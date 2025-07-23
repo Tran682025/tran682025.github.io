@@ -1,21 +1,34 @@
-<script src="https://sdk.minepi.com/pi-sdk.js"></script>
-<script>
-  Pi.init({ version: "2.0", sandbox: true });
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Tran Music Kingdom – Đăng nhập Pi</title>
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+</head>
+<body>
+  <h1>🚀 Tran Music Kingdom – Đăng nhập Pi</h1>
+  <button onclick="login()">Đăng nhập với Pi</button>
 
-  function login() {
-    const scopes = ['username', 'payments'];
-    const onIncompletePaymentFound = (payment) => {
-      console.log('Incomplete payment found:', payment);
-    };
+  <script>
+    // PHẢI gọi init() ngay sau khi load SDK
+    Pi.init({ version: "2.0", sandbox: true });
 
-    Pi.authenticate(scopes, onIncompletePaymentFound)
-      .then(function(auth) {
-        console.log('Authentication success', auth);
-        alert("Xin chào, " + auth.user.username);
-      })
-      .catch(function(error) {
-        console.error('Authentication failed:', error);
-        alert("Đăng nhập thất bại: " + error);
-      });
-  }
-</script>
+    function login() {
+      const scopes = ['username', 'payments'];
+      const onIncompletePaymentFound = (payment) => {
+        console.log('Incomplete payment found:', payment);
+      };
+
+      Pi.authenticate(scopes, onIncompletePaymentFound)
+        .then(function(auth) {
+          console.log('Authentication success', auth);
+          alert("Xin chào, " + auth.user.username);
+        })
+        .catch(function(error) {
+          console.error('Authentication failed:', error);
+          alert("Đăng nhập thất bại: " + error);
+        });
+    }
+  </script>
+</body>
+</html>
