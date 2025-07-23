@@ -1,45 +1,24 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>Đăng nhập Pi - Tran Music Kingdom</title>
-    <meta charset="UTF-8" />
-    <script defer src="https://sdk.minepi.com/pi-sdk.js"></script>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        text-align: center;
-        padding-top: 80px;
-      }
-      button {
-        padding: 10px 20px;
-        font-size: 18px;
-        cursor: pointer;
-      }
-    </style>
-  </head>
-  <body>
-    <h2>🚀 Tran Music Kingdom – Đăng nhập Pi</h2>
-    <p>Vui lòng đăng nhập bằng ví Pi để tiếp tục</p>
-    <button onclick="login()">🔐 Đăng nhập với Pi</button>
+<!-- SDK Pi -->
+<script src="https://sdk.minepi.com/pi-sdk.js"></script>
+<script>
+  // Khởi tạo SDK trước khi làm gì khác
+  Pi.init({ version: "2.0", sandbox: true });
 
-    <script>
-      const scopes = ['username', 'payments'];
-      const onIncompletePaymentFound = (payment) => {
-        console.log('Incomplete payment:', payment);
-      };
+  // Hàm login sẽ được gọi khi nhấn nút
+  function login() {
+    const scopes = ['username', 'payments']; // quyền truy cập
+    const onIncompletePaymentFound = (payment) => {
+      console.log('Incomplete payment found:', payment);
+    };
 
-      Pi.init({ version: "2.0", sandbox: true });
-      
-      async function login() {
-        try {
-          const user = await Pi.authenticate(scopes, onIncompletePaymentFound);
-          alert("Đăng nhập thành công: " + user.username);
-          console.log(user);
-        } catch (err) {
-          alert("Lỗi đăng nhập: " + err.message);
-          console.error(err);
-        }
-      }
-    </script>
-  </body>
-</html>
+    Pi.authenticate(scopes, onIncompletePaymentFound)
+      .then(function(auth) {
+        console.log('Authentication success', auth);
+        alert("Xin chào, " + auth.user.username);
+      })
+      .catch(function(error) {
+        console.error('Authentication failed:', error);
+        alert("Đăng nhập thất bại: " + error);
+      });
+  }
+</script>
