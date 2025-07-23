@@ -1,12 +1,9 @@
-<!-- SDK Pi -->
 <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 <script>
-  // Khởi tạo SDK trước khi làm gì khác
   Pi.init({ version: "2.0", sandbox: true });
 
-  // Hàm login sẽ được gọi khi nhấn nút
   function login() {
-    const scopes = ['username', 'payments']; // quyền truy cập
+    const scopes = ['username', 'payments'];
     const onIncompletePaymentFound = (payment) => {
       console.log('Incomplete payment found:', payment);
     };
