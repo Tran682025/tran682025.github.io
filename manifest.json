@@ -1,0 +1,16 @@
+{
+  "name": "Tran Music Kingdom",
+  "short_name": "TMK",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#660099",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://tran682025.github.io/icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
