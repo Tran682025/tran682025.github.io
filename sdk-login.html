@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Đăng nhập Pi - Tran Music Kingdom</title>
+    <meta charset="UTF-8" />
+    <script defer src="https://sdk.minepi.com/pi-sdk.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        padding-top: 80px;
+      }
+      button {
+        padding: 10px 20px;
+        font-size: 18px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>🚀 Tran Music Kingdom – Đăng nhập Pi</h2>
+    <p>Vui lòng đăng nhập bằng ví Pi để tiếp tục</p>
+    <button onclick="login()">🔐 Đăng nhập với Pi</button>
+
+    <script>
+      const scopes = ['username', 'payments'];
+      const onIncompletePaymentFound = (payment) => {
+        console.log('Incomplete payment:', payment);
+      };
+
+      Pi.init({ version: "2.0", sandbox: true });
+      
+      async function login() {
+        try {
+          const user = await Pi.authenticate(scopes, onIncompletePaymentFound);
+          alert("Đăng nhập thành công: " + user.username);
+          console.log(user);
+        } catch (err) {
+          alert("Lỗi đăng nhập: " + err.message);
+          console.error(err);
+        }
+      }
+    </script>
+  </body>
+</html>
