@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Pi SDK Test</title>
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+</head>
+<body>
+  <h1>Test Pi SDK</h1>
+  <button onclick="login()">Login with Pi</button>
+
+  <script>
+    function login() {
+      Pi.authenticate(['username'], function (result) {
+        alert("Logged in as " + result.user.username);
+      }, function (error) {
+        alert("Login failed: " + error);
+      });
+    }
+  </script>
+</body>
+</html>
