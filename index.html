@@ -17,9 +17,11 @@
       const scopes = ['username', 'payments'];
       Pi.authenticate(scopes, function(payment){
         console.log("Incomplete payment:", payment);
-      }).then(auth => {
+      })
+      .then(auth => {
         alert("Welcome, " + auth.user.username);
-      }).catch(err => {
+      })
+      .catch(err => {
         alert("Login failed: " + JSON.stringify(err));
       });
     }
