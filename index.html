@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
   <title>Tran682025 Pi App</title>
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 </head>
@@ -15,31 +14,18 @@
     function login() {
       const scopes = ['username', 'payments'];
       const onIncompletePaymentFound = (payment) => {
-        console.log("⚠️ Incomplete payment:", payment);
+        console.log('Incomplete payment found:', payment);
       };
 
       Pi.authenticate(scopes, onIncompletePaymentFound)
         .then(function(auth) {
-          alert("Chào mừng " + auth.user.username);
-          createPayment(auth.user.username);
+          console.log('Authentication success', auth);
+          alert("Xin chào, " + auth.user.username);
         })
         .catch(function(error) {
-          console.error("Lỗi đăng nhập:", error);
+          console.error('Authentication failed:', error);
           alert("Đăng nhập thất bại: " + error);
         });
-    }
-
-    function createPayment(username) {
-      Pi.createPayment({
-        amount: 0.01,
-        memo: "Thanh toán thử nghiệm",
-        metadata: { user: username, type: "test" }
-      }).then(function(payment) {
-        console.log("✅ Payment created:", payment);
-      }).catch(function(error) {
-        console.error("Lỗi tạo thanh toán:", error);
-        alert("Tạo thanh toán thất bại: " + error);
-      });
     }
   </script>
 </body>
