@@ -15,27 +15,29 @@
     function login() {
       const scopes = ['username', 'payments'];
       const onIncompletePaymentFound = (payment) => {
-        alert("⚠️ Tìm thấy thanh toán chưa hoàn tất: " + payment.identifier);
+        console.log("⚠️ Incomplete payment:", payment);
       };
 
       Pi.authenticate(scopes, onIncompletePaymentFound)
         .then(function(auth) {
-          alert("Chào mừng, " + auth.user.username);
-          requestPayment(auth.user.username);
+          alert("Chào mừng " + auth.user.username);
+          createPayment(auth.user.username);
         })
         .catch(function(error) {
+          console.error("Lỗi đăng nhập:", error);
           alert("Đăng nhập thất bại: " + error);
         });
     }
 
-    function requestPayment(username) {
+    function createPayment(username) {
       Pi.createPayment({
         amount: 0.01,
-        memo: "Thanh toán test từ " + username,
-        metadata: { type: "test", user: username }
+        memo: "Thanh toán thử nghiệm",
+        metadata: { user: username, type: "test" }
       }).then(function(payment) {
-        alert("Tạo thanh toán thành công: " + payment.identifier);
+        console.log("✅ Payment created:", payment);
       }).catch(function(error) {
+        console.error("Lỗi tạo thanh toán:", error);
         alert("Tạo thanh toán thất bại: " + error);
       });
     }
