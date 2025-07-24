@@ -1,9 +1,33 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta http-equiv="refresh" content="0; url=sdk-login.html" />
-  </head>
-  <body>
-    <p>Redirecting to <a href="sdk-login.html">Pi Login Page</a>...</p>
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <title>Pi App Login</title>
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+</head>
+<body>
+  <h2>Welcome to Tran682025 Pi App</h2>
+  <button onclick="login()">Đăng nhập với Pi</button>
+
+  <script>
+    Pi.init({ version: "2.0", sandbox: false });
+
+    function login() {
+      const scopes = ['username', 'payments'];
+      const onIncompletePaymentFound = (payment) => {
+        console.log('⚠️ Incomplete payment:', payment);
+      };
+
+      Pi.authenticate(scopes, onIncompletePaymentFound)
+        .then(function(auth) {
+          alert("Chào mừng, " + auth.user.username);
+          console.log("✅ Auth success:", auth);
+        })
+        .catch(function(error) {
+          alert("Đăng nhập thất bại!");
+          console.error("❌ Auth failed:", error);
+        });
+    }
+  </script>
+</body>
 </html>
