@@ -1,84 +1,66 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
   <meta charset="UTF-8">
   <title>Tran682025 Pi App</title>
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      margin-top: 100px;
-    }
-    button {
-      padding: 10px 20px;
-      margin: 10px;
-      font-size: 16px;
-    }
-  </style>
-</head>
-<body>
-
-  <h1>Welcome to Tran682025 Pi App</h1>
-
-  <button onclick="login()">Đăng nhập với Pi</button>
-  <br><br>
-  <button onclick="pay()">Thanh toán 0.01 Pi</button>
-
   <script>
     Pi.init({ version: "2.0", sandbox: true });
 
-    let username = "";
+    let paymentData = {
+      amount: 0.01,
+      memo: "Thanh toán thử nghiệm Pi",
+      metadata: { type: "test-payment" }
+    };
+
+    let paymentFn = null;
 
     function login() {
       const scopes = ['username', 'payments'];
       const onIncompletePaymentFound = (payment) => {
         console.log('Incomplete payment found:', payment);
+        paymentFn = () => Pi.createPayment(payment);
       };
 
       Pi.authenticate(scopes, onIncompletePaymentFound)
         .then(function(auth) {
-          username = auth.user.username;
-          console.log('Authentication success', auth);
-          alert("Xin chào, " + username);
+          console.log('Authenticated!', auth);
+          alert("Xin chào, " + auth.user.username);
+          paymentFn = () => {
+            Pi.createPayment(paymentData, {
+              onReadyForServerApproval: (paymentId) => {
+                console.log('Ready for server approval:', paymentId);
+              },
+              onReadyForServerCompletion: (paymentId, txid) => {
+                console.log('Ready for server completion:', paymentId, txid);
+              },
+              onCancel: (paymentId) => {
+                console.log('Payment cancelled:', paymentId);
+              },
+              onError: (error, payment) => {
+                console.error('Payment error:', error, payment);
+              }
+            });
+          };
         })
         .catch(function(error) {
-          console.error('Authentication failed:', error);
+          console.error('Login failed:', error);
           alert("Đăng nhập thất bại: " + error);
         });
     }
 
     function pay() {
-      if (!username) {
+      if (paymentFn) {
+        paymentFn();
+      } else {
         alert("Vui lòng đăng nhập trước khi thanh toán.");
-        return;
       }
-
-      Pi.createPayment({
-        amount: 0.01,
-        memo: "Thanh toán test",
-        metadata: { type: "sandbox_demo" }
-      }, {
-        onReadyForServerApproval: function(paymentId) {
-          console.log("Ready for server approval", paymentId);
-        },
-        onReadyForServerCompletion: function(paymentId, txid) {
-          console.log("Ready for server completion", paymentId, txid);
-        },
-        onCancel: function(paymentId) {
-          console.warn("Payment cancelled", paymentId);
-        },
-        onError: function(error, paymentId) {
-          console.error("Payment error", error);
-        }
-      }).then(function(payment) {
-        console.log("Payment created", payment);
-        alert("Đã gửi yêu cầu thanh toán. Vui lòng chờ...");
-      }).catch(function(err) {
-        console.error("Failed to create payment", err);
-      });
     }
   </script>
-
+</head>
+<body>
+  <h1>Welcome to Tran682025 Pi App</h1>
+  <button onclick="login()">🔐 Đăng nhập Pi</button>
+  <button onclick="pay()">💰 Thanh toán 0.01 Pi</button>
 </body>
 </html>
