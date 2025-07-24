@@ -1,33 +1,62 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <meta charset="UTF-8">
-  <title>Pi App Login</title>
-  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-</head>
-<body>
-  <h2>Welcome to Tran682025 Pi App</h2>
-  <button onclick="login()">Đăng nhập với Pi</button>
+  <head>
+    <title>Tran682025 Pi App</title>
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+    <script>
+      Pi.init({ version: "2.0", sandbox: true });
 
-  <script>
-    Pi.init({ version: "2.0", sandbox: false });
+      function login() {
+        const scopes = ['username', 'payments'];
+        const onIncompletePaymentFound = (payment) => {
+          console.log('Incomplete payment found:', payment);
+        };
 
-    function login() {
-      const scopes = ['username', 'payments'];
-      const onIncompletePaymentFound = (payment) => {
-        console.log('⚠️ Incomplete payment:', payment);
-      };
+        Pi.authenticate(scopes, onIncompletePaymentFound)
+          .then(function(auth) {
+            console.log('Authentication success', auth);
+            alert("Chào mừng, " + auth.user.username);
+          })
+          .catch(function(error) {
+            console.error('Authentication failed:', error);
+            alert("Đăng nhập thất bại: " + error);
+          });
+      }
 
-      Pi.authenticate(scopes, onIncompletePaymentFound)
-        .then(function(auth) {
-          alert("Chào mừng, " + auth.user.username);
-          console.log("✅ Auth success:", auth);
-        })
-        .catch(function(error) {
-          alert("Đăng nhập thất bại!");
-          console.error("❌ Auth failed:", error);
+      function pay() {
+        Pi.createPayment({
+          amount: 0.001,
+          memo: "Test payment to complete checklist",
+          metadata: { type: "test" },
+        }, {
+          onReadyForServerApproval: function(paymentId) {
+            console.log("Ready for server approval", paymentId);
+            alert("Payment created. Confirm manually in Pi Browser.");
+          },
+          onCancelled: function(paymentId) {
+            console.log("Payment cancelled", paymentId);
+            alert("Thanh toán đã bị hủy.");
+          },
+          onError: function(error, paymentId) {
+            console.error("Payment failed", paymentId, error);
+            alert("Thanh toán thất bại.");
+          },
+          onSubmitted: function(paymentId) {
+            console.log("Payment submitted", paymentId);
+            alert("Thanh toán đã được gửi thành công!");
+          },
+          onCompleted: function(paymentId) {
+            console.log("Payment completed", paymentId);
+            alert("Giao dịch hoàn tất! Mục 11 sắp xong!");
+          },
         });
-    }
-  </script>
-</body>
+      }
+    </script>
+  </head>
+  <body>
+    <h1>Welcome to Tran682025 Pi App</h1>
+    <button onclick="login()">Đăng nhập với Pi</button>
+    <br><br>
+    <button onclick="pay()">Thanh toán thử 0.001 Pi</button>
+  </body>
 </html>
