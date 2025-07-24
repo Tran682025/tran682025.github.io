@@ -1,32 +1,25 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Tran Music Kingdom – Đăng nhập Pi</title>
+  <title>Pi Login Test</title>
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+</head>
+<body>
+  <button onclick="login()">Login with Pi</button>
+
   <script>
     Pi.init({ version: "2.0", sandbox: true });
 
     function login() {
-      const scopes = ['username', 'payments'];
+      const scopes = ["username"];
       const onIncompletePaymentFound = (payment) => {
-        console.log('Incomplete payment found:', payment);
+        console.log("Found incomplete payment:", payment);
       };
 
       Pi.authenticate(scopes, onIncompletePaymentFound)
-        .then(function(auth) {
-          console.log('Authentication success:', auth);
-          alert("Xin chào, " + auth.user.username);
-        })
-        .catch(function(error) {
-          console.error('Authentication failed:', error);
-          alert("Đăng nhập thất bại: " + error);
-        });
+        .then(auth => alert("Welcome, " + auth.user.username))
+        .catch(err => alert("Error: " + err));
     }
   </script>
-</head>
-<body>
-  <h1>Tran Music Kingdom – Đăng nhập Pi</h1>
-  <button onclick="login()">Đăng nhập với Pi</button>
 </body>
 </html>
