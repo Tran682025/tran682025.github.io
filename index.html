@@ -1,63 +1,77 @@
 <!DOCTYPE html>
-<html>
-<head>
-  <title>Tran682025 Pi App</title>
-  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-</head>
-<body>
-  <h1>Welcome to Tran682025 Pi App</h1>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Tran682025 Pi App</title>
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        margin-top: 100px;
+      }
+      button {
+        padding: 10px 20px;
+        margin: 10px;
+        font-size: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Welcome to Tran682025 Pi App</h1>
+    <button onclick="login()">Đăng nhập với Pi</button>
+    <button onclick="pay()">Thanh toán 0.01 Pi</button>
 
-  <button onclick="login()">Đăng nhập với Pi</button>
-  <button onclick="pay()">Thanh toán 0.01 Pi</button>
+    <script>
+      Pi.init({ version: "2.0", sandbox: true });
 
-  <script>
-    Pi.init({ version: "2.0", sandbox: true });
+      let currentUser = null;
 
-    function login() {
-      const scopes = ['username', 'payments'];
-      const onIncompletePaymentFound = function(payment) {
-        console.log("Incomplete payment found:", payment);
-        alert("Thanh toán chưa hoàn tất: " + payment.identifier);
-      };
+      function login() {
+        const scopes = ['username', 'payments'];
+        const onIncompletePaymentFound = (payment) => {
+          console.log("Incomplete payment found:", payment);
+        };
 
-      Pi.authenticate(scopes, onIncompletePaymentFound)
-        .then(function(auth) {
-          console.log("Authentication success", auth);
-          alert("Chào mừng, " + auth.user.username);
-        })
-        .catch(function(error) {
-          console.error("Authentication failed:", error);
-          alert("Đăng nhập thất bại: " + error);
-        });
-    }
+        Pi.authenticate(scopes, onIncompletePaymentFound)
+          .then(function(auth) {
+            currentUser = auth.user;
+            alert("Xin chào, " + auth.user.username);
+          })
+          .catch(function(error) {
+            console.error("Login failed:", error);
+            alert("Đăng nhập thất bại: " + error);
+          });
+      }
 
-    function pay() {
-      Pi.createPayment({
-        amount: 0.01,
-        memo: "Test payment from Tran682025",
-        metadata: { type: "test" },
-
-        onReadyForServerApproval: function(paymentId) {
-          console.log("onReadyForServerApproval", paymentId);
-          alert("Đang chờ phê duyệt: " + paymentId);
-        },
-
-        onReadyForServerCompletion: function(paymentId, txid) {
-          console.log("onReadyForServerCompletion", paymentId, txid);
-          alert("Thanh toán thành công! TXID: " + txid);
-        },
-
-        onCancel: function(paymentId) {
-          console.log("onCancel", paymentId);
-          alert("Hủy thanh toán: " + paymentId);
-        },
-
-        onError: function(error, payment) {
-          console.error("onError", error);
-          alert("Lỗi thanh toán: " + error);
+      function pay() {
+        if (!currentUser) {
+          alert("Vui lòng đăng nhập trước!");
+          return;
         }
-      });
-    }
-  </script>
-</body>
+
+        Pi.createPayment({
+          amount: 0.01,
+          memo: "Thanh toán thử nghiệm",
+          metadata: { type: "test" },
+        }, {
+          onReadyForServerApproval: function(paymentId) {
+            console.log("Ready for server approval", paymentId);
+            // Có thể thêm gọi API ở đây nếu cần
+          },
+          onReadyForServerCompletion: function(paymentId, txid) {
+            console.log("Ready for server completion", paymentId, txid);
+            alert("Giao dịch thành công! ID: " + txid);
+          },
+          onCancel: function(paymentId) {
+            console.log("User cancelled", paymentId);
+          },
+          onError: function(error, payment) {
+            console.error("Payment error", error, payment);
+            alert("Lỗi thanh toán: " + error);
+          }
+        });
+      }
+    </script>
+  </body>
 </html>
