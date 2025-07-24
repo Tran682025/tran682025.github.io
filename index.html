@@ -2,51 +2,42 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Thanh toán Pi</title>
+  <title>Tran682025 Pi App</title>
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 </head>
 <body>
-  <h2>Chào mừng đến với ứng dụng thử nghiệm!</h2>
-  <button onclick="loginAndPay()">Đăng nhập & Thanh toán 0.001 Pi</button>
+  <h1>Welcome to Tran682025 Pi App</h1>
+  <button onclick="login()">Đăng nhập với Pi</button>
 
   <script>
     Pi.init({ version: "2.0", sandbox: true });
 
-    function loginAndPay() {
+    function login() {
       const scopes = ['username', 'payments'];
       const onIncompletePaymentFound = (payment) => {
-        console.log('Incomplete payment found:', payment);
+        alert("⚠️ Tìm thấy thanh toán chưa hoàn tất: " + payment.identifier);
       };
 
       Pi.authenticate(scopes, onIncompletePaymentFound)
         .then(function(auth) {
-          console.log('✅ Đăng nhập thành công:', auth.user.username);
-
-          // Gọi thanh toán
-          Pi.createPayment({
-            amount: 0.001,
-            memo: "Test thanh toán Pi SDK",
-            metadata: { type: "purchase", item: "test" }
-          }, {
-            onReadyForServerApproval: function(paymentId) {
-              console.log('🟡 Chờ duyệt server:', paymentId);
-            },
-            onReadyForServerCompletion: function(paymentId, txid) {
-              console.log('🟢 Sẵn sàng hoàn tất:', paymentId, txid);
-            },
-            onCancel: function(paymentId) {
-              console.log('❌ Người dùng hủy:', paymentId);
-            },
-            onError: function(error, payment) {
-              console.error('🔴 Lỗi thanh toán:', error);
-            }
-          });
-
+          alert("Chào mừng, " + auth.user.username);
+          requestPayment(auth.user.username);
         })
         .catch(function(error) {
-          console.error('❌ Lỗi đăng nhập:', error);
           alert("Đăng nhập thất bại: " + error);
         });
+    }
+
+    function requestPayment(username) {
+      Pi.createPayment({
+        amount: 0.01,
+        memo: "Thanh toán test từ " + username,
+        metadata: { type: "test", user: username }
+      }).then(function(payment) {
+        alert("Tạo thanh toán thành công: " + payment.identifier);
+      }).catch(function(error) {
+        alert("Tạo thanh toán thất bại: " + error);
+      });
     }
   </script>
 </body>
