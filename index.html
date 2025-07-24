@@ -1,24 +1,69 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Pi Login Test</title>
-    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-  </head>
-  <body>
-    <button onclick="login()">Đăng nhập với Pi</button>
+<head>
+  <title>Tran682025 Pi App</title>
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+</head>
+<body>
+  <h1>Welcome to Tran682025 Pi App</h1>
 
-    <script>
-      Pi.init({ version: "2.0", sandbox: true });
+  <button onclick="login()">🔐 Đăng nhập với Pi</button>
+  <br><br>
+  <button onclick="pay()">💰 Thanh toán 0.01 Pi</button>
 
-      function login() {
-        Pi.authenticate(['username'], function (payment) {
-          console.log('Unfinished payment:', payment);
-        }).then(function (auth) {
-          alert("Xin chào, " + auth.user.username);
-        }).catch(function (error) {
-          alert("Lỗi đăng nhập: " + error);
+  <script>
+    Pi.init({ version: "2.0", sandbox: true });
+
+    let username = "";
+
+    function login() {
+      const scopes = ['username', 'payments'];
+      const onIncompletePaymentFound = (payment) => {
+        console.log('❗ Incomplete payment found:', payment);
+      };
+
+      Pi.authenticate(scopes, onIncompletePaymentFound)
+        .then(function(auth) {
+          username = auth.user.username;
+          console.log('✅ Authentication success', auth);
+          alert("Xin chào, " + username);
+        })
+        .catch(function(error) {
+          console.error('❌ Authentication failed:', error);
+          alert("Đăng nhập thất bại: " + error);
         });
+    }
+
+    function pay() {
+      if (!username) {
+        alert("Vui lòng đăng nhập trước khi thanh toán.");
+        return;
       }
-    </script>
-  </body>
+
+      Pi.createPayment({
+        amount: 0.01,
+        memo: "Thanh toán test",
+        metadata: { type: "sandbox_demo" }
+      }, {
+        onReadyForServerApproval: function(paymentId) {
+          console.log("🟡 Ready for server approval", paymentId);
+        },
+        onReadyForServerCompletion: function(paymentId, txid) {
+          console.log("🟢 Ready for server completion", paymentId, txid);
+        },
+        onCancel: function(paymentId) {
+          console.warn("🔴 Payment cancelled", paymentId);
+        },
+        onError: function(error, paymentId) {
+          console.error("❌ Payment error", error);
+        }
+      }).then(function(payment) {
+        console.log("✅ Payment created", payment);
+        alert("Đã gửi yêu cầu thanh toán. Vui lòng chờ...");
+      }).catch(function(err) {
+        console.error("❌ Failed to create payment", err);
+      });
+    }
+  </script>
+</body>
 </html>
