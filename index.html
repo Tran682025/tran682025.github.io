@@ -1,66 +1,68 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>Tran682025 Pi App</title>
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-  <script>
-    Pi.init({ version: "2.0", sandbox: true });
-
-    let paymentData = {
-      amount: 0.01,
-      memo: "Thanh toán thử nghiệm Pi",
-      metadata: { type: "test-payment" }
-    };
-
-    let paymentFn = null;
-
-    function login() {
-      const scopes = ['username', 'payments'];
-      const onIncompletePaymentFound = (payment) => {
-        console.log('Incomplete payment found:', payment);
-        paymentFn = () => Pi.createPayment(payment);
-      };
-
-      Pi.authenticate(scopes, onIncompletePaymentFound)
-        .then(function(auth) {
-          console.log('Authenticated!', auth);
-          alert("Xin chào, " + auth.user.username);
-          paymentFn = () => {
-            Pi.createPayment(paymentData, {
-              onReadyForServerApproval: (paymentId) => {
-                console.log('Ready for server approval:', paymentId);
-              },
-              onReadyForServerCompletion: (paymentId, txid) => {
-                console.log('Ready for server completion:', paymentId, txid);
-              },
-              onCancel: (paymentId) => {
-                console.log('Payment cancelled:', paymentId);
-              },
-              onError: (error, payment) => {
-                console.error('Payment error:', error, payment);
-              }
-            });
-          };
-        })
-        .catch(function(error) {
-          console.error('Login failed:', error);
-          alert("Đăng nhập thất bại: " + error);
-        });
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 100px;
     }
-
-    function pay() {
-      if (paymentFn) {
-        paymentFn();
-      } else {
-        alert("Vui lòng đăng nhập trước khi thanh toán.");
-      }
+    button {
+      padding: 10px 20px;
+      margin: 10px;
+      font-size: 16px;
+      cursor: pointer;
     }
-  </script>
+  </style>
 </head>
 <body>
   <h1>Welcome to Tran682025 Pi App</h1>
-  <button onclick="login()">🔐 Đăng nhập Pi</button>
-  <button onclick="pay()">💰 Thanh toán 0.01 Pi</button>
+  <button onclick="login()">🔑 Login with Pi</button>
+  <button onclick="makePayment()">💰 Pay 0.01 Pi</button>
+
+  <script>
+    Pi.init({ version: "2.0", sandbox: true });
+    let currentUser = null;
+
+    function login() {
+      const scopes = ['username', 'payments'];
+      Pi.authenticate(scopes, onIncompletePaymentFound)
+        .then(function(auth) {
+          currentUser = auth.user;
+          alert("Welcome, " + auth.user.username + "!");
+        })
+        .catch(function(error) {
+          console.error("Login failed:", error);
+          alert("Login failed: " + error);
+        });
+    }
+
+    function onIncompletePaymentFound(payment) {
+      console.log("Incomplete payment:", payment);
+    }
+
+    function makePayment() {
+      if (!currentUser) {
+        alert("Please login first before making a payment.");
+        return;
+      }
+      Pi.createPayment({
+        amount: 0.01,
+        memo: "Test payment",
+        metadata: { user: currentUser.username }
+      })
+      .then(function(payment) {
+        console.log("Payment created:", payment);
+        alert("Payment created successfully!");
+      })
+      .catch(function(error) {
+        console.error("Payment failed:", error);
+        alert("Payment failed: " + error);
+      });
+    }
+  </script>
 </body>
 </html>
