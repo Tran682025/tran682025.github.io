@@ -1,62 +1,52 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Tran682025 Pi App</title>
+  <meta charset="UTF-8">
+  <title>Thanh toán Pi</title>
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 </head>
 <body>
-  <h1>Welcome to Tran682025 Pi App</h1>
-
-  <button onclick="login()">Đăng nhập với Pi</button>
-  <button onclick="pay()">Thanh toán 0.01 Pi</button>
+  <h2>Chào mừng đến với ứng dụng thử nghiệm!</h2>
+  <button onclick="loginAndPay()">Đăng nhập & Thanh toán 0.001 Pi</button>
 
   <script>
     Pi.init({ version: "2.0", sandbox: true });
 
-    function login() {
+    function loginAndPay() {
       const scopes = ['username', 'payments'];
-      const onIncompletePaymentFound = function(payment) {
-        console.log("Incomplete payment found:", payment);
-        alert("Thanh toán chưa hoàn tất: " + payment.identifier);
+      const onIncompletePaymentFound = (payment) => {
+        console.log('Incomplete payment found:', payment);
       };
 
       Pi.authenticate(scopes, onIncompletePaymentFound)
         .then(function(auth) {
-          console.log("Authentication success", auth);
-          alert("Chào mừng, " + auth.user.username);
+          console.log('✅ Đăng nhập thành công:', auth.user.username);
+
+          // Gọi thanh toán
+          Pi.createPayment({
+            amount: 0.001,
+            memo: "Test thanh toán Pi SDK",
+            metadata: { type: "purchase", item: "test" }
+          }, {
+            onReadyForServerApproval: function(paymentId) {
+              console.log('🟡 Chờ duyệt server:', paymentId);
+            },
+            onReadyForServerCompletion: function(paymentId, txid) {
+              console.log('🟢 Sẵn sàng hoàn tất:', paymentId, txid);
+            },
+            onCancel: function(paymentId) {
+              console.log('❌ Người dùng hủy:', paymentId);
+            },
+            onError: function(error, payment) {
+              console.error('🔴 Lỗi thanh toán:', error);
+            }
+          });
+
         })
         .catch(function(error) {
-          console.error("Authentication failed:", error);
+          console.error('❌ Lỗi đăng nhập:', error);
           alert("Đăng nhập thất bại: " + error);
         });
-    }
-
-    function pay() {
-      Pi.createPayment({
-        amount: 0.01,
-        memo: "Test payment from Tran682025",
-        metadata: { type: "test" },
-
-        onReadyForServerApproval: function(paymentId) {
-          console.log("onReadyForServerApproval", paymentId);
-          alert("Đang chờ phê duyệt: " + paymentId);
-        },
-
-        onReadyForServerCompletion: function(paymentId, txid) {
-          console.log("onReadyForServerCompletion", paymentId, txid);
-          alert("Thanh toán thành công! TXID: " + txid);
-        },
-
-        onCancel: function(paymentId) {
-          console.log("onCancel", paymentId);
-          alert("Hủy thanh toán: " + paymentId);
-        },
-
-        onError: function(error, payment) {
-          console.error("onError", error);
-          alert("Lỗi thanh toán: " + error);
-        }
-      });
     }
   </script>
 </body>
