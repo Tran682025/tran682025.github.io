@@ -2,58 +2,25 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Tran682025 Pi App</title>
+  <title>Test Pi Login</title>
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-  <style>
-    body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
-    button { padding: 10px 20px; margin: 10px; font-size: 16px; cursor: pointer; }
-  </style>
 </head>
 <body>
-  <h1>Welcome to Tran682025 Pi App</h1>
+  <h1>Test Pi Login</h1>
   <button onclick="login()">🔑 Login with Pi</button>
-  <button onclick="makePayment()">💰 Pay 0.01 Pi</button>
 
   <script>
-    let currentUser = null;
-
     Pi.init({ version: "2.0", sandbox: true, appId: "tran682025.github.io" });
 
     function login() {
+      alert("Starting login...");
       const scopes = ['username', 'payments'];
-      Pi.authenticate(scopes, onIncompletePaymentFound)
-        .then(auth => {
-          currentUser = auth.user;
-          alert("Welcome, " + currentUser.username);
-          console.log("Authentication success:", auth);
-        })
-        .catch(err => {
-          console.error("Login failed:", err);
-          alert("Login failed: " + err);
-        });
-    }
-
-    function onIncompletePaymentFound(payment) {
-      console.log("Incomplete payment found:", payment);
-    }
-
-    function makePayment() {
-      if (!currentUser) {
-        alert("Please login first before making a payment.");
-        return;
-      }
-      Pi.createPayment({
-        amount: 0.01,
-        memo: "Test payment",
-        metadata: { user: currentUser.username }
-      })
-      .then(payment => {
-        console.log("Payment created:", payment);
-        alert("Payment created successfully!");
-      })
-      .catch(err => {
-        console.error("Payment failed:", err);
-        alert("Payment failed: " + err);
+      Pi.authenticate(scopes, function(payment){
+        console.log("Incomplete payment:", payment);
+      }).then(auth => {
+        alert("Welcome, " + auth.user.username);
+      }).catch(err => {
+        alert("Login failed: " + JSON.stringify(err));
       });
     }
   </script>
