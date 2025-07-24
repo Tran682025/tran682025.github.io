@@ -1,16 +1,10 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Tran Music Kingdom – Đăng nhập Pi</title>
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-</head>
-<body>
-  <h1>Tran Music Kingdom – Đăng nhập Pi</h1>
-  <button onclick="login()">Đăng nhập với Pi</button>
-
   <script>
-    // PHẢI gọi init() ngay sau khi load SDK
     Pi.init({ version: "2.0", sandbox: true });
 
     function login() {
@@ -21,7 +15,7 @@
 
       Pi.authenticate(scopes, onIncompletePaymentFound)
         .then(function(auth) {
-          console.log('Authentication success', auth);
+          console.log('Authentication success:', auth);
           alert("Xin chào, " + auth.user.username);
         })
         .catch(function(error) {
@@ -30,5 +24,9 @@
         });
     }
   </script>
+</head>
+<body>
+  <h1>Tran Music Kingdom – Đăng nhập Pi</h1>
+  <button onclick="login()">Đăng nhập với Pi</button>
 </body>
 </html>
