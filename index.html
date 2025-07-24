@@ -5,17 +5,8 @@
   <title>Tran682025 Pi App</title>
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      margin-top: 100px;
-    }
-    button {
-      padding: 10px 20px;
-      margin: 10px;
-      font-size: 16px;
-      cursor: pointer;
-    }
+    body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+    button { padding: 10px 20px; margin: 10px; font-size: 16px; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -24,29 +15,30 @@
   <button onclick="makePayment()">💰 Pay 0.01 Pi</button>
 
   <script>
-    Pi.init({ version: "2.0", sandbox: true });
     let currentUser = null;
+
+    Pi.init({ version: "2.0", sandbox: true });
 
     function login() {
       const scopes = ['username', 'payments'];
       Pi.authenticate(scopes, onIncompletePaymentFound)
-        .then(function(auth) {
+        .then(auth => {
           currentUser = auth.user;
-          alert("Welcome, " + auth.user.username + "!");
+          alert("Welcome, " + currentUser.username);
         })
-        .catch(function(error) {
-          console.error("Login failed:", error);
-          alert("Login failed: " + error);
+        .catch(err => {
+          console.error("Login failed:", err);
+          alert("Login failed: " + err);
         });
     }
 
     function onIncompletePaymentFound(payment) {
-      console.log("Incomplete payment:", payment);
+      console.log("Incomplete payment found:", payment);
     }
 
     function makePayment() {
       if (!currentUser) {
-        alert("Please login first before making a payment.");
+        alert("Please login first!");
         return;
       }
       Pi.createPayment({
@@ -54,14 +46,8 @@
         memo: "Test payment",
         metadata: { user: currentUser.username }
       })
-      .then(function(payment) {
-        console.log("Payment created:", payment);
-        alert("Payment created successfully!");
-      })
-      .catch(function(error) {
-        console.error("Payment failed:", error);
-        alert("Payment failed: " + error);
-      });
+      .then(payment => alert("Payment created: " + payment.identifier))
+      .catch(err => alert("Payment failed: " + err));
     }
   </script>
 </body>
