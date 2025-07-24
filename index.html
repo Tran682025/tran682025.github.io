@@ -1,32 +1,24 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <title>Tran682025 Pi App</title>
-  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-</head>
-<body>
-  <h1>Welcome to Tran682025 Pi App</h1>
-  <button onclick="login()">Đăng nhập với Pi</button>
+  <head>
+    <title>Pi Login Test</title>
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+  </head>
+  <body>
+    <button onclick="login()">Đăng nhập với Pi</button>
 
-  <script>
-    Pi.init({ version: "2.0", sandbox: true });
+    <script>
+      Pi.init({ version: "2.0", sandbox: true });
 
-    function login() {
-      const scopes = ['username', 'payments'];
-      const onIncompletePaymentFound = (payment) => {
-        console.log('Incomplete payment found:', payment);
-      };
-
-      Pi.authenticate(scopes, onIncompletePaymentFound)
-        .then(function(auth) {
-          console.log('Authentication success', auth);
+      function login() {
+        Pi.authenticate(['username'], function (payment) {
+          console.log('Unfinished payment:', payment);
+        }).then(function (auth) {
           alert("Xin chào, " + auth.user.username);
-        })
-        .catch(function(error) {
-          console.error('Authentication failed:', error);
-          alert("Đăng nhập thất bại: " + error);
+        }).catch(function (error) {
+          alert("Lỗi đăng nhập: " + error);
         });
-    }
-  </script>
-</body>
+      }
+    </script>
+  </body>
 </html>
