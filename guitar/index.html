@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Pi Guitar Premium</title>
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
   <style>
@@ -12,94 +12,151 @@
       text-align: center;
       padding: 10px;
     }
-    h1 { font-size: 1.8rem; }
+    h1 {
+      font-size: 1.8rem;
+      margin: 15px 0;
+    }
     button {
-      background: #7b2ff7;
+      background: #7b24ff;
       color: white;
       border: none;
       border-radius: 8px;
-      padding: 10px;
-      margin: 5px;
+      padding: 10px 12px;
+      margin: 6px auto;
+      display: block;
+      width: 260px;
       font-size: 1rem;
       cursor: pointer;
     }
-    .song-btn { display: block; margin: 8px auto; max-width: 300px; }
-    #log {
-      background: #eee;
-      padding: 10px;
+    button:hover {
+      opacity: 0.9;
+    }
+    .controls, .songs, .status {
       margin-top: 10px;
-      font-family: monospace;
-      white-space: pre-line;
+    }
+    .speed-control {
+      width: 80%;
+      margin: 10px auto;
+    }
+    .instrument-buttons button {
+      display: inline-block;
+      width: 90px;
+      margin: 4px;
+    }
+    #log {
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      padding: 8px;
+      width: 90%;
+      margin: 10px auto;
+      font-size: 0.9rem;
+      text-align: left;
+      min-height: 30px;
     }
   </style>
 </head>
 <body>
+
   <h1>🎸 Pi Guitar Premium</h1>
+  
   <button onclick="loginWithPi()">Đăng nhập với Pi</button>
-  <button onclick="buyPremium()">Mua Premium 1 Pi/tháng</button>
+  <button onclick="payWithPi()">Mua Premium 1 Pi/tháng</button>
+  
   <p id="status">Chưa đăng nhập.</p>
 
-  <h2>Chọn bài hát demo</h2>
-  <button class="song-btn" onclick="selectSong('Cảm Ơn Người Tình')">Cảm Ơn Người Tình</button>
-  <button class="song-btn" onclick="selectSong('Hallelujah')">Hallelujah</button>
-  <button class="song-btn" onclick="selectSong('Perfect (Ed Sheeran)')">Perfect (Ed Sheeran)</button>
+  <h3>Chọn bài hát demo</h3>
+  <div class="songs">
+    <button onclick="selectSong('Cảm Ơn Người Tình')">Cảm Ơn Người Tình</button>
+    <button onclick="selectSong('Hallelujah')">Hallelujah</button>
+    <button onclick="selectSong('Perfect (Ed Sheeran)')">Perfect (Ed Sheeran)</button>
+  </div>
 
-  <button onclick="togglePlay()" id="playPauseBtn">▶ Play</button>
-  <button onclick="restart()">⟳ Restart</button>
-
+  <div class="controls">
+    <button id="playPauseBtn" onclick="togglePlay()">▶ Play</button>
+    <button onclick="restart()">⟳ Restart</button>
+  </div>
   <p>Tốc độ: <span id="speedLabel">100%</span></p>
-  <input type="range" min="50" max="150" value="100" onchange="updateSpeed(this.value)">
+  <input class="speed-control" type="range" min="50" max="150" value="100" step="10" oninput="updateSpeed(this.value)">
 
   <h3>Hợp âm hiện tại: <span id="currentChord">G</span></h3>
-  <p><strong>Lời bài hát</strong></p>
-  <p>I found a love ... darling you look perfect tonight ...</p>
-  <p>(Mua Premium để xem đầy đủ)</p>
+  <div>
+    <button onclick="showChord('G')">G</button>
+    <button onclick="showChord('Em')">Em</button>
+    <button onclick="showChord('C')">C</button>
+  </div>
 
-  <h3>Test Pi SDK</h3>
+  <h3>Lời bài hát</h3>
+  <p id="lyrics">I found a love ... darling you look perfect tonight ...</p>
+  <p><i>(Mua Premium để xem đầy đủ)</i></p>
+
+  <div class="instrument-buttons">
+    <button>Guitar</button>
+    <button>Ukulele</button>
+    <button>Piano</button>
+    <button>Mandolin</button>
+  </div>
+
+  <hr>
+
+  <h2>Test Pi SDK</h2>
   <button onclick="loginTest()">Đăng nhập test</button>
   <button onclick="payTest()">Thanh toán test (0.01 Pi)</button>
-  <div id="log">[LOG] Ready...</div>
+  <pre id="log">[LOG] Ready...</pre>
 
   <script>
-    // Pi SDK Init
+    // Init Pi SDK (sandbox)
     Pi.init({ version: "2.0", sandbox: true });
 
     let isPlaying = false;
 
+    // Premium Login
     function loginWithPi() {
-      Pi.authenticate(['username', 'payments'], payment => {
-        console.log('Incomplete payment:', payment);
+      Pi.authenticate(['username', 'payments'], (payment) => {
+        console.log('Payment found:', payment);
       }).then(auth => {
         document.getElementById('status').innerText = "Xin chào, " + auth.user.username;
-        console.log('Auth success', auth);
       }).catch(error => {
         alert("Đăng nhập thất bại: " + error);
       });
     }
 
-    function buyPremium() {
+    // Premium Payment
+    function payWithPi() {
       alert("Thanh toán 1 Pi/tháng (demo).");
     }
 
+    // Guitar Controls
     function togglePlay() {
       isPlaying = !isPlaying;
       document.getElementById('playPauseBtn').innerText = isPlaying ? "⏸ Pause" : "▶ Play";
     }
+    function restart() {
+      alert("Khởi động lại bài hát.");
+    }
+    function updateSpeed(val) {
+      document.getElementById('speedLabel').innerText = val + "%";
+    }
+    function selectSong(song) {
+      alert("Chọn bài hát: " + song);
+    }
+    function showChord(chord) {
+      document.getElementById('currentChord').innerText = chord;
+    }
 
-    function restart() { alert("Khởi động lại bài hát."); }
-    function updateSpeed(val) { document.getElementById('speedLabel').innerText = val + "%"; }
-    function selectSong(song) { alert("Chọn bài hát: " + song); document.getElementById('currentChord').innerText = "G"; }
-
-    // --- Test Pi SDK ---
+    // Test Pi SDK login
     function log(msg) {
       document.getElementById('log').innerText += "\n" + msg;
     }
     function loginTest() {
       log("Đang login...");
-      Pi.authenticate(['username', 'payments'], payment => {
+      Pi.authenticate(['username', 'payments'], (payment) => {
         log("Incomplete payment: " + JSON.stringify(payment));
-      }).then(auth => log("Login thành công: " + auth.user.username))
-        .catch(err => log("Login lỗi: " + err));
+      }).then(auth => {
+        log("Login thành công: " + auth.user.username);
+      }).catch(error => {
+        log("Login lỗi: " + error);
+      });
     }
     function payTest() {
       log("Thanh toán test (0.01 Pi)...");
