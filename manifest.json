@@ -1,16 +1,34 @@
-{
-  "name": "Tran Music Kingdom",
-  "short_name": "TMK",
-  "start_url": "index.html",
-  "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#660099",
-  "orientation": "portrait",
-  "icons": [
-    {
-      "src": "https://tran682025.github.io/icon.png",
-      "sizes": "512x512",
-      "type": "image/png"
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Pi SDK Login Test</title>
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+  <script>
+    console.log("Pi SDK loading...");
+    Pi.init({ version: "2.0", sandbox: true });
+    console.log("Pi SDK loaded:", Pi);
+
+    function login() {
+      console.log("Login button clicked");
+      alert("Bắt đầu login test...");
+
+      Pi.authenticate(['username'], (payment) => {
+        console.log("Incomplete payment found:", payment);
+      })
+      .then(auth => {
+        console.log("Authentication success:", auth);
+        alert("Xin chào " + auth.user.username);
+      })
+      .catch(err => {
+        console.error("Authentication failed:", err);
+        alert("Lỗi: " + err);
+      });
     }
-  ]
-}
+  </script>
+</head>
+<body>
+  <h1>Pi SDK Login Test</h1>
+  <button onclick="login()">Đăng nhập bằng Pi</button>
+</body>
+</html>
