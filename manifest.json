@@ -1,34 +1,10 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-  <meta charset="UTF-8">
-  <title>Pi SDK Login Test</title>
-  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-  <script>
-    console.log("Pi SDK loading...");
-    Pi.init({ version: "2.0", sandbox: true });
-    console.log("Pi SDK loaded:", Pi);
-
-    function login() {
-      console.log("Login button clicked");
-      alert("Bắt đầu login test...");
-
-      Pi.authenticate(['username'], (payment) => {
-        console.log("Incomplete payment found:", payment);
-      })
-      .then(auth => {
-        console.log("Authentication success:", auth);
-        alert("Xin chào " + auth.user.username);
-      })
-      .catch(err => {
-        console.error("Authentication failed:", err);
-        alert("Lỗi: " + err);
-      });
-    }
-  </script>
-</head>
-<body>
-  <h1>Pi SDK Login Test</h1>
-  <button onclick="login()">Đăng nhập bằng Pi</button>
-</body>
-</html>
+{
+  "name": "Tranmusickingdom",
+  "short_name": "Tranmusic",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#6200EE",
+  "description": "Tranmusickingdom Pi App Test",
+  "pi_network": true
+}
