@@ -4,57 +4,79 @@
   <meta charset="UTF-8">
   <title>Tranmusickingdom Pi App</title>
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+    button { margin: 10px; padding: 10px 20px; font-size: 16px; }
+    #log { margin-top: 20px; text-align: left; width: 90%; max-width: 600px; margin-left: auto; margin-right: auto;
+           background: #f5f5f5; padding: 10px; border-radius: 8px; font-size: 14px; white-space: pre-wrap; }
+  </style>
 </head>
 <body>
   <h1>Welcome to Tranmusickingdom Pi App</h1>
   <button onclick="login()">Đăng nhập bằng Pi</button>
   <button onclick="pay()">Thanh toán 0.01 Pi</button>
+  <div id="log"></div>
 
   <script>
-    console.log("Pi SDK initializing...");
-    Pi.init({ version: "2.0", sandbox: true });
-    console.log("Pi SDK loaded:", Pi);
-
-    function login() {
-      alert("Bắt đầu login...");
-      const scopes = ['username', 'payments'];
-      const onIncompletePaymentFound = (payment) => {
-        console.log("Incomplete payment found:", payment);
-      };
-
-      Pi.authenticate(scopes, onIncompletePaymentFound)
-        .then(auth => {
-          console.log("Authentication success:", auth);
-          alert("Xin chào, " + auth.user.username);
-        })
-        .catch(err => {
-          console.error("Authentication failed:", err);
-          alert("Lỗi: " + err);
-        });
+    // --- Log tiện lợi ---
+    function addLog(msg) {
+      console.log(msg);
+      document.getElementById('log').textContent += msg + "\n";
     }
 
+    // --- Khởi tạo Pi SDK ---
+    try {
+      addLog("Đang khởi tạo Pi SDK...");
+      Pi.init({ version: "2.0", sandbox: true });
+      addLog("Pi SDK đã sẵn sàng.");
+    } catch (e) {
+      addLog("Lỗi init Pi SDK: " + e);
+    }
+
+    // --- Hàm Login ---
+    function login() {
+      addLog("Bắt đầu login...");
+      alert("Bắt đầu login...");
+
+      const scopes = ['username', 'payments'];
+      const onIncompletePaymentFound = (payment) => addLog("Incomplete payment found: " + JSON.stringify(payment));
+
+      try {
+        Pi.authenticate(scopes, onIncompletePaymentFound)
+          .then(auth => {
+            addLog("Login success: " + JSON.stringify(auth));
+            alert("Xin chào, " + auth.user.username);
+          })
+          .catch(err => {
+            addLog("Login error: " + err);
+            alert("Login thất bại: " + err);
+          });
+      } catch (e) {
+        addLog("JS Error in login: " + e);
+      }
+    }
+
+    // --- Hàm Payment ---
     function pay() {
+      addLog("Bắt đầu thanh toán test...");
       alert("Bắt đầu thanh toán test...");
+
       const paymentData = {
         amount: 0.01,
-        memo: "Test payment",
+        memo: "Thanh toán test sandbox",
         metadata: { orderId: 1234 }
       };
 
-      Pi.createPayment(paymentData, {
-        onReadyForServerApproval: (paymentId) => {
-          console.log("Approve Payment: ", paymentId);
-        },
-        onReadyForServerCompletion: (paymentId, txid) => {
-          console.log("Complete Payment: ", paymentId, txid);
-        },
-        onCancel: (paymentId) => {
-          console.log("Payment cancelled: ", paymentId);
-        },
-        onError: (error, paymentId) => {
-          console.error("Payment error: ", error, paymentId);
-        }
-      });
+      try {
+        Pi.createPayment(paymentData, {
+          onReadyForServerApproval: (paymentId) => addLog("onReadyForServerApproval: " + paymentId),
+          onReadyForServerCompletion: (paymentId, txid) => addLog("onReadyForServerCompletion: " + paymentId + " | txid: " + txid),
+          onCancel: (paymentId) => addLog("Payment cancelled: " + paymentId),
+          onError: (error, paymentId) => addLog("Payment error: " + error + " | paymentId: " + paymentId)
+        });
+      } catch (e) {
+        addLog("JS Error in pay: " + e);
+      }
     }
   </script>
 </body>
