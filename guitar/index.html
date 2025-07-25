@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pi Guitar Chord Premium</title>
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+  <style>
+    body { font-family: sans-serif; background: #f9f9ff; margin: 0; padding: 24px; }
+    h1 { text-align: center; margin-bottom: 8px; }
+    .toolbar, .auth { display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+    button {
+      background: #7c3aed; color: #fff; border: none; padding: 10px 16px;
+      border-radius: 8px; font-weight: bold; cursor: pointer;
+    }
+    button.outline { background: #fff; color: #7c3aed; border: 2px solid #7c3aed; }
+    .chip {
+      border: 1px solid #ccc; border-radius: 6px; padding: 6px 10px; min-width: 50px;
+      text-align: center; cursor: pointer;
+    }
+    .chip.active { background: #e9d5ff; border-color: #7c3aed; font-weight: bold; }
+    .slider-box { text-align: center; margin: 12px 0; }
+    footer { text-align: center; margin-top: 30px; font-size: 13px; color: #666; }
+  </style>
+</head>
+<body>
+
+<h1>🎸 Pi Guitar Chord Premium</h1>
+
+<div class="auth">
+  <button onclick="loginPi()">Đăng nhập với Pi</button>
+  <button onclick="payPi()">Mua Premium 1 Pi/tháng</button>
+</div>
+<div id="status" style="text-align:center;font-weight:bold;margin-bottom:12px;">Chưa đăng nhập</div>
+
+<div class="toolbar">
+  <button onclick="togglePlay()">▶️ Play / Pause</button>
+  <button class="outline" onclick="reset()">⟲ Restart</button>
+</div>
+
+<div class="slider-box">
+  <label>Tốc độ: <span id="speedVal">100%</span></label><br/>
+  <input id="speedRange" type="range" min="50" max="150" value="100" step="10" />
+</div>
+
+<div style="text-align:center;margin:10px 0;font-size:18px;font-weight:bold">
+  Hợp âm hiện tại: <span id="currentChord">Cm</span>
+</div>
+
+<div id="strip" style="display:flex;overflow-x:auto;gap:8px;padding:8px 0 20px;"></div>
+<div id="fret" style="display:flex;justify-content:center;flex-wrap:wrap;gap:12px;"></div>
+
+<footer>© Tranmarket & Rùa 🐢 | Pi SDK v2.0 | Sandbox Demo</footer>
+
+<script>
+Pi.init({ version: "2.0", sandbox: true });
+
+let isPremium = false;
+let username = "";
+let isPlaying = false;
+let current = 0;
+let speed = 100;
+let timer = null;
+
+const demoChords = [
+  { name: "Cm",  positions: ["x", 3, 5, 5, 4, 3] },
+  { name: "A♭",  positions: ["x", 1, 3, 3, 3, 1] },
+  { name: "Fm",  positions: [1, 3, 3, 1, 1, 1] },
+  { name: "G",   positions: [3, 2, 0, 0, 0, 3] },
+  { name: "G7",  positions: [3, 2, 0, 0, 0, 1] },
+  { name: "Cm",  positions: ["x", 3, 5, 5, 4, 3] },
+];
+
+const strip = document.getElementById("strip");
+const fret = document.getElementById("fret");
+const speedVal = document.getElementById("speedVal");
+const speedRange = document.getElementById("speedRange");
+const status = document.getElementById("status");
+const currentChordLabel = document.getElementById("currentChord");
+
+function loginPi() {
+  Pi.authenticate(["username", "payments"], (payment) => {
+    console.log("Incomplete payment:", payment);
+  }).then(auth => {
+    username = auth.user.username;
+    status.innerText = "Xin chào, " + username;
+  }).catch(err => {
+    alert("Login lỗi: " + err);
+  });
+}
+
+function payPi() {
+  Pi.createPayment({
+    amount: 1,
+    memo: "Mua Premium Guitar Chords 1 tháng",
+    metadata: { product: "guitar_premium" }
+  }, {
+    onReadyForServerApproval: (pid) => {
+      console.log("Payment ready:", pid);
+      status.innerText = "Đang xử lý...";
+    },
+    onReadyForServerCompletion: (pid, txid) => {
+      isPremium = true;
+      status.innerText = "🎉 Bạn đã là Premium! Đã mở khoá tất cả hợp âm.";
+      renderStrip();
+      renderChord();
+    },
+    onCancel: () => {
+      status.innerText = "Bạn đã huỷ thanh toán.";
+    },
+    onError: (e) => {
+      status.innerText = "Lỗi thanh toán: " + e;
+    }
+  });
+}
+
+function renderStrip() {
+  strip.innerHTML = "";
+  const limit = isPremium ? demoChords.length : 2;
+  for (let i = 0; i < limit; i++) {
+    const chip = document.createElement("div");
+    chip.className = "chip" + (i === current ? " active" : "");
+    chip.innerText = demoChords[i].name;
+    chip.onclick = () => { current = i; update(); };
+    strip.appendChild(chip);
+  }
+}
+
+function renderChord() {
+  fret.innerHTML = "";
+  const pos = demoChords[current].positions;
+  const svg = drawFretSVG(pos);
+  fret.appendChild(svg);
+}
+
+function drawFretSVG(pos) {
+  const NS = "http://www.w3.org/2000/svg";
+  const w = 180, h = 200, fw = 30, fh = 30;
+
+  const svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("width", w);
+  svg.setAttribute("height", h);
+
+  // dây & phím
+  for (let i = 0; i < 6; i++) {
+    const x = fw * i + 15;
+    const line = document.createElementNS(NS, "line");
+    line.setAttribute("x1", x);
+    line.setAttribute("y1", 40);
+    line.setAttribute("x2", x);
+    line.setAttribute("y2", 160);
+    line.setAttribute("stroke", "#000");
+    svg.appendChild(line);
+  }
+  for (let j = 0; j <= 5; j++) {
+    const y = 40 + j * fh;
+    const line = document.createElementNS(NS, "line");
+    line.setAttribute("x1", 15);
+    line.setAttribute("y1", y);
+    line.setAttribute("x2", 165);
+    line.setAttribute("y2", y);
+    line.setAttribute("stroke", "#000");
+    svg.appendChild(line);
+  }
+
+  // chấm ngón tay
+  for (let i = 0; i < 6; i++) {
+    const val = pos[i];
+    if (typeof val === 'number' && val > 0) {
+      const cx = fw * i + 15;
+      const cy = 40 + (val - 0.5) * fh;
+      const c = document.createElementNS(NS, "circle");
+      c.setAttribute("cx", cx);
+      c.setAttribute("cy", cy);
+      c.setAttribute("r", 7);
+      c.setAttribute("fill", "#111");
+      svg.appendChild(c);
+    }
+  }
+
+  return svg;
+}
+
+function update() {
+  currentChordLabel.innerText = demoChords[current].name;
+  renderStrip();
+  renderChord();
+}
+
+function togglePlay() {
+  isPlaying = !isPlaying;
+  if (isPlaying) {
+    timer = setInterval(() => {
+      current = (current + 1) % (isPremium ? demoChords.length : 2);
+      update();
+    }, 2000 * (100 / speed));
+  } else {
+    clearInterval(timer);
+  }
+}
+
+function reset() {
+  clearInterval(timer);
+  isPlaying = false;
+  current = 0;
+  update();
+}
+
+speedRange.oninput = () => {
+  speed = +speedRange.value;
+  speedVal.innerText = speed + "%";
+  if (isPlaying) {
+    clearInterval(timer);
+    togglePlay(); togglePlay(); // restart
+  }
+};
+
+update();
+</script>
+</body>
+</html>
