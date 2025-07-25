@@ -1,91 +1,133 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html>
 <head>
   <meta charset="UTF-8">
-  <title>[FULL DEBUG] Tranmusickingdom Pi App</title>
-  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+  <title>Pi Guitar Premium</title>
   <style>
-    body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
-    h1 { margin-bottom: 20px; }
-    button { margin: 10px; padding: 10px 20px; font-size: 16px; }
-    #log { background: #f5f5f5; padding: 10px; margin-top: 20px; text-align: left;
-           border-radius: 8px; width: 90%; max-width: 600px; margin-left: auto; margin-right: auto;
-           white-space: pre-wrap; font-size: 14px; }
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #ffffff;
+      color: #000;
+    }
+    h1 {
+      font-size: 28px;
+      margin-top: 20px;
+    }
+    button {
+      margin: 8px;
+      padding: 12px 20px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: none;
+      background-color: #7b2cbf;
+      color: white;
+    }
+    .demo-song {
+      margin-top: 20px;
+    }
+    .chord {
+      display: inline-block;
+      background: #eee;
+      padding: 8px 14px;
+      margin: 4px;
+      border-radius: 6px;
+      font-weight: bold;
+    }
+    .instrument-buttons button {
+      margin: 4px;
+    }
+    .speed-control {
+      margin: 20px auto;
+      width: 80%;
+    }
   </style>
 </head>
 <body>
-  <h1>[FULL DEBUG] Tranmusickingdom Pi App</h1>
-  <button onclick="login()">Đăng nhập bằng Pi</button>
-  <button onclick="pay()">Thanh toán 0.01 Pi</button>
-  <div id="log">[LOG bắt đầu...]\n</div>
+  <h1>🎸 Pi Guitar Premium</h1>
+  <button onclick="loginWithPi()">Đăng nhập với Pi</button>
+  <button onclick="buyPremium()">Mua Premium 1 Pi/tháng</button>
+  <p id="status">Chưa đăng nhập.</p>
 
+  <div class="demo-song">
+    <h3>Chọn bài hát demo</h3>
+    <button onclick="selectSong('Cam On Nguoi Tinh')">Cảm Ơn Người Tình</button>
+    <button onclick="selectSong('Hallelujah')">Hallelujah</button>
+    <button onclick="selectSong('Perfect')">Perfect (Ed Sheeran)</button>
+  </div>
+
+  <div class="player">
+    <button onclick="playSong()">🔺 Play</button>
+    <button onclick="restartSong()">↻ Restart</button>
+    <div class="speed-control">
+      <label for="speed">Tốc độ: <span id="speedDisplay">100%</span></label><br>
+      <input type="range" id="speed" min="50" max="150" value="100" oninput="updateSpeed(this.value)">
+    </div>
+  </div>
+
+  <div class="chords">
+    <h3>Hợp âm hiện tại: <span id="currentChord">G</span></h3>
+    <div class="chord">G</div>
+    <div class="chord">Em</div>
+    <div class="chord">C</div>
+    <p><b>G</b> (sơ đồ demo guitar)</p>
+  </div>
+
+  <div class="lyrics">
+    <h3>Lời bài hát</h3>
+    <p>I found a love ... darling you look perfect tonight ...</p>
+    <p>...<br><i>(Mua Premium để xem đầy đủ)</i></p>
+  </div>
+
+  <div class="instrument-buttons">
+    <button>Guitar</button>
+    <button>Ukulele</button>
+    <button>Piano</button>
+    <button>Mandolin</button>
+  </div>
+
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
   <script>
-    let authUser = null; // Lưu thông tin login
-    function addLog(msg) {
-      console.log(msg);
-      document.getElementById('log').textContent += msg + "\n";
+    Pi.init({ version: "2.0", sandbox: true });
+
+    function loginWithPi() {
+      Pi.authenticate(['username', 'payments'], (payment) => {
+        console.log("Incomplete payment:", payment);
+      }).then(function(auth) {
+        document.getElementById("status").innerText = "Xin chào, " + auth.user.username;
+      }).catch(function(error) {
+        alert("Login thất bại: " + error);
+      });
     }
 
-    // --- Khởi tạo SDK ---
-    try {
-      addLog("🔄 Bước 1: Đang khởi tạo Pi SDK...");
-      Pi.init({ version: "2.0", sandbox: true });
-      addLog("✅ Bước 2: Pi SDK đã khởi tạo thành công (sandbox: true).");
-    } catch (e) {
-      addLog("❌ Lỗi init Pi SDK: " + e);
-    }
-
-    // --- Hàm login ---
-    function login() {
-      addLog("▶ Bước 3: Gọi Pi.authenticate()...");
-      alert("Bắt đầu login...");
-      const scopes = ['username', 'payments'];
-      const onIncompletePaymentFound = (payment) => {
-        addLog("🔍 Incomplete payment found: " + JSON.stringify(payment));
-      };
-
-      try {
-        Pi.authenticate(scopes, onIncompletePaymentFound)
-          .then(auth => {
-            authUser = auth;
-            addLog("✅ Bước 4: Login thành công: " + JSON.stringify(auth));
-            alert("Xin chào, " + auth.user.username);
-          })
-          .catch(err => {
-            addLog("❌ Bước 4: Login thất bại: " + err);
-            alert("Login thất bại: " + err);
-          });
-      } catch (e) {
-        addLog("❌ JS Error trong login(): " + e);
-      }
-    }
-
-    // --- Hàm thanh toán ---
-    function pay() {
-      if (!authUser) {
-        alert("Vui lòng đăng nhập trước khi thanh toán.");
-        addLog("⚠ Không thể thanh toán: chưa login.");
-        return;
-      }
-      addLog("▶ Bước 5: Bắt đầu thanh toán test...");
-      alert("Bắt đầu thanh toán test...");
-
+    function buyPremium() {
       const paymentData = {
-        amount: 0.01,
-        memo: "Thanh toán test sandbox",
-        metadata: { orderId: 1234 }
+        amount: 1,
+        memo: "Mua Premium Guitar 1 Pi/tháng",
+        metadata: { plan: "premium" }
       };
+      Pi.createPayment(paymentData, {
+        onReadyForServerApproval: function(paymentId) { console.log("Ready for approval:", paymentId); },
+        onReadyForServerCompletion: function(paymentId, txid) { console.log("Payment completed:", paymentId, txid); },
+        onCancel: function(paymentId) { alert("Thanh toán bị huỷ: " + paymentId); },
+        onError: function(error) { alert("Lỗi thanh toán: " + error); }
+      });
+    }
 
-      try {
-        Pi.createPayment(paymentData, {
-          onReadyForServerApproval: (paymentId) => addLog("➡ Bước 6: onReadyForServerApproval: " + paymentId),
-          onReadyForServerCompletion: (paymentId, txid) => addLog("✅ Bước 7: onReadyForServerCompletion: " + paymentId + " | txid: " + txid),
-          onCancel: (paymentId) => addLog("⚠ Bước 8: Payment cancelled: " + paymentId),
-          onError: (error, paymentId) => addLog("❌ Bước 9: Payment error: " + error + " | paymentId: " + paymentId)
-        });
-      } catch (e) {
-        addLog("❌ Lỗi JS trong pay(): " + e);
-      }
+    function selectSong(songName) {
+      alert("Bạn đã chọn: " + songName);
+    }
+
+    function playSong() {
+      alert("Đang phát nhạc...");
+    }
+
+    function restartSong() {
+      alert("Phát lại từ đầu...");
+    }
+
+    function updateSpeed(val) {
+      document.getElementById("speedDisplay").innerText = val + "%";
     }
   </script>
 </body>
