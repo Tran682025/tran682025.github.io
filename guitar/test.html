@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Pi Test Login & Payment</title>
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+</head>
+<body>
+  <h2>Test Pi SDK</h2>
+  <button onclick="loginWithPi()">Đăng nhập với Pi</button>
+  <button onclick="payWithPi()">Thanh toán 0.01 Pi</button>
+
+  <pre id="log">[LOG] Ready...</pre>
+
+  <script>
+    Pi.init({ version: "2.0", sandbox: true });
+
+    function log(msg) {
+      document.getElementById('log').innerText += '\n' + msg;
+    }
+
+    function loginWithPi() {
+      log("Đang login...");
+      Pi.authenticate(['username', 'payments'], (payment) => {
+        log("Incomplete payment: " + JSON.stringify(payment));
+      }).then(auth => {
+        log("Login thành công: " + auth.user.username);
+      }).catch(error => {
+        log("Login lỗi: " + error);
+      });
+    }
+
+    function payWithPi() {
+      log("Tạo payment...");
+      Pi.createPayment({
+        amount: 0.01,
+        memo: "Test Payment",
+        metadata: { test: true }
+      }, {
+        onReadyForServerApproval: (paymentId) => log("Ready: " + paymentId),
+        onReadyForServerCompletion: (paymentId, txid) => log("Complete: " + txid),
+        onCancel: (paymentId) => log("Cancel: " + paymentId),
+        onError: (error) => log("Error: " + error)
+      });
+    }
+  </script>
+</body>
+</html>
