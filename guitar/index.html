@@ -2,138 +2,83 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Pi Guitar Premium</title>
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
       background-color: #f5f5f5;
-      margin: 0;
-      padding: 10px;
       text-align: center;
+      padding: 10px;
     }
-    h1 {
-      font-size: 1.8rem;
-      margin: 10px 0;
-    }
+    h1 { font-size: 1.8rem; }
     button {
-      background: #7B47FF;
+      background: #7b2ff7;
       color: white;
       border: none;
-      border-radius: 6px;
-      padding: 10px 15px;
-      margin: 6px auto;
+      border-radius: 8px;
+      padding: 10px;
+      margin: 5px;
       font-size: 1rem;
-      display: block;
-      max-width: 300px;
       cursor: pointer;
     }
-    button:hover { opacity: 0.9; }
-    .song-btn {
-      display: block;
-      width: 80%;
-      max-width: 300px;
-      margin: 8px auto;
+    .song-btn { display: block; margin: 8px auto; max-width: 300px; }
+    #log {
+      background: #eee;
       padding: 10px;
-      background: #8A5CFF;
-      color: white;
-      border-radius: 6px;
-      font-size: 1rem;
-    }
-    #playPauseBtn, #restartBtn {
-      display: inline-block;
-      width: 100px;
-      margin: 5px;
-    }
-    #speed {
-      width: 80%;
       margin-top: 10px;
-    }
-    #log, #status {
-      margin-top: 10px;
-      font-size: 0.9rem;
-      color: #333;
-      white-space: pre-wrap;
-    }
-    #currentChord {
-      margin-top: 10px;
-      font-size: 1.2rem;
-      font-weight: bold;
-    }
-    .instrument-btns button {
-      display: inline-block;
-      margin: 5px;
-      background: #6A32FF;
+      font-family: monospace;
+      white-space: pre-line;
     }
   </style>
 </head>
 <body>
   <h1>🎸 Pi Guitar Premium</h1>
-  
   <button onclick="loginWithPi()">Đăng nhập với Pi</button>
-  <button onclick="payWithPi()">Mua Premium 1 Pi/tháng</button>
-  
-  <div id="status">Chưa đăng nhập.</div>
-  
-  <h3>Chọn bài hát demo</h3>
+  <button onclick="buyPremium()">Mua Premium 1 Pi/tháng</button>
+  <p id="status">Chưa đăng nhập.</p>
+
+  <h2>Chọn bài hát demo</h2>
   <button class="song-btn" onclick="selectSong('Cảm Ơn Người Tình')">Cảm Ơn Người Tình</button>
   <button class="song-btn" onclick="selectSong('Hallelujah')">Hallelujah</button>
   <button class="song-btn" onclick="selectSong('Perfect (Ed Sheeran)')">Perfect (Ed Sheeran)</button>
-  
-  <button id="playPauseBtn" onclick="togglePlay()">▶ Play</button>
-  <button id="restartBtn" onclick="restart()">⟳ Restart</button>
-  
-  <div>
-    <label for="speed">Tốc độ: <span id="speedLabel">100%</span></label>
-    <input type="range" id="speed" min="50" max="150" value="100" step="10" oninput="updateSpeed(this.value)">
-  </div>
-  
-  <div id="currentChord">Hợp âm hiện tại: G</div>
-  <p>G (sơ đồ demo guitar)</p>
-  
-  <div id="lyrics">
-    <h3>Lời bài hát</h3>
-    <p>I found a love ... darling you look perfect tonight ...</p>
-    <small>(Mua Premium để xem đầy đủ)</small>
-  </div>
-  
-  <div class="instrument-btns">
-    <button>Guitar</button>
-    <button>Ukulele</button>
-    <button>Piano</button>
-    <button>Mandolin</button>
-  </div>
 
-  <!-- Phần LOG test -->
+  <button onclick="togglePlay()" id="playPauseBtn">▶ Play</button>
+  <button onclick="restart()">⟳ Restart</button>
+
+  <p>Tốc độ: <span id="speedLabel">100%</span></p>
+  <input type="range" min="50" max="150" value="100" onchange="updateSpeed(this.value)">
+
+  <h3>Hợp âm hiện tại: <span id="currentChord">G</span></h3>
+  <p><strong>Lời bài hát</strong></p>
+  <p>I found a love ... darling you look perfect tonight ...</p>
+  <p>(Mua Premium để xem đầy đủ)</p>
+
   <h3>Test Pi SDK</h3>
-  <button onclick="loginWithPi()">Đăng nhập test</button>
-  <button onclick="payWithPiTest()">Thanh toán test (0.01 Pi)</button>
-  <pre id="log">[LOG] Ready...</pre>
-  
-  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+  <button onclick="loginTest()">Đăng nhập test</button>
+  <button onclick="payTest()">Thanh toán test (0.01 Pi)</button>
+  <div id="log">[LOG] Ready...</div>
+
   <script>
+    // Pi SDK Init
     Pi.init({ version: "2.0", sandbox: true });
 
     let isPlaying = false;
 
     function loginWithPi() {
-      document.getElementById('log').innerText = "[LOG] Đang login...";
-      Pi.authenticate(['username', 'payments'], (payment) => {
-        console.log("Incomplete payment:", payment);
+      Pi.authenticate(['username', 'payments'], payment => {
+        console.log('Incomplete payment:', payment);
       }).then(auth => {
         document.getElementById('status').innerText = "Xin chào, " + auth.user.username;
-        document.getElementById('log').innerText += "\n[LOG] Login thành công!";
+        console.log('Auth success', auth);
       }).catch(error => {
-        document.getElementById('log').innerText += "\n[LOG] Đăng nhập thất bại: " + error;
+        alert("Đăng nhập thất bại: " + error);
       });
     }
 
-    function payWithPi() {
+    function buyPremium() {
       alert("Thanh toán 1 Pi/tháng (demo).");
-    }
-
-    function payWithPiTest() {
-      document.getElementById('log').innerText += "\nThanh toán test (0.01 Pi)...";
     }
 
     function togglePlay() {
@@ -141,16 +86,24 @@
       document.getElementById('playPauseBtn').innerText = isPlaying ? "⏸ Pause" : "▶ Play";
     }
 
-    function restart() {
-      alert("Khởi động lại bài hát.");
-    }
+    function restart() { alert("Khởi động lại bài hát."); }
+    function updateSpeed(val) { document.getElementById('speedLabel').innerText = val + "%"; }
+    function selectSong(song) { alert("Chọn bài hát: " + song); document.getElementById('currentChord').innerText = "G"; }
 
-    function updateSpeed(val) {
-      document.getElementById('speedLabel').innerText = val + "%";
+    // --- Test Pi SDK ---
+    function log(msg) {
+      document.getElementById('log').innerText += "\n" + msg;
     }
-
-    function selectSong(song) {
-      alert("Chọn bài hát: " + song);
+    function loginTest() {
+      log("Đang login...");
+      Pi.authenticate(['username', 'payments'], payment => {
+        log("Incomplete payment: " + JSON.stringify(payment));
+      }).then(auth => log("Login thành công: " + auth.user.username))
+        .catch(err => log("Login lỗi: " + err));
+    }
+    function payTest() {
+      log("Thanh toán test (0.01 Pi)...");
+      alert("Demo thanh toán test");
     }
   </script>
 </body>
