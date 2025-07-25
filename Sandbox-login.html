@@ -1,60 +1,24 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Pi Sandbox Login & Pay Test</title>
+  <meta charset="UTF-8">
+  <title>Pi SDK Test</title>
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-</head>
-<body>
-  <h1>Pi Sandbox Login & Pay</h1>
-  <button onclick="login()">Đăng nhập bằng Pi</button>
-  <button onclick="pay()">Thanh toán 0.01 Pi</button>
-
   <script>
-    // Khởi tạo Pi SDK trong chế độ Sandbox
+    console.log("Pi SDK loading...");
     Pi.init({ version: "2.0", sandbox: true });
+    console.log("Pi SDK loaded:", Pi);
 
-    // Hàm Login
     function login() {
-      const scopes = ['username', 'payments'];
-      const onIncompletePaymentFound = (payment) => {
-        console.log('Incomplete payment found:', payment);
-      };
-
-      Pi.authenticate(scopes, onIncompletePaymentFound)
-        .then(function(auth) {
-          console.log('Authentication success', auth);
-          alert("Xin chào, " + auth.user.username);
-        })
-        .catch(function(error) {
-          console.error('Authentication failed:', error);
-          alert("Đăng nhập thất bại: " + error);
-        });
-    }
-
-    // Hàm thanh toán (test 0.01 Pi)
-    function pay() {
-      const paymentData = {
-        amount: 0.01,
-        memo: "Thanh toán test sandbox",
-        metadata: { orderId: 1234 }
-      };
-
-      Pi.createPayment(paymentData, {
-        onReadyForServerApproval: (paymentId) => {
-          console.log("Approve Payment: ", paymentId);
-        },
-        onReadyForServerCompletion: (paymentId, txid) => {
-          console.log("Complete Payment: ", paymentId, txid);
-        },
-        onCancel: (paymentId) => {
-          console.log("Payment cancelled: ", paymentId);
-        },
-        onError: (error, paymentId) => {
-          console.error("Payment error: ", error, paymentId);
-        }
-      });
+      alert("Bắt đầu login test...");
+      Pi.authenticate(['username'], (payment) => console.log("Incomplete:", payment))
+        .then(auth => alert("Xin chào " + auth.user.username))
+        .catch(err => alert("Lỗi: " + err));
     }
   </script>
+</head>
+<body>
+  <h1>Pi SDK Login Test</h1>
+  <button onclick="login()">Đăng nhập bằng Pi</button>
 </body>
 </html>
