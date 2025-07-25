@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Pi SDK Test</title>
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
   <script>
@@ -11,9 +11,17 @@
 
     function login() {
       alert("Bắt đầu login test...");
-      Pi.authenticate(['username'], (payment) => console.log("Incomplete:", payment))
-        .then(auth => alert("Xin chào " + auth.user.username))
-        .catch(err => alert("Lỗi: " + err));
+      Pi.authenticate(['username'], (payment) => {
+        console.log("Incomplete payment found:", payment);
+      })
+      .then(auth => {
+        console.log("Authentication success:", auth);
+        alert("Xin chào " + auth.user.username);
+      })
+      .catch(err => {
+        console.error("Authentication failed:", err);
+        alert("Lỗi: " + err);
+      });
     }
   </script>
 </head>
