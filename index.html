@@ -1,93 +1,79 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <title>[DEBUG] Tranmusickingdom Pi App</title>
+  <meta charset="UTF-8" />
+  <title>Tranmusickingdom Pi App [DEBUG]</title>
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
   <style>
-    body { font-family: sans-serif; text-align: center; padding: 40px; }
-    button { margin: 10px; padding: 12px 24px; font-size: 16px; }
-    #log {
-      margin-top: 20px; padding: 10px;
-      border: 1px solid #ccc; border-radius: 8px;
-      text-align: left; max-width: 700px;
-      margin-left: auto; margin-right: auto;
-      background: #f8f8f8; font-size: 14px;
-      white-space: pre-wrap;
-    }
+    body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+    button { margin: 10px; padding: 12px 20px; font-size: 16px; }
+    #log { margin-top: 30px; text-align: left; max-width: 600px; margin-left: auto; margin-right: auto; background: #f5f5f5; padding: 15px; border-radius: 10px; font-size: 14px; white-space: pre-wrap; }
   </style>
 </head>
 <body>
   <h1>[DEBUG] Tranmusickingdom Pi App</h1>
-  <button onclick="login()">🔐 Đăng nhập bằng Pi</button>
-  <button onclick="pay()">💰 Thanh toán 0.01 Pi</button>
-
+  <button onclick="login()">Đăng nhập bằng Pi</button>
+  <button onclick="pay()">Thanh toán 0.01 Pi</button>
   <div id="log">[LOG bắt đầu...]\n</div>
 
   <script>
+    let authUser = null; // Lưu kết quả login
+
     function log(msg) {
-      const div = document.getElementById("log");
-      div.textContent += msg + "\n";
       console.log(msg);
+      document.getElementById("log").textContent += msg + "\n";
     }
 
-    // Step 1: Init SDK
+    // Bước 1: Init SDK
+    log("🔆 Bước 1: Đang khởi tạo Pi SDK...");
     try {
-      log("🟡 Bước 1: Đang khởi tạo Pi SDK...");
       Pi.init({ version: "2.0", sandbox: true });
       log("✅ SDK khởi tạo xong (sandbox: true)");
-    } catch (err) {
-      log("❌ Lỗi khi init SDK: " + err);
+    } catch (e) {
+      log("❌ Lỗi khi init Pi SDK: " + e);
     }
 
-    // Step 2: Login
+    // Bước 2: Login
     function login() {
-      log("▶ Bắt đầu Pi.authenticate()...");
+      log("▶️ Bắt đầu Pi.authenticate()...");
       alert("Bắt đầu login...");
-
-      try {
-        const scopes = ['username', 'payments'];
-        Pi.authenticate(scopes, (payment) => {
-          log("⚠ Incomplete payment found: " + JSON.stringify(payment));
-        })
-        .then(auth => {
-          log("✅ Đăng nhập thành công: " + JSON.stringify(auth));
-          alert("Xin chào " + auth.user.username);
-        })
-        .catch(err => {
-          log("❌ Đăng nhập lỗi: " + err);
-          alert("Lỗi đăng nhập: " + err);
-        });
-      } catch (e) {
-        log("❌ Lỗi JS trong login(): " + e);
-      }
+      Pi.authenticate(['username', 'payments'], (payment) => {
+        log("🔁 Incomplete payment: " + JSON.stringify(payment));
+      })
+      .then(auth => {
+        authUser = auth;
+        log("✅ Đăng nhập thành công: " + JSON.stringify(auth));
+        alert("Xin chào, " + auth.user.username);
+      })
+      .catch(err => {
+        log("❌ Đăng nhập thất bại: " + err);
+        alert("Đăng nhập lỗi: " + err);
+      });
     }
 
-    // Step 3: Payment
+    // Bước 3: Thanh toán
     function pay() {
-      log("▶ Bắt đầu thanh toán thử...");
+      if (!authUser) {
+        alert("⚠️ Vui lòng đăng nhập trước khi thanh toán.");
+        log("❌ Không thể thanh toán: chưa login.");
+        return;
+      }
+
+      log("▶️ Bắt đầu thanh toán thử...");
       alert("Bắt đầu thanh toán test...");
 
-      try {
-        const paymentData = {
-          amount: 0.01,
-          memo: "Sandbox test",
-          metadata: { orderId: 314 }
-        };
+      const paymentData = {
+        amount: 0.01,
+        memo: "Test Pi Payment",
+        metadata: { orderId: 314 }
+      };
 
+      try {
         Pi.createPayment(paymentData, {
-          onReadyForServerApproval: (paymentId) => {
-            log("🟡 onReadyForServerApproval: " + paymentId);
-          },
-          onReadyForServerCompletion: (paymentId, txid) => {
-            log("✅ onReadyForServerCompletion: " + paymentId + " | txid: " + txid);
-          },
-          onCancel: (paymentId) => {
-            log("⚠ Payment bị hủy: " + paymentId);
-          },
-          onError: (error, paymentId) => {
-            log("❌ Payment lỗi: " + error + " | paymentId: " + paymentId);
-          }
+          onReadyForServerApproval: (paymentId) => log("🟡 Chờ duyệt: " + paymentId),
+          onReadyForServerCompletion: (paymentId, txid) => log("✅ Thanh toán hoàn tất: " + paymentId + " | txid: " + txid),
+          onCancel: (paymentId) => log("⚪ Hủy thanh toán: " + paymentId),
+          onError: (error, paymentId) => log("❌ Lỗi thanh toán: " + error + " | ID: " + paymentId)
         });
       } catch (e) {
         log("❌ Lỗi JS trong pay(): " + e);
