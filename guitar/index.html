@@ -2,126 +2,138 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>🎸 Pi Guitar Premium</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Pi Guitar Premium</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       background-color: #f5f5f5;
-      text-align: center;
-      padding: 10px;
       margin: 0;
+      padding: 10px;
+      text-align: center;
     }
     h1 {
       font-size: 1.8rem;
       margin: 10px 0;
     }
     button {
-      background: #7b42ff;
+      background: #7B47FF;
       color: white;
       border: none;
-      border-radius: 8px;
-      padding: 10px 14px;
+      border-radius: 6px;
+      padding: 10px 15px;
       margin: 6px auto;
-      display: block;
       font-size: 1rem;
-      max-width: 320px;
-      width: 80%;
+      display: block;
+      max-width: 300px;
       cursor: pointer;
     }
-    button:hover {
-      opacity: 0.9;
-    }
-    .song-list button {
-      width: 90%;
-      margin: 5px auto;
-      font-weight: bold;
-    }
-    #status {
-      font-size: 0.95rem;
-      margin: 10px;
-      color: #333;
-    }
-    .controls {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      margin-top: 10px;
-    }
-    .controls button {
-      width: 40%;
-    }
-    .slider-container {
-      margin-top: 10px;
-    }
-    input[type="range"] {
+    button:hover { opacity: 0.9; }
+    .song-btn {
+      display: block;
       width: 80%;
-      margin: 10px auto;
+      max-width: 300px;
+      margin: 8px auto;
+      padding: 10px;
+      background: #8A5CFF;
+      color: white;
+      border-radius: 6px;
+      font-size: 1rem;
     }
-    .chord-box {
-      margin-top: 15px;
+    #playPauseBtn, #restartBtn {
+      display: inline-block;
+      width: 100px;
+      margin: 5px;
+    }
+    #speed {
+      width: 80%;
+      margin-top: 10px;
+    }
+    #log, #status {
+      margin-top: 10px;
+      font-size: 0.9rem;
+      color: #333;
+      white-space: pre-wrap;
+    }
+    #currentChord {
+      margin-top: 10px;
       font-size: 1.2rem;
       font-weight: bold;
     }
-    footer {
-      margin-top: 20px;
-      font-size: 0.8rem;
-      color: #777;
+    .instrument-btns button {
+      display: inline-block;
+      margin: 5px;
+      background: #6A32FF;
     }
   </style>
-  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 </head>
 <body>
   <h1>🎸 Pi Guitar Premium</h1>
-
+  
   <button onclick="loginWithPi()">Đăng nhập với Pi</button>
   <button onclick="payWithPi()">Mua Premium 1 Pi/tháng</button>
-  <p id="status">Chưa đăng nhập.</p>
-
+  
+  <div id="status">Chưa đăng nhập.</div>
+  
   <h3>Chọn bài hát demo</h3>
-  <div class="song-list">
-    <button onclick="selectSong('Cảm Ơn Người Tình')">Cảm Ơn Người Tình</button>
-    <button onclick="selectSong('Hallelujah')">Hallelujah</button>
-    <button onclick="selectSong('Perfect (Ed Sheeran)')">Perfect (Ed Sheeran)</button>
-  </div>
-
-  <div class="controls">
-    <button id="playPauseBtn" onclick="togglePlay()">▶ Play</button>
-    <button onclick="restart()">⟳ Restart</button>
-  </div>
-
-  <div class="slider-container">
+  <button class="song-btn" onclick="selectSong('Cảm Ơn Người Tình')">Cảm Ơn Người Tình</button>
+  <button class="song-btn" onclick="selectSong('Hallelujah')">Hallelujah</button>
+  <button class="song-btn" onclick="selectSong('Perfect (Ed Sheeran)')">Perfect (Ed Sheeran)</button>
+  
+  <button id="playPauseBtn" onclick="togglePlay()">▶ Play</button>
+  <button id="restartBtn" onclick="restart()">⟳ Restart</button>
+  
+  <div>
     <label for="speed">Tốc độ: <span id="speedLabel">100%</span></label>
     <input type="range" id="speed" min="50" max="150" value="100" step="10" oninput="updateSpeed(this.value)">
   </div>
-
-  <div class="chord-box">
-    Hợp âm hiện tại: <span id="currentChord">G</span>
-    <div>
-      <button onclick="showChord('G')">G</button>
-      <button onclick="showChord('Em')">Em</button>
-      <button onclick="showChord('C')">C</button>
-    </div>
+  
+  <div id="currentChord">Hợp âm hiện tại: G</div>
+  <p>G (sơ đồ demo guitar)</p>
+  
+  <div id="lyrics">
+    <h3>Lời bài hát</h3>
+    <p>I found a love ... darling you look perfect tonight ...</p>
+    <small>(Mua Premium để xem đầy đủ)</small>
+  </div>
+  
+  <div class="instrument-btns">
+    <button>Guitar</button>
+    <button>Ukulele</button>
+    <button>Piano</button>
+    <button>Mandolin</button>
   </div>
 
-  <footer>
-    (Mua Premium để xem đầy đủ lời bài hát)
-  </footer>
-
+  <!-- Phần LOG test -->
+  <h3>Test Pi SDK</h3>
+  <button onclick="loginWithPi()">Đăng nhập test</button>
+  <button onclick="payWithPiTest()">Thanh toán test (0.01 Pi)</button>
+  <pre id="log">[LOG] Ready...</pre>
+  
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
   <script>
     Pi.init({ version: "2.0", sandbox: true });
+
     let isPlaying = false;
 
     function loginWithPi() {
+      document.getElementById('log').innerText = "[LOG] Đang login...";
       Pi.authenticate(['username', 'payments'], (payment) => {
-        console.log('Payment found:', payment);
+        console.log("Incomplete payment:", payment);
       }).then(auth => {
         document.getElementById('status').innerText = "Xin chào, " + auth.user.username;
-      }).catch(error => alert("Đăng nhập thất bại: " + error));
+        document.getElementById('log').innerText += "\n[LOG] Login thành công!";
+      }).catch(error => {
+        document.getElementById('log').innerText += "\n[LOG] Đăng nhập thất bại: " + error;
+      });
     }
 
     function payWithPi() {
       alert("Thanh toán 1 Pi/tháng (demo).");
+    }
+
+    function payWithPiTest() {
+      document.getElementById('log').innerText += "\nThanh toán test (0.01 Pi)...";
     }
 
     function togglePlay() {
@@ -139,10 +151,6 @@
 
     function selectSong(song) {
       alert("Chọn bài hát: " + song);
-    }
-
-    function showChord(chord) {
-      document.getElementById('currentChord').innerText = chord;
     }
   </script>
 </body>
