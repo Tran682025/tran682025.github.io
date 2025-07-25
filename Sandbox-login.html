@@ -1,33 +1,60 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8">
-    <title>Pi Sandbox Login Test</title>
-    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-  </head>
-  <body>
-    <h1>Pi Sandbox Login Test</h1>
-    <button onclick="login()">Đăng nhập bằng Pi</button>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>Pi Sandbox Login & Pay Test</title>
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+</head>
+<body>
+  <h1>Pi Sandbox Login & Pay</h1>
+  <button onclick="login()">Đăng nhập bằng Pi</button>
+  <button onclick="pay()">Thanh toán 0.01 Pi</button>
 
-    <script>
-      Pi.init({ version: "2.0", sandbox: true });
+  <script>
+    // Khởi tạo Pi SDK trong chế độ Sandbox
+    Pi.init({ version: "2.0", sandbox: true });
 
-      function login() {
-        const scopes = ['username', 'payments'];
-        const onIncompletePaymentFound = (payment) => {
-          console.log('Incomplete payment found:', payment);
-        };
+    // Hàm Login
+    function login() {
+      const scopes = ['username', 'payments'];
+      const onIncompletePaymentFound = (payment) => {
+        console.log('Incomplete payment found:', payment);
+      };
 
-        Pi.authenticate(scopes, onIncompletePaymentFound)
-          .then(function(auth) {
-            console.log('Authentication success', auth);
-            alert("Xin chào, " + auth.user.username);
-          })
-          .catch(function(error) {
-            console.error('Authentication failed:', error);
-            alert("Đăng nhập thất bại: " + error);
-          });
-      }
-    </script>
-  </body>
+      Pi.authenticate(scopes, onIncompletePaymentFound)
+        .then(function(auth) {
+          console.log('Authentication success', auth);
+          alert("Xin chào, " + auth.user.username);
+        })
+        .catch(function(error) {
+          console.error('Authentication failed:', error);
+          alert("Đăng nhập thất bại: " + error);
+        });
+    }
+
+    // Hàm thanh toán (test 0.01 Pi)
+    function pay() {
+      const paymentData = {
+        amount: 0.01,
+        memo: "Thanh toán test sandbox",
+        metadata: { orderId: 1234 }
+      };
+
+      Pi.createPayment(paymentData, {
+        onReadyForServerApproval: (paymentId) => {
+          console.log("Approve Payment: ", paymentId);
+        },
+        onReadyForServerCompletion: (paymentId, txid) => {
+          console.log("Complete Payment: ", paymentId, txid);
+        },
+        onCancel: (paymentId) => {
+          console.log("Payment cancelled: ", paymentId);
+        },
+        onError: (error, paymentId) => {
+          console.error("Payment error: ", error, paymentId);
+        }
+      });
+    }
+  </script>
+</body>
 </html>
