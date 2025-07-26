@@ -9,21 +9,21 @@
     body {
       font-family: Arial, sans-serif;
       text-align: center;
-      padding: 20px;
       background: #fff;
+      padding: 20px;
     }
     button {
       padding: 12px 20px;
       margin: 10px;
-      font-size: 16px;
       border: none;
       border-radius: 6px;
-      background-color: #7b2cbf;
-      color: white;
+      background: #7b2cbf;
+      color: #fff;
+      font-size: 16px;
       cursor: pointer;
     }
     button:hover {
-      background-color: #5a189a;
+      background: #5a189a;
     }
   </style>
 </head>
@@ -34,33 +34,25 @@
   <p id="status">Chưa đăng nhập.</p>
 
   <script>
-    console.log("Pi SDK:", Pi);
-    alert("Sandbox-test.html loaded!");
-
-    // Khởi tạo Pi SDK
+    // Khởi tạo Pi SDK với chế độ sandbox
     Pi.init({ version: "2.0", sandbox: true });
-    console.log("Pi.init called with sandbox:true");
 
-    // Xử lý đăng nhập
-    function loginWithPi() {
+    // Hàm đăng nhập
+    function login() {
       alert("Bắt đầu đăng nhập Pi...");
       Pi.authenticate(['username', 'payments'], (payment) => {
-        console.log('Incomplete payment found:', payment);
-      })
-      .then(auth => {
-        console.log('Authentication success:', auth);
-        document.getElementById('status').innerText = "Xin chào, " + auth.user.username;
+        console.log("Incomplete payment: ", payment);
+      }).then(auth => {
+        document.getElementById("status").innerText = "Xin chào, " + auth.user.username;
         alert("Đăng nhập thành công: " + auth.user.username);
-      })
-      .catch(error => {
-        console.error('Authentication failed:', error);
+      }).catch(error => {
         alert("Đăng nhập thất bại: " + error);
       });
     }
 
-    // Thanh toán thử
+    // Hàm thanh toán thử
     function testPayment() {
-      alert("Bắt đầu thanh toán 0.01 Pi...");
+      alert("Khởi tạo thanh toán 0.01 Pi...");
       const paymentData = {
         amount: 0.01,
         memo: "Test Sandbox Payment",
@@ -68,14 +60,15 @@
       };
       Pi.createPayment(paymentData, {
         onReadyForServerApproval: (paymentId) => alert("Ready for approval: " + paymentId),
-        onReadyForServerCompletion: (paymentId, txid) => alert("Payment completed: " + paymentId),
+        onReadyForServerCompletion: (paymentId, txid) => alert("Payment completed: " + paymentId + ", txid: " + txid),
         onCancel: (paymentId) => alert("Payment cancelled: " + paymentId),
         onError: (error, paymentId) => alert("Lỗi thanh toán: " + error)
       });
     }
 
-    document.getElementById('loginBtn').addEventListener('click', loginWithPi);
-    document.getElementById('payBtn').addEventListener('click', testPayment);
+    // Gắn sự kiện cho nút
+    document.getElementById("loginBtn").addEventListener("click", login);
+    document.getElementById("payBtn").addEventListener("click", testPayment);
   </script>
 </body>
 </html>
