@@ -19,6 +19,7 @@
   <script>
     Pi.init({ version: "2.0", sandbox: false });
 
+    // Xử lý đăng nhập
     document.getElementById('loginBtn').addEventListener('click', async () => {
       alert("Bắt đầu đăng nhập Pi...");
       try {
@@ -31,6 +32,7 @@
       }
     });
 
+    // Xử lý thanh toán
     document.getElementById('payBtn').addEventListener('click', async () => {
       alert("Khởi tạo thanh toán 0.01 Pi...");
       try {
