@@ -14,8 +14,7 @@
       margin: 0;
       padding: 20px;
     }
-    h1 { color: #4B0082; font-size: 26px; }
-    h2 { color: #000; }
+    h1 { color: #4B0082; font-size: 28px; }
     button {
       background-color: #8a2be2;
       border: none;
@@ -27,45 +26,12 @@
       cursor: pointer;
     }
     button:hover { opacity: 0.85; }
-    .instrument-buttons button {
+    .instrument-btn {
       background-color: teal;
     }
+    .slider { width: 80%; margin: 10px auto; }
+    .label { font-weight: bold; margin-top: 10px; display: block; }
   </style>
-  <script>
-    Pi.init({ version: "2.0", sandbox: false });
-
-    async function login() {
-      const scopes = ['username', 'payments'];
-      try {
-        const auth = await Pi.authenticate(scopes, (payment) => {
-          console.log('Incomplete payment:', payment);
-        });
-        document.getElementById("user").innerText = "Xin chào, " + auth.user.username;
-      } catch (error) {
-        alert("Đăng nhập thất bại: " + error);
-      }
-    }
-
-    function buyPremium() {
-      Pi.createPayment({
-        amount: 1,
-        memo: "Mua Premium 1 Pi/tháng",
-        metadata: { plan: "premium" }
-      }, {
-        onReadyForServerApproval: paymentId => console.log("Ready for approval:", paymentId),
-        onReadyForServerCompletion: (paymentId, txid) => {
-          Pi.completePayment(paymentId);
-          alert("Thanh toán Premium 1 Pi thành công!");
-        },
-        onCancel: () => alert("Bạn đã hủy thanh toán."),
-        onError: error => alert("Lỗi thanh toán: " + error)
-      });
-    }
-
-    function selectSong(song) {
-      document.getElementById("selectedSong").innerText = "Bài đã chọn: " + song;
-    }
-  </script>
 </head>
 <body>
   <h1>🎸 Pi Guitar Premium</h1>
@@ -77,14 +43,70 @@
   <button onclick="selectSong('Cảm Ơn Người Tình')">Cảm Ơn Người Tình</button>
   <button onclick="selectSong('Hallelujah')">Hallelujah</button>
   <button onclick="selectSong('Perfect (Ed Sheeran)')">Perfect (Ed Sheeran)</button>
-  <p id="selectedSong"></p>
+  <p id="selectedSong">Bài đã chọn: (chưa chọn)</p>
 
   <h2>Chọn nhạc cụ</h2>
-  <div class="instrument-buttons">
-    <button>Guitar</button>
-    <button>Ukulele</button>
-    <button>Piano</button>
-    <button>Mandolin</button>
+  <button class="instrument-btn" onclick="selectInstrument('Guitar')">Guitar</button>
+  <button class="instrument-btn" onclick="selectInstrument('Ukulele')">Ukulele</button>
+  <button class="instrument-btn" onclick="selectInstrument('Piano')">Piano</button>
+  <button class="instrument-btn" onclick="selectInstrument('Mandolin')">Mandolin</button>
+  <p id="instrument">Nhạc cụ: Guitar</p>
+
+  <h2>Điều chỉnh</h2>
+  <span class="label">Tốc độ: <span id="speedValue">100</span>%</span>
+  <input type="range" min="50" max="150" value="100" class="slider" oninput="updateSpeed(this.value)">
+  
+  <span class="label">Cao độ (Transpose): <span id="transposeValue">0</span></span>
+  <input type="range" min="-5" max="5" value="0" class="slider" oninput="updateTranspose(this.value)">
+  
+  <div>
+    <button onclick="playSong()">▶ Play</button>
+    <button onclick="restartSong()">↻ Restart</button>
   </div>
+
+  <script>
+    Pi.init({ version: "2.0", sandbox: false });
+
+    function login() {
+      Pi.authenticate(['username', 'payments'], (payment) => {
+        console.log('Incomplete payment:', payment);
+      })
+      .then(auth => {
+        document.getElementById("user").innerText = "Xin chào, " + auth.user.username;
+      })
+      .catch(err => alert("Đăng nhập thất bại: " + err));
+    }
+
+    function buyPremium() {
+      Pi.createPayment({
+        amount: 1,
+        memo: "Mua Premium 1 Pi/tháng",
+        metadata: { plan: "premium" }
+      }, {
+        onReadyForServerApproval: (paymentId) => console.log("Ready:", paymentId),
+        onReadyForServerCompletion: (paymentId, txid) => {
+          Pi.completePayment(paymentId);
+          alert("Thanh toán 1 Pi thành công!");
+        },
+        onCancel: () => alert("Bạn đã hủy thanh toán."),
+        onError: (err) => alert("Lỗi thanh toán: " + err)
+      });
+    }
+
+    function selectSong(song) {
+      document.getElementById("selectedSong").innerText = "Bài đã chọn: " + song;
+    }
+    function selectInstrument(inst) {
+      document.getElementById("instrument").innerText = "Nhạc cụ: " + inst;
+    }
+    function updateSpeed(val) {
+      document.getElementById("speedValue").innerText = val;
+    }
+    function updateTranspose(val) {
+      document.getElementById("transposeValue").innerText = val;
+    }
+    function playSong() { alert("Phát bài hát với tốc độ " + document.getElementById("speedValue").innerText + "% và transpose " + document.getElementById("transposeValue").innerText); }
+    function restartSong() { alert("Phát lại từ đầu"); }
+  </script>
 </body>
 </html>
