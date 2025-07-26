@@ -14,7 +14,10 @@
       margin: 0;
       padding: 20px;
     }
-    h1 { color: #4B0082; font-size: 28px; }
+    h1 {
+      color: #4B0082;
+      font-size: 26px;
+    }
     button {
       background-color: #8a2be2;
       border: none;
@@ -25,67 +28,97 @@
       font-size: 16px;
       cursor: pointer;
     }
-    button:hover { opacity: 0.9; }
+    button:hover { opacity: 0.85; }
+    .instrument-buttons button {
+      background-color: #20b2aa;
+    }
     .slider { width: 80%; margin: 10px auto; }
+    .chords, .lyrics {
+      margin: 10px 0;
+      padding: 5px;
+      font-size: 18px;
+      color: #333;
+    }
   </style>
+  <script>
+    // Khởi tạo Pi SDK
+    Pi.init({ version: "2.0", sandbox: true });
+
+    // Đăng nhập
+    function login() {
+      const scopes = ['username', 'payments'];
+      Pi.authenticate(scopes, (payment) => {
+        console.log('Incomplete payment found:', payment);
+      })
+      .then(auth => {
+        document.getElementById("user").innerText = "Xin chào, " + auth.user.username;
+      })
+      .catch(error => {
+        alert("Đăng nhập thất bại: " + error);
+      });
+    }
+
+    // Thanh toán Premium
+    function buyPremium() {
+      Pi.createPayment({
+        amount: 0.01,
+        memo: "Pi Guitar Premium",
+        metadata: { action: "premium" }
+      }, {
+        onReadyForServerApproval: paymentId => console.log("Ready for approval:", paymentId),
+        onReadyForServerCompletion: (paymentId, txid) => {
+          Pi.completePayment(paymentId);
+          alert("Thanh toán Premium thành công!");
+        },
+        onCancel: () => alert("Bạn đã hủy thanh toán."),
+        onError: error => alert("Lỗi thanh toán: " + error)
+      });
+    }
+
+    // Chọn bài hát
+    function selectSong(song) {
+      document.getElementById("selectedSong").innerText = "Bài đã chọn: " + song;
+    }
+
+    // Nhạc cụ
+    function selectInstrument(inst) {
+      document.getElementById("instrument").innerText = "Nhạc cụ: " + inst;
+    }
+
+    // Play/Restart
+    function playSong() { alert("Bắt đầu phát hợp âm bài hát..."); }
+    function restartSong() { alert("Phát lại từ đầu..."); }
+  </script>
 </head>
 <body>
   <h1>🎸 Pi Guitar Premium</h1>
-  <button id="loginBtn">Đăng nhập với Pi</button>
-  <button id="buyBtn">Mua Premium 0.01 Pi</button>
-  <p id="status">Chưa đăng nhập.</p>
+  <button onclick="login()">Đăng nhập với Pi</button>
+  <button onclick="buyPremium()">Mua Premium 0.01 Pi</button>
+  <p id="user"></p>
 
   <h2>Chọn bài hát demo</h2>
   <button onclick="selectSong('Cảm Ơn Người Tình')">Cảm Ơn Người Tình</button>
   <button onclick="selectSong('Hallelujah')">Hallelujah</button>
   <button onclick="selectSong('Perfect (Ed Sheeran)')">Perfect (Ed Sheeran)</button>
+  <p id="selectedSong">Chưa chọn bài nào.</p>
+
+  <h2>Chọn nhạc cụ</h2>
+  <div class="instrument-buttons">
+    <button onclick="selectInstrument('Guitar')">Guitar</button>
+    <button onclick="selectInstrument('Ukulele')">Ukulele</button>
+    <button onclick="selectInstrument('Piano')">Piano</button>
+    <button onclick="selectInstrument('Mandolin')">Mandolin</button>
+  </div>
+  <p id="instrument">Nhạc cụ: Chưa chọn</p>
+
+  <div class="chords">🎼 Hợp âm: G | D | Em | C</div>
+  <div class="lyrics">🎵 Lời bài hát sẽ hiển thị ở đây...</div>
 
   <div>
     <button onclick="playSong()">🔺 Play</button>
     <button onclick="restartSong()">↻ Restart</button>
   </div>
-  <p>Tốc độ: <span id="speedDisplay">100</span>%</p>
-  <input type="range" class="slider" min="50" max="150" value="100" oninput="updateSpeed(this.value)">
-
-  <script>
-    Pi.init({ version: "2.0", sandbox: false });
-
-    document.getElementById('loginBtn').addEventListener('click', () => {
-      alert('Bắt đầu đăng nhập Pi...');
-      Pi.authenticate(['username', 'payments'], payment => {
-        console.log('Incomplete payment:', payment);
-      })
-      .then(auth => {
-        document.getElementById("status").innerText = "Xin chào, " + auth.user.username;
-      })
-      .catch(error => alert("Đăng nhập thất bại: " + error));
-    });
-
-    document.getElementById('buyBtn').addEventListener('click', () => {
-      alert('Khởi tạo thanh toán Premium...');
-      Pi.createPayment({
-        amount: 0.01,
-        memo: "Premium Test",
-        metadata: { action: "premium" }
-      }, {
-        onReadyForServerApproval: paymentId => alert("Chờ duyệt: " + paymentId),
-        onReadyForServerCompletion: (paymentId, txid) => {
-          Pi.completePayment(paymentId);
-          alert("Thanh toán thành công!");
-        },
-        onCancel: () => alert("Bạn đã hủy thanh toán."),
-        onError: error => alert("Lỗi thanh toán: " + error)
-      });
-    });
-
-    function selectSong(songName) {
-      alert("Bạn đã chọn: " + songName);
-    }
-    function playSong() { alert("Đang phát nhạc..."); }
-    function restartSong() { alert("Phát lại từ đầu..."); }
-    function updateSpeed(val) {
-      document.getElementById("speedDisplay").innerText = val;
-    }
-  </script>
+  <p>Tốc độ: 100%</p>
+  <input type="range" class="slider" min="50" max="150" value="100">
 </body>
 </html>
