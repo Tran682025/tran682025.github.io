@@ -1,10 +1,32 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pi Premium Test</title>
+  <title>🎸 Pi Guitar Premium</title>
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #fff;
+      color: #000;
+      margin: 0;
+      padding: 20px;
+    }
+    h1, h2 { color: #4B0082; }
+    button {
+      background-color: #8a2be2;
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      margin: 5px;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    button:hover { opacity: 0.85; }
+    .slider { width: 80%; margin: 10px auto; }
+  </style>
   <script>
     Pi.init({ version: "2.0", sandbox: true });
 
@@ -16,8 +38,7 @@
 
       Pi.authenticate(scopes, onIncompletePaymentFound)
         .then(function(auth) {
-          console.log('Authentication success', auth);
-          alert("Xin chào, " + auth.user.username);
+          document.getElementById("user").innerText = "Xin chào, " + auth.user.username;
         })
         .catch(function(error) {
           console.error('Authentication failed:', error);
@@ -36,15 +57,13 @@
         },
         onReadyForServerCompletion: function(paymentId, txid) {
           console.log("Ready for completion:", paymentId, txid);
-          Pi.completePayment(paymentId); // Kết thúc để không lặp popup
+          Pi.completePayment(paymentId); // fix loop
           alert("Thanh toán Premium 0.01 Pi thành công!");
         },
         onCancel: function(paymentId) {
-          console.log("Payment cancelled:", paymentId);
           alert("Bạn đã hủy thanh toán.");
         },
         onError: function(error, paymentId) {
-          console.error("Payment error:", error);
           alert("Lỗi thanh toán: " + error);
         }
       });
@@ -52,8 +71,21 @@
   </script>
 </head>
 <body>
-  <h2>Pi Premium Test</h2>
-  <button onclick="login()">Đăng nhập</button>
-  <button onclick="buyPremium()">Mua Premium (0.01 Pi)</button>
+  <h1>🎸 Pi Guitar Premium</h1>
+  <button onclick="login()">Đăng nhập với Pi</button>
+  <button onclick="buyPremium()">Mua Premium 1 Pi/tháng</button>
+  <p id="user"></p>
+
+  <h2>Chọn bài hát demo</h2>
+  <button>Cảm Ơn Người Tình</button>
+  <button>Hallelujah</button>
+  <button>Perfect (Ed Sheeran)</button>
+
+  <div>
+    <button>🔺 Play</button>
+    <button>↻ Restart</button>
+  </div>
+  <p>Tốc độ: 100%</p>
+  <input type="range" class="slider" min="50" max="150" value="100">
 </body>
 </html>
