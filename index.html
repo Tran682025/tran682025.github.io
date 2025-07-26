@@ -14,7 +14,7 @@
       margin: 0;
       padding: 20px;
     }
-    h1, h2 { color: #4B0082; }
+    h1 { color: #4B0082; font-size: 28px; }
     button {
       background-color: #8a2be2;
       border: none;
@@ -23,69 +23,69 @@
       margin: 5px;
       border-radius: 8px;
       font-size: 16px;
+      cursor: pointer;
     }
-    button:hover { opacity: 0.85; }
+    button:hover { opacity: 0.9; }
     .slider { width: 80%; margin: 10px auto; }
   </style>
+</head>
+<body>
+  <h1>🎸 Pi Guitar Premium</h1>
+  <button id="loginBtn">Đăng nhập với Pi</button>
+  <button id="buyBtn">Mua Premium 0.01 Pi</button>
+  <p id="status">Chưa đăng nhập.</p>
+
+  <h2>Chọn bài hát demo</h2>
+  <button onclick="selectSong('Cảm Ơn Người Tình')">Cảm Ơn Người Tình</button>
+  <button onclick="selectSong('Hallelujah')">Hallelujah</button>
+  <button onclick="selectSong('Perfect (Ed Sheeran)')">Perfect (Ed Sheeran)</button>
+
+  <div>
+    <button onclick="playSong()">🔺 Play</button>
+    <button onclick="restartSong()">↻ Restart</button>
+  </div>
+  <p>Tốc độ: <span id="speedDisplay">100</span>%</p>
+  <input type="range" class="slider" min="50" max="150" value="100" oninput="updateSpeed(this.value)">
+
   <script>
-    Pi.init({ version: "2.0", sandbox: true });
+    Pi.init({ version: "2.0", sandbox: false });
 
-    function login() {
-      const scopes = ['username', 'payments'];
-      const onIncompletePaymentFound = (payment) => {
-        console.log('Incomplete payment found:', payment);
-      };
+    document.getElementById('loginBtn').addEventListener('click', () => {
+      alert('Bắt đầu đăng nhập Pi...');
+      Pi.authenticate(['username', 'payments'], payment => {
+        console.log('Incomplete payment:', payment);
+      })
+      .then(auth => {
+        document.getElementById("status").innerText = "Xin chào, " + auth.user.username;
+      })
+      .catch(error => alert("Đăng nhập thất bại: " + error));
+    });
 
-      Pi.authenticate(scopes, onIncompletePaymentFound)
-        .then(function(auth) {
-          document.getElementById("user").innerText = "Xin chào, " + auth.user.username;
-        })
-        .catch(function(error) {
-          console.error('Authentication failed:', error);
-          alert("Đăng nhập thất bại: " + error);
-        });
-    }
-
-    function buyPremium() {
+    document.getElementById('buyBtn').addEventListener('click', () => {
+      alert('Khởi tạo thanh toán Premium...');
       Pi.createPayment({
         amount: 0.01,
         memo: "Premium Test",
         metadata: { action: "premium" }
       }, {
-        onReadyForServerApproval: function(paymentId) {
-          console.log("Ready for approval:", paymentId);
+        onReadyForServerApproval: paymentId => alert("Chờ duyệt: " + paymentId),
+        onReadyForServerCompletion: (paymentId, txid) => {
+          Pi.completePayment(paymentId);
+          alert("Thanh toán thành công!");
         },
-        onReadyForServerCompletion: function(paymentId, txid) {
-          console.log("Ready for completion:", paymentId, txid);
-          Pi.completePayment(paymentId); // fix loop
-          alert("Thanh toán Premium 0.01 Pi thành công!");
-        },
-        onCancel: function(paymentId) {
-          alert("Bạn đã hủy thanh toán.");
-        },
-        onError: function(error, paymentId) {
-          alert("Lỗi thanh toán: " + error);
-        }
+        onCancel: () => alert("Bạn đã hủy thanh toán."),
+        onError: error => alert("Lỗi thanh toán: " + error)
       });
+    });
+
+    function selectSong(songName) {
+      alert("Bạn đã chọn: " + songName);
+    }
+    function playSong() { alert("Đang phát nhạc..."); }
+    function restartSong() { alert("Phát lại từ đầu..."); }
+    function updateSpeed(val) {
+      document.getElementById("speedDisplay").innerText = val;
     }
   </script>
-</head>
-<body>
-  <h1>🎸 Pi Guitar Premium</h1>
-  <button onclick="login()">Đăng nhập với Pi</button>
-  <button onclick="buyPremium()">Mua Premium 1 Pi/tháng</button>
-  <p id="user"></p>
-
-  <h2>Chọn bài hát demo</h2>
-  <button>Cảm Ơn Người Tình</button>
-  <button>Hallelujah</button>
-  <button>Perfect (Ed Sheeran)</button>
-
-  <div>
-    <button>🔺 Play</button>
-    <button>↻ Restart</button>
-  </div>
-  <p>Tốc độ: 100%</p>
-  <input type="range" class="slider" min="50" max="150" value="100">
 </body>
 </html>
