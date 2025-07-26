@@ -1,138 +1,59 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Pi Guitar Premium</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      background-color: #ffffff;
-      color: #000;
-    }
-    h1 {
-      font-size: 28px;
-      margin-top: 20px;
-    }
-    button {
-      margin: 8px;
-      padding: 12px 20px;
-      font-size: 16px;
-      border-radius: 8px;
-      border: none;
-      background-color: #7b2cbf;
-      color: white;
-      cursor: pointer;
-    }
-    .demo-song {
-      margin-top: 20px;
-    }
-    .chord {
-      display: inline-block;
-      background: #eee;
-      padding: 8px 14px;
-      margin: 4px;
-      border-radius: 6px;
-      font-weight: bold;
-    }
-    .instrument-buttons button {
-      margin: 4px;
-    }
-    .speed-control {
-      margin: 20px auto;
-      width: 80%;
-    }
-  </style>
-</head>
-<body>
-  <h1>🎸 Pi Guitar Premium</h1>
-  <button id="loginBtn">Đăng nhập với Pi</button>
-  <button id="buyBtn">Mua Premium 1 Pi/tháng</button>
-  <p id="status">Chưa đăng nhập.</p>
-
-  <div class="demo-song">
-    <h3>Chọn bài hát demo</h3>
-    <button onclick="selectSong('Cảm Ơn Người Tình')">Cảm Ơn Người Tình</button>
-    <button onclick="selectSong('Hallelujah')">Hallelujah</button>
-    <button onclick="selectSong('Perfect')">Perfect (Ed Sheeran)</button>
-  </div>
-
-  <div class="player">
-    <button onclick="playSong()">🔺 Play</button>
-    <button onclick="restartSong()">↻ Restart</button>
-    <div class="speed-control">
-      <label for="speed">Tốc độ: <span id="speedDisplay">100%</span></label><br>
-      <input type="range" id="speed" min="50" max="150" value="100" oninput="updateSpeed(this.value)">
-    </div>
-  </div>
-
-  <div class="chords">
-    <h3>Hợp âm hiện tại: <span id="currentChord">G</span></h3>
-    <div class="chord">G</div>
-    <div class="chord">Em</div>
-    <div class="chord">C</div>
-    <p><b>G</b> (sơ đồ demo guitar)</p>
-  </div>
-
-  <div class="lyrics">
-    <h3>Lời bài hát</h3>
-    <p>I found a love ... darling you look perfect tonight ...</p>
-    <p>...<br><i>(Mua Premium để xem đầy đủ)</i></p>
-  </div>
-
-  <div class="instrument-buttons">
-    <button>Guitar</button>
-    <button>Ukulele</button>
-    <button>Piano</button>
-    <button>Mandolin</button>
-  </div>
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pi Premium Test</title>
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
   <script>
-    Pi.init({ version: "2.0", sandbox: false });
+    Pi.init({ version: "2.0", sandbox: true });
 
-    document.getElementById('loginBtn').addEventListener('click', loginWithPi);
-    document.getElementById('buyBtn').addEventListener('click', buyPremium);
+    function login() {
+      const scopes = ['username', 'payments'];
+      const onIncompletePaymentFound = (payment) => {
+        console.log('Incomplete payment found:', payment);
+      };
 
-    function loginWithPi() {
-      Pi.authenticate(['username', 'payments'], (payment) => {
-        console.log("Incomplete payment:", payment);
-      }).then(function(auth) {
-        document.getElementById("status").innerText = "Xin chào, " + auth.user.username;
-      }).catch(function(error) {
-        alert("Login thất bại: " + error);
-      });
+      Pi.authenticate(scopes, onIncompletePaymentFound)
+        .then(function(auth) {
+          console.log('Authentication success', auth);
+          alert("Xin chào, " + auth.user.username);
+        })
+        .catch(function(error) {
+          console.error('Authentication failed:', error);
+          alert("Đăng nhập thất bại: " + error);
+        });
     }
 
     function buyPremium() {
-      const paymentData = {
-        amount: 1,
-        memo: "Mua Premium Guitar 1 Pi/tháng",
-        metadata: { plan: "premium" }
-      };
-      Pi.createPayment(paymentData, {
-        onReadyForServerApproval: function(paymentId) { alert("Ready for approval: " + paymentId); },
-        onReadyForServerCompletion: function(paymentId, txid) { alert("Payment completed: " + paymentId + ", txid: " + txid); },
-        onCancel: function(paymentId) { alert("Thanh toán bị huỷ: " + paymentId); },
-        onError: function(error) { alert("Lỗi thanh toán: " + error); }
+      Pi.createPayment({
+        amount: 0.01,
+        memo: "Premium Test",
+        metadata: { action: "premium" }
+      }, {
+        onReadyForServerApproval: function(paymentId) {
+          console.log("Ready for approval:", paymentId);
+        },
+        onReadyForServerCompletion: function(paymentId, txid) {
+          console.log("Ready for completion:", paymentId, txid);
+          Pi.completePayment(paymentId); // Kết thúc để không lặp popup
+          alert("Thanh toán Premium 0.01 Pi thành công!");
+        },
+        onCancel: function(paymentId) {
+          console.log("Payment cancelled:", paymentId);
+          alert("Bạn đã hủy thanh toán.");
+        },
+        onError: function(error, paymentId) {
+          console.error("Payment error:", error);
+          alert("Lỗi thanh toán: " + error);
+        }
       });
     }
-
-    function selectSong(songName) {
-      alert("Bạn đã chọn: " + songName);
-    }
-
-    function playSong() {
-      alert("Đang phát nhạc...");
-    }
-
-    function restartSong() {
-      alert("Phát lại từ đầu...");
-    }
-
-    function updateSpeed(val) {
-      document.getElementById("speedDisplay").innerText = val + "%";
-    }
   </script>
+</head>
+<body>
+  <h2>Pi Premium Test</h2>
+  <button onclick="login()">Đăng nhập</button>
+  <button onclick="buyPremium()">Mua Premium (0.01 Pi)</button>
 </body>
 </html>
