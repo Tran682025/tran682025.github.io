@@ -22,6 +22,7 @@
       border: none;
       background-color: #7b2cbf;
       color: white;
+      cursor: pointer;
     }
     .demo-song {
       margin-top: 20px;
@@ -45,13 +46,13 @@
 </head>
 <body>
   <h1>🎸 Pi Guitar Premium</h1>
-  <button onclick="loginWithPi()">Đăng nhập với Pi</button>
-  <button onclick="buyPremium()">Mua Premium 1 Pi/tháng</button>
+  <button id="loginBtn">Đăng nhập với Pi</button>
+  <button id="buyBtn">Mua Premium 1 Pi/tháng</button>
   <p id="status">Chưa đăng nhập.</p>
 
   <div class="demo-song">
     <h3>Chọn bài hát demo</h3>
-    <button onclick="selectSong('Cam On Nguoi Tinh')">Cảm Ơn Người Tình</button>
+    <button onclick="selectSong('Cảm Ơn Người Tình')">Cảm Ơn Người Tình</button>
     <button onclick="selectSong('Hallelujah')">Hallelujah</button>
     <button onclick="selectSong('Perfect')">Perfect (Ed Sheeran)</button>
   </div>
@@ -88,7 +89,10 @@
 
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
   <script>
-    Pi.init({ version: "2.0", sandbox: true });
+    Pi.init({ version: "2.0", sandbox: false });
+
+    document.getElementById('loginBtn').addEventListener('click', loginWithPi);
+    document.getElementById('buyBtn').addEventListener('click', buyPremium);
 
     function loginWithPi() {
       Pi.authenticate(['username', 'payments'], (payment) => {
@@ -107,8 +111,8 @@
         metadata: { plan: "premium" }
       };
       Pi.createPayment(paymentData, {
-        onReadyForServerApproval: function(paymentId) { console.log("Ready for approval:", paymentId); },
-        onReadyForServerCompletion: function(paymentId, txid) { console.log("Payment completed:", paymentId, txid); },
+        onReadyForServerApproval: function(paymentId) { alert("Ready for approval: " + paymentId); },
+        onReadyForServerCompletion: function(paymentId, txid) { alert("Payment completed: " + paymentId + ", txid: " + txid); },
         onCancel: function(paymentId) { alert("Thanh toán bị huỷ: " + paymentId); },
         onError: function(error) { alert("Lỗi thanh toán: " + error); }
       });
