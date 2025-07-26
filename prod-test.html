@@ -1,57 +1,54 @@
-import express from "express";
-import fetch from "node-fetch";
-import dotenv from "dotenv";
-dotenv.config();
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pi SDK Prod Test</title>
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+  <style>
+    body { text-align: center; padding: 20px; font-family: Arial, sans-serif; }
+    button { margin: 10px; padding: 12px 20px; font-size: 16px; background: purple; color: white; border: none; border-radius: 8px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h2>💎 Pi SDK Prod Test 💎</h2>
+  <button id="loginBtn">Đăng nhập với Pi</button>
+  <button id="payBtn">Thanh toán 0.01 Pi</button>
+  <p id="status">Chưa đăng nhập.</p>
 
-const app = express();
-app.use(express.json());
+  <script>
+    Pi.init({ version: "2.0", sandbox: false });
 
-const API = "https://api.minepi.com/v2";
-const { PI_API_KEY, APP_ID, PORT = 3000 } = process.env;
-
-async function piFetch(path, options = {}) {
-  const res = await fetch(`${API}${path}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Key ${PI_API_KEY}`,
-      ...(options.headers || {})
-    }
-  });
-  if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
-  return res.json();
-}
-
-// 1) Approve
-app.post("/approve", async (req, res) => {
-  try {
-    const { paymentId } = req.body;
-    // (optional) verify payment belongs to your APP_ID
-    const payment = await piFetch(`/payments/${paymentId}`, { method: "GET" });
-    if (payment.app_id !== APP_ID) throw new Error("Wrong APP_ID");
-
-    const approved = await piFetch(`/payments/${paymentId}/approve`, { method: "POST" });
-    res.json({ ok: true, approved });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ ok: false, error: e.message });
-  }
-});
-
-// 2) Complete
-app.post("/complete", async (req, res) => {
-  try {
-    const { paymentId, txid } = req.body;
-    const completed = await piFetch(`/payments/${paymentId}/complete`, {
-      method: "POST",
-      body: JSON.stringify({ txid })
+    document.getElementById('loginBtn').addEventListener('click', async () => {
+      alert("Bắt đầu đăng nhập Pi...");
+      try {
+        const auth = await Pi.authenticate(['username', 'payments'], (payment) => {
+          console.log("Incomplete payment: ", payment);
+        });
+        document.getElementById('status').innerText = "Xin chào, " + auth.user.username;
+      } catch (error) {
+        alert("Lỗi đăng nhập: " + error);
+      }
     });
-    res.json({ ok: true, completed });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ ok: false, error: e.message });
-  }
-});
 
-app.get("/", (req, res) => res.send("Pi backend up"));
-app.listen(PORT, () => console.log("Server running on port", PORT));
+    document.getElementById('payBtn').addEventListener('click', async () => {
+      alert("Khởi tạo thanh toán 0.01 Pi...");
+      try {
+        const paymentData = {
+          amount: 0.01,
+          memo: "Thanh toán test 0.01 Pi",
+          metadata: { type: "prod-test" }
+        };
+        await Pi.createPayment(paymentData, {
+          onReadyForServerApproval: (paymentId) => alert("Ready for approval: " + paymentId),
+          onReadyForServerCompletion: (paymentId, txid) => alert("Payment completed: " + paymentId + " | " + txid),
+          onCancel: (paymentId) => alert("Payment cancelled: " + paymentId),
+          onError: (error) => alert("Lỗi thanh toán: " + error)
+        });
+      } catch (error) {
+        alert("Lỗi khởi tạo thanh toán: " + error);
+      }
+    });
+  </script>
+</body>
+</html>
