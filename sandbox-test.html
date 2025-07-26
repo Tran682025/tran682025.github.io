@@ -6,8 +6,25 @@
   <title>Pi SDK Sandbox Test</title>
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; text-align: center; padding: 30px; }
-    button { padding: 12px 20px; margin: 10px; font-size: 16px; border: none; border-radius: 6px; background: #7b2cbf; color: #fff; cursor: pointer; }
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+      background: #fff;
+    }
+    button {
+      padding: 12px 20px;
+      margin: 10px;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      background-color: #7b2cbf;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #5a189a;
+    }
   </style>
 </head>
 <body>
@@ -17,35 +34,48 @@
   <p id="status">Chưa đăng nhập.</p>
 
   <script>
-    Pi.init({ version: "2.0", sandbox: true });
+    console.log("Pi SDK:", Pi);
+    alert("Sandbox-test.html loaded!");
 
+    // Khởi tạo Pi SDK
+    Pi.init({ version: "2.0", sandbox: true });
+    console.log("Pi.init called with sandbox:true");
+
+    // Xử lý đăng nhập
     function loginWithPi() {
+      alert("Bắt đầu đăng nhập Pi...");
       Pi.authenticate(['username', 'payments'], (payment) => {
         console.log('Incomplete payment found:', payment);
       })
       .then(auth => {
+        console.log('Authentication success:', auth);
         document.getElementById('status').innerText = "Xin chào, " + auth.user.username;
-        alert("Login thành công: " + auth.user.username);
+        alert("Đăng nhập thành công: " + auth.user.username);
       })
       .catch(error => {
-        alert("Login thất bại: " + error);
+        console.error('Authentication failed:', error);
+        alert("Đăng nhập thất bại: " + error);
       });
     }
 
+    // Thanh toán thử
     function testPayment() {
-      const paymentData = { amount: 0.01, memo: "Test Sandbox Payment", metadata: { type: "sandbox-test" } };
+      alert("Bắt đầu thanh toán 0.01 Pi...");
+      const paymentData = {
+        amount: 0.01,
+        memo: "Test Sandbox Payment",
+        metadata: { type: "sandbox-test" }
+      };
       Pi.createPayment(paymentData, {
-        onReadyForServerApproval: paymentId => alert("Ready for approval: " + paymentId),
-        onReadyForServerCompletion: (paymentId, txid) => alert("Payment completed: " + paymentId + ", txid: " + txid),
-        onCancel: paymentId => alert("Thanh toán bị huỷ: " + paymentId),
-        onError: error => alert("Lỗi thanh toán: " + error)
+        onReadyForServerApproval: (paymentId) => alert("Ready for approval: " + paymentId),
+        onReadyForServerCompletion: (paymentId, txid) => alert("Payment completed: " + paymentId),
+        onCancel: (paymentId) => alert("Payment cancelled: " + paymentId),
+        onError: (error, paymentId) => alert("Lỗi thanh toán: " + error)
       });
     }
 
-    window.onload = () => {
-      document.getElementById('loginBtn').addEventListener('click', loginWithPi);
-      document.getElementById('payBtn').addEventListener('click', testPayment);
-    };
+    document.getElementById('loginBtn').addEventListener('click', loginWithPi);
+    document.getElementById('payBtn').addEventListener('click', testPayment);
   </script>
 </body>
 </html>
