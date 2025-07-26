@@ -1,32 +1,59 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <title>Pi SDK Test</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pi SDK Sandbox Test</title>
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-  <script>
-    console.log("Pi SDK loading...");
-    Pi.init({ version: "2.0", sandbox: true });
-    console.log("Pi SDK loaded:", Pi);
-
-    function login() {
-      alert("Bắt đầu login test...");
-      Pi.authenticate(['username'], (payment) => {
-        console.log("Incomplete payment found:", payment);
-      })
-      .then(auth => {
-        console.log("Authentication success:", auth);
-        alert("Xin chào " + auth.user.username);
-      })
-      .catch(err => {
-        console.error("Authentication failed:", err);
-        alert("Lỗi: " + err);
-      });
-    }
-  </script>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; padding: 20px; background: #fff; }
+    button { padding: 12px 20px; margin: 10px; font-size: 16px; border: none; border-radius: 8px; background: purple; color: white; cursor: pointer; }
+    button:hover { background: #5a0e9e; }
+    h2 { color: purple; }
+  </style>
 </head>
 <body>
-  <h1>Pi SDK Login Test</h1>
-  <button onclick="login()">Đăng nhập bằng Pi</button>
+  <h2>🔹 Pi SDK Sandbox Test 🔹</h2>
+
+  <button id="loginBtn">Đăng nhập với Pi</button>
+  <button id="payBtn">Thanh toán thử 0.01 Pi</button>
+
+  <p id="status">Chưa đăng nhập.</p>
+
+  <script>
+    // Khởi tạo SDK với sandbox
+    Pi.init({ version: "2.0", sandbox: true });
+
+    // Đăng nhập
+    function login() {
+      Pi.authenticate(['username', 'payments'], (payment) => {
+        console.log("Incomplete payment:", payment);
+      })
+      .then(auth => {
+        document.getElementById("status").innerText = "Xin chào, " + auth.user.username;
+        alert("Đăng nhập thành công: " + auth.user.username);
+      })
+      .catch(error => {
+        alert("Đăng nhập thất bại: " + error);
+      });
+    }
+
+    // Thanh toán test
+    function testPayment() {
+      Pi.createPayment({
+        amount: 0.01,
+        memo: "Test Sandbox Payment",
+        metadata: { type: "sandbox-test" }
+      }, {
+        onReadyForServerApproval: (paymentId) => alert("Ready for approval: " + paymentId),
+        onReadyForServerCompletion: (paymentId, txid) => alert("Payment completed: " + paymentId),
+        onCancel: (paymentId) => alert("Payment cancelled."),
+        onError: (error, payment) => alert("Error: " + error),
+      });
+    }
+
+    document.getElementById("loginBtn").addEventListener("click", login);
+    document.getElementById("payBtn").addEventListener("click", testPayment);
+  </script>
 </body>
 </html>
