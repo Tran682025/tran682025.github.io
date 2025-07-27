@@ -24,8 +24,9 @@ function login() {
 
   Pi.authenticate(scopes, onIncompletePaymentFound)
     .then(auth => {
-      alert("Xin chào, " + auth.user.username);
-      userInfo.innerHTML = `<p>Xin chào, <b>${auth.user.username}</b>!</p>`;
+      const username = auth.user.username;
+      alert("Login thành công! Xin chào, " + username);
+      userInfo.innerHTML = `<p>Xin chào, <b>${username}</b>!</p>`;
     })
     .catch(error => alert("Đăng nhập thất bại: " + error));
 }
@@ -34,7 +35,7 @@ function buyPremium() {
   alert("Đang khởi tạo thanh toán 1 Pi Premium...");
   Pi.createPayment({
     amount: 1,
-    memo: "PICHORDIPY Premium",
+    memo: "PICHORDIFY Premium",
     metadata: { type: "premium" }
   }, {
     onReadyForServerApproval: (paymentId) => alert("Sẵn sàng duyệt: " + paymentId),
