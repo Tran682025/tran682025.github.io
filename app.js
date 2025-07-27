@@ -16,6 +16,7 @@ fetch('chords/basic.json')
   });
 
 function login() {
+  alert("Đang gửi yêu cầu đăng nhập Pi...");
   const scopes = ['username', 'payments'];
   const onIncompletePaymentFound = (payment) => {
     console.log('Incomplete payment found:', payment);
@@ -23,24 +24,22 @@ function login() {
 
   Pi.authenticate(scopes, onIncompletePaymentFound)
     .then(auth => {
-      console.log('Authentication success', auth);
+      alert("Xin chào, " + auth.user.username);
       userInfo.innerHTML = `<p>Xin chào, <b>${auth.user.username}</b>!</p>`;
     })
-    .catch(error => {
-      console.error('Authentication failed:', error);
-      alert("Đăng nhập thất bại: " + error);
-    });
+    .catch(error => alert("Đăng nhập thất bại: " + error));
 }
 
 function buyPremium() {
+  alert("Đang khởi tạo thanh toán 1 Pi Premium...");
   Pi.createPayment({
-    amount: 0.01,
+    amount: 1,
     memo: "PICHORDIPY Premium",
     metadata: { type: "premium" }
   }, {
-    onReadyForServerApproval: console.log,
-    onReadyForServerCompletion: console.log,
-    onCancel: console.log,
-    onError: console.error
+    onReadyForServerApproval: (paymentId) => alert("Sẵn sàng duyệt: " + paymentId),
+    onReadyForServerCompletion: (paymentId) => alert("Thanh toán hoàn tất: " + paymentId),
+    onCancel: () => alert("Thanh toán bị hủy."),
+    onError: (error) => alert("Lỗi: " + error)
   });
 }
