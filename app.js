@@ -1,5 +1,5 @@
 // Initialize Pi SDK
-Pi.init({ version: "2.0", sandbox: true });
+Pi.init({ version: "2.0", sandbox: false });
 
 const chordsElement = document.getElementById('chords');
 const userInfo = document.getElementById('user-info');
