@@ -2,18 +2,77 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Tran Music Kingdom</title>
+  <title>PiChordify</title>
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+  <style>
+    body {
+      background-color: #3d0075;
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding-top: 100px;
+    }
+    h1 {
+      font-size: 48px;
+    }
+    button {
+      padding: 15px 30px;
+      margin: 20px;
+      font-size: 18px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      background-color: #ff9800;
+      color: white;
+    }
+    button:hover {
+      background-color: #e68900;
+    }
+  </style>
 </head>
 <body>
-  <h1>Welcome to Tran Music Kingdom!</h1>
-  <button onclick="login()">Login with Pi</button>
+  <h1>🎸 PiChordify</h1>
+  <p>Chơi nhạc – Học hợp âm – Thanh toán bằng Pi</p>
+
+  <button onclick="login()">Đăng nhập Pi</button>
+  <button onclick="pay()">Mua Premium (0.5 Pi)</button>
+
   <script>
+    Pi.init({ version: "2.0", sandbox: true });
+
     function login() {
-      Pi.authenticate(['username'], function(result) {
-        alert("Logged in as " + result.user.username);
-      }, function(error) {
-        alert("Login failed: " + error);
+      const scopes = ['username', 'payments'];
+      const onIncompletePaymentFound = (payment) => {
+        console.log('Incomplete payment found:', payment);
+      };
+
+      Pi.authenticate(scopes, onIncompletePaymentFound)
+        .then(function(auth) {
+          alert("Xin chào, " + auth.user.username);
+        })
+        .catch(function(error) {
+          alert("Đăng nhập thất bại: " + error);
+        });
+    }
+
+    function pay() {
+      Pi.createPayment({
+        amount: 0.5,
+        memo: "Thanh toán Premium PiChordify",
+        metadata: { type: "premium" }
+      }, {
+        onReadyForServerApproval: function(paymentId) {
+          alert("Thanh toán thử 0.5 Pi (demo) – Payment ID: " + paymentId);
+        },
+        onReadyForServerCompletion: function(paymentId, txid) {
+          alert("Hoàn tất thanh toán! TxID: " + txid);
+        },
+        onCancel: function(paymentId) {
+          alert("Đã hủy thanh toán.");
+        },
+        onError: function(error, payment) {
+          alert("Lỗi thanh toán: " + error);
+        }
       });
     }
   </script>
