@@ -1,17 +1,21 @@
 const express = require('express');
 const path = require('path');
 const app = express();
+const port = process.env.PORT || 3000;
 
-// Dùng thư mục 'public' để chứa các file HTML, JS, CSS
+// Serve static files from "public" folder
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Trang chủ
+// Root route -> index.html
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Port 10000 hoặc theo môi trường
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+// Default test route
+app.get('/api', (req, res) => {
+  res.send('Pi Guitar Backend is running!');
+});
+
+app.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
 });
