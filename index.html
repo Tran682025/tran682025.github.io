@@ -1,95 +1,62 @@
 <!DOCTYPE html>
-<html lang="vi">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PiChordify</title>
-  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-  <style>
-    body {
-      background: linear-gradient(to right, #614385, #516395);
-      color: white;
-      font-family: 'Segoe UI', sans-serif;
-      padding: 20px;
-      text-align: center;
-    }
-    button {
-      padding: 12px;
-      margin: 10px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    #loginBtn {
-      background-color: #ffeb3b;
-      color: black;
-    }
-    #premiumBtn {
-      background-color: white;
-      color: #673ab7;
-      border: 2px solid #673ab7;
-    }
-    .chord-item {
-      margin: 12px auto;
-      background-color: rgba(255, 255, 255, 0.2);
-      padding: 10px;
-      width: 260px;
-      border-radius: 10px;
-    }
-  </style>
-</head>
-<body>
-  <h1>🎸 PiChordify 🎼</h1>
-  <button id="loginBtn" type="button" onclick="login()">Đăng nhập Pi</button>
-  <button id="premiumBtn" type="button" onclick="purchasePremium()">Mua gói Premium</button>
-
-  <div class="chord-item">🎵 C G Am F</div>
-  <div class="chord-item">🎵 Dm G C F</div>
-  <div class="chord-item">🎵 Em A D G</div>
-
-  <script>
-    Pi.init({ version: "2.0", sandbox: true }); // khi duyệt app chính thức, bỏ sandbox
-
-    function login() {
-      const scopes = ['username', 'payments'];
-      const onIncomplete = (payment) => {
-        alert("⚠️ Giao dịch chưa hoàn tất: " + payment.identifier);
-      };
-
-      Pi.authenticate(scopes, onIncomplete)
-        .then((auth) => {
-          alert("✅ Xin chào, " + auth.user.username);
-          console.log("Auth success:", auth);
-        })
-        .catch((err) => {
-          alert("❌ Lỗi đăng nhập: " + err);
-          console.error("Auth error:", err);
-        });
-    }
-
-    function purchasePremium() {
-      const paymentData = {
-        amount: 0.5,
-        memo: "Mua gói Premium thử nghiệm - PiChordify",
-        metadata: { type: "premium", level: "test" }
-      };
-
-      Pi.createPayment(paymentData, {
-        onReadyForServerApproval: function(paymentId) {
-          alert("💡 Chờ duyệt thanh toán... ID: " + paymentId);
-        },
-        onReadyForServerCompletion: function(paymentId, txid) {
-          alert("🎉 Giao dịch xong! ID: " + paymentId + ", TX: " + txid);
-        },
-        onCancel: function(paymentId) {
-          alert("❗ Giao dịch bị huỷ.");
-        },
-        onError: function(err, payment) {
-          alert("🚨 Lỗi thanh toán: " + err);
-          console.error("Payment error:", err);
-        }
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>PiChordify</title>
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+    <script>
+      Pi.init({
+        version: "2.0",
+        sandbox: true,
+        endpoint: "pchordifykingdom7723.pinet.io"
       });
-    }
-  </script>
-</body>
+
+      function login() {
+        const scopes = ['username', 'payments'];
+        const onIncompletePaymentFound = (payment) => {
+          console.log('Incomplete payment found:', payment);
+        };
+
+        Pi.authenticate(scopes, onIncompletePaymentFound)
+          .then(function(auth) {
+            alert("Chào bạn: " + auth.user.username);
+            console.log('✅ Auth success:', auth);
+          })
+          .catch(function(error) {
+            alert("Đăng nhập thất bại: " + error);
+            console.error('❌ Auth error:', error);
+          });
+      }
+
+      function pay() {
+        Pi.createPayment({
+          amount: 0.1,
+          memo: "Gói Premium 0.1 Pi",
+          metadata: { type: "premium" }
+        })
+          .then(function(payment) {
+            alert("Thanh toán thành công!");
+            console.log('✅ Payment:', payment);
+          })
+          .catch(function(error) {
+            alert("Thanh toán thất bại: " + error);
+            console.error('❌ Payment error:', error);
+          });
+      }
+    </script>
+    <style>
+      body { font-family: sans-serif; background: linear-gradient(#4b2e83, #673ab7); color: white; text-align: center; padding: 50px; }
+      button { margin: 10px; padding: 15px 30px; font-size: 16px; border-radius: 10px; border: none; cursor: pointer; }
+      .login-btn { background-color: yellow; color: black; font-weight: bold; }
+      .pay-btn { background-color: white; color: purple; font-weight: bold; }
+    </style>
+  </head>
+  <body>
+    <h1>🎸 PiChordify</h1>
+    <button class="login-btn" onclick="login()">Đăng nhập Pi</button><br />
+    <button class="pay-btn" onclick="pay()">Mua gói Premium</button><br /><br />
+    <div>🎵 C G Am F</div>
+    <div>🎵 Dm G C F</div>
+    <div>🎵 Em A D G</div>
+  </body>
 </html>
