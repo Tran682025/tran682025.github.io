@@ -2,23 +2,98 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Pichordify 🎸</title>
-  <link rel="stylesheet" href="style.css" />
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: linear-gradient(to right, #6a11cb, #2575fc);
+      color: white;
+      padding: 40px;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 10px;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    #login-btn {
+      background-color: yellow;
+      color: black;
+    }
+    #pay-btn {
+      background-color: lightgray;
+      color: black;
+    }
+  </style>
 </head>
 <body>
   <h1>Pichordify 🎸</h1>
-
-  <button onclick="login()" style="background-color:yellow">Đăng nhập Pi</button>
-  <button onclick="payPremium()">Mua Premium (1 Pi)</button>
+  <button id="login-btn">Đăng nhập Pi</button>
+  <button id="pay-btn">Mua Premium (1 Pi)</button>
 
   <h2>Hợp âm cơ bản</h2>
-  <div id="chords"></div>
+  <h3>Trạng thái Premium</h3>
+  <p id="status">🔒 Chưa mua Premium</p>
 
-  <h2>Trạng thái Premium</h2>
-  <div id="premium-status">🔒 Chưa mua Premium</div>
+  <script>
+    let username = null;
+    let premium = false;
 
-  <script src="app.js"></script>
+    Pi.init({ version: "2.0", sandbox: false });
+
+    const loginButton = document.getElementById("login-btn");
+    const payButton = document.getElementById("pay-btn");
+    const status = document.getElementById("status");
+
+    loginButton.addEventListener("click", () => {
+      const scopes = ['username', 'payments'];
+      Pi.authenticate(scopes, onIncompletePaymentFound)
+        .then(auth => {
+          username = auth.user.username;
+          alert("Chào mừng " + username);
+        })
+        .catch(err => {
+          console.error("Lỗi đăng nhập:", err);
+          alert("Đăng nhập thất bại.");
+        });
+    });
+
+    function onIncompletePaymentFound(payment) {
+      console.log("Thanh toán chưa hoàn tất:", payment);
+    }
+
+    payButton.addEventListener("click", () => {
+      if (!username) {
+        alert("Vui lòng đăng nhập trước!");
+        return;
+      }
+
+      Pi.createPayment({
+        amount: 1,
+        memo: "Mua Premium",
+        metadata: { type: "premium" }
+      }, {
+        onReadyForServerApproval(paymentId) {
+          console.log("Approve:", paymentId);
+          // Dùng paymentId nếu muốn xác minh server-side
+        },
+        onReadyForServerCompletion(paymentId, txid) {
+          console.log("Complete:", paymentId, txid);
+          premium = true;
+          status.textContent = "✅ Đã mua Premium";
+        },
+        onCancel(paymentId) {
+          alert("Đã hủy thanh toán.");
+        },
+        onError(error, payment) {
+          alert("Lỗi thanh toán: " + error);
+        }
+      });
+    });
+  </script>
 </body>
 </html>
