@@ -1,11 +1,25 @@
 {
   "name": "pichordify",
   "version": "1.0.0",
-  "main": "server.js",
+  "description": "Pichordify - Pi App for chord music playing and premium features",
+  "main": "index.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node index.js",
+    "dev": "nodemon index.js"
   },
+  "keywords": [
+    "pi",
+    "music",
+    "chord",
+    "guitar",
+    "premium"
+  ],
+  "author": "Tranmarket",
+  "license": "MIT",
   "dependencies": {
     "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.3"
   }
 }
