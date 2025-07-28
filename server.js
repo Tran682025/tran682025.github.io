@@ -1,21 +1,24 @@
+// server.js
+
 const express = require('express');
 const path = require('path');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Serve static files from "public" folder
+// Serve static files from the "public" directory
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Root route -> index.html
+// Serve index.html at root "/"
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.resolve(__dirname, 'public/index.html'));
 });
 
-// Default test route
-app.get('/api', (req, res) => {
-  res.send('Pi Guitar Backend is running!');
+// Default route fallback (optional)
+app.get('*', (req, res) => {
+  res.send('🎸 Pi Guitar Backend is running!');
 });
 
+// Start the server
 app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
+  console.log(`✅ Server running at http://localhost:${port}`);
 });
