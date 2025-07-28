@@ -1,89 +1,69 @@
+<!-- File: guitar/index.html -->
 <!DOCTYPE html>
-<html lang="vi">
+<html>
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>🎸PiChordify</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PiChordify</title>
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
   <style>
     body {
-      background: linear-gradient(to bottom, #5f2c82, #49a09d);
-      font-family: Arial, sans-serif;
+      background: linear-gradient(to bottom, #5b0888, #2d1a4b);
       color: white;
+      font-family: Arial, sans-serif;
       text-align: center;
-      padding: 50px;
+      padding-top: 100px;
     }
     h1 {
-      font-size: 2.5em;
-      margin-bottom: 20px;
+      font-size: 36px;
+      margin-bottom: 30px;
     }
     button {
+      font-size: 20px;
       padding: 15px 30px;
-      margin: 10px;
       border: none;
-      border-radius: 10px;
-      font-size: 18px;
+      border-radius: 8px;
       cursor: pointer;
+      margin: 15px;
     }
     .login-btn {
-      background-color: yellow;
-      color: black;
+      background-color: #ffdb00;
+      color: #000;
+      font-weight: bold;
     }
     .premium-btn {
-      background-color: white;
-      color: purple;
-    }
-    .chords {
-      margin-top: 40px;
-      font-size: 20px;
-      line-height: 1.8em;
+      background-color: #ffffff;
+      color: #800080;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
-  <h1>🎸PiChordify</h1>
-  <button class="login-btn" onclick="login()">Đăng nhập Pi</button>
-  <br />
+  <h1>🎸 PiChordify</h1>
+  <button class="login-btn" onclick="login()">Đăng nhập Pi</button><br>
   <button class="premium-btn" onclick="buy()">Mua gói Premium (0.5 Pi)</button>
-
-  <div class="chords">
-    <p>🎵 Đô ♩ Rê ♩ Mi ♩</p>
-    <p>🎶 Fa ♩ Sol ♩ La ♩ Si</p>
-  </div>
 
   <script>
     Pi.init({ version: "2.0", sandbox: true });
 
-    async function login() {
+    function login() {
       const scopes = ['username', 'payments'];
-      try {
-        const auth = await Pi.authenticate(scopes, (payment) => {
-          console.log("Found incomplete payment", payment);
+      const onIncompletePaymentFound = (payment) => {
+        console.log('Incomplete payment found: ', payment);
+      };
+
+      Pi.authenticate(scopes, onIncompletePaymentFound)
+        .then(auth => {
+          alert("Xin chào, " + auth.user.username);
+        })
+        .catch(error => {
+          console.error("Login failed", error);
+          alert("Đăng nhập thất bại: " + error);
         });
-        alert(`Xin chào, ${auth.user.username}`);
-      } catch (error) {
-        alert("Đăng nhập thất bại: " + error);
-      }
     }
 
     function buy() {
-      Pi.createPayment({
-        amount: 0.5,
-        memo: "Gói Premium PiChordify",
-        metadata: { type: "premium_chords" },
-        onReadyForServerApproval: function (paymentId) {
-          alert("Thanh toán thử 0.5 Pi (demo)");
-        },
-        onReadyForServerCompletion: function (paymentId, txid) {
-          alert("Thanh toán thành công! TXID: " + txid);
-        },
-        onCancel: function (paymentId) {
-          alert("Đã huỷ thanh toán.");
-        },
-        onError: function (error, payment) {
-          alert("Lỗi thanh toán: " + error);
-        }
-      });
+      alert("Thanh toán thử 0.5 Pi (demo)");
     }
   </script>
 </body>
