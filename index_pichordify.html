@@ -1,0 +1,114 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>PiChordify Premium</title>
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      background-color: #3d0075;
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 30px;
+    }
+    h1 {
+      font-size: 36px;
+      margin-bottom: 10px;
+    }
+    h2 {
+      font-size: 20px;
+      margin-top: 0;
+    }
+    button {
+      background-color: #ffae00;
+      color: white;
+      padding: 15px 30px;
+      border: none;
+      border-radius: 8px;
+      font-size: 18px;
+      margin: 10px;
+      cursor: pointer;
+    }
+    .demo-buttons, .instrument-buttons {
+      margin-top: 30px;
+    }
+    .demo-buttons button,
+    .instrument-buttons button {
+      background-color: #7c3aed;
+      margin: 8px;
+    }
+    .instrument-buttons button {
+      background-color: #00796b;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎸 PiChordify Premium</h1>
+  <h2>Chơi nhạc – Học hợp âm – Thanh toán bằng Pi</h2>
+  <div id="authSection">
+    <button onclick="loginWithPi()">Đăng nhập Pi</button>
+  </div>
+  <div id="mainApp" style="display:none;">
+    <p id="welcomeUser"></p>
+    <button onclick="buyPremium()">Mua Premium (0.5 Pi)</button>
+
+    <div class="demo-buttons">
+      <h2>Chọn bài hát demo</h2>
+      <button>Cảm Ơn Người Tình</button>
+      <button>Hallelujah</button>
+      <button>Perfect (Ed Sheeran)</button>
+    </div>
+
+    <div class="instrument-buttons">
+      <h2>Chọn nhạc cụ</h2>
+      <button>Guitar</button>
+      <button>Ukulele</button>
+      <button>Piano</button>
+      <button>Mandolin</button>
+    </div>
+  </div>
+
+  <script>
+    Pi.init({ version: "2.0", sandbox: true });
+
+    function loginWithPi() {
+      const scopes = ['username', 'payments'];
+      Pi.authenticate(scopes, onIncompletePaymentFound).then(function(auth) {
+        document.getElementById("authSection").style.display = "none";
+        document.getElementById("mainApp").style.display = "block";
+        document.getElementById("welcomeUser").innerText = "Xin chào, " + auth.user.username;
+      }).catch(function(error) {
+        alert("Đăng nhập thất bại: " + error);
+      });
+    }
+
+    function onIncompletePaymentFound(payment) {
+      console.log("Incomplete payment found:", payment);
+    }
+
+    function buyPremium() {
+      Pi.createPayment({
+        amount: 0.5,
+        memo: "Mua Premium PiChordify",
+        metadata: { type: "premium" }
+      }, {
+        onReadyForServerApproval: function(paymentId) {
+          console.log("Ready for server approval:", paymentId);
+        },
+        onReadyForServerCompletion: function(paymentId, txid) {
+          console.log("Ready for server completion:", paymentId, txid);
+        },
+        onCancel: function(paymentId) {
+          console.log("Payment cancelled:", paymentId);
+        },
+        onError: function(error, paymentId) {
+          console.log("Payment error:", error);
+        }
+      });
+    }
+  </script>
+</body>
+</html>
