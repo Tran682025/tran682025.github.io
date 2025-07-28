@@ -1,54 +1,38 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>PiChordify</title>
+  <meta charset="UTF-8">
+  <title>PiChordify 🎸</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
   <style>
     body {
-      background-color: #3b0066;
+      background-color: #3c0073;
       color: white;
-      font-family: 'Arial', sans-serif;
+      font-family: Arial, sans-serif;
       text-align: center;
-      padding: 40px 20px;
+      padding-top: 100px;
     }
     h1 {
-      font-size: 3em;
-      margin-bottom: 0.2em;
+      font-size: 40px;
+      margin-bottom: 10px;
     }
     p {
-      font-size: 1.2em;
-      margin-bottom: 2em;
+      font-size: 20px;
+      margin-bottom: 40px;
     }
     button {
       background-color: #ffa500;
       color: white;
       border: none;
       padding: 15px 30px;
+      font-size: 18px;
       margin: 10px;
-      font-size: 1.1em;
       border-radius: 8px;
       cursor: pointer;
     }
     button:hover {
-      background-color: #e69500;
-    }
-    select {
-      padding: 10px;
-      font-size: 1em;
-      margin: 10px;
-      border-radius: 5px;
-      border: none;
-    }
-    .demo-section {
-      margin-top: 30px;
-      background-color: #4a0072;
-      padding: 20px;
-      border-radius: 10px;
-      display: inline-block;
-    }
-    .demo-section h3 {
-      margin-bottom: 10px;
+      opacity: 0.9;
     }
   </style>
 </head>
@@ -59,33 +43,6 @@
   <button onclick="login()">Đăng nhập Pi</button>
   <button onclick="pay()">Mua Premium (0.5 Pi)</button>
 
-  <div class="demo-section">
-    <h3>🎼 Chọn nhạc cụ</h3>
-    <select id="instrument">
-      <option>🎸 Guitar</option>
-      <option>🎻 Ukulele</option>
-      <option>🎹 Piano</option>
-      <option>🪕 Mandolin</option>
-    </select>
-
-    <h3>🎵 Chọn hợp âm demo</h3>
-    <select id="chord">
-      <option>C</option>
-      <option>D</option>
-      <option>Em</option>
-      <option>F</option>
-      <option>G</option>
-      <option>Am</option>
-      <option>B7</option>
-    </select>
-
-    <div style="margin-top:15px;">
-      <button onclick="showChord()">Xem Hợp Âm</button>
-    </div>
-    <p id="output" style="margin-top:20px; font-weight:bold;"></p>
-  </div>
-
-  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
   <script>
     Pi.init({ version: "2.0", sandbox: false });
 
@@ -94,6 +51,7 @@
       const onIncompletePaymentFound = (payment) => {
         console.log('Incomplete payment found:', payment);
       };
+
       Pi.authenticate(scopes, onIncompletePaymentFound)
         .then(function(auth) {
           console.log('Authentication success', auth);
@@ -108,28 +66,22 @@
     function pay() {
       Pi.createPayment({
         amount: 0.5,
-        memo: "Thanh toán Premium PiChordify",
-        metadata: { type: "premium" },
+        memo: "Mua Premium PiChordify",
+        metadata: { type: "premium" }
+      }, {
         onReadyForServerApproval: function(paymentId) {
-          alert("Thanh toán thử 0.5 Pi – ID: " + paymentId);
+          console.log("Ready for server approval", paymentId);
         },
         onReadyForServerCompletion: function(paymentId, txid) {
-          alert("Hoàn tất thanh toán! TXID: " + txid);
+          console.log("Ready for server completion", paymentId, txid);
         },
         onCancel: function(paymentId) {
-          alert("Đã huỷ thanh toán.");
+          console.log("Payment cancelled", paymentId);
         },
         onError: function(error, payment) {
-          alert("Lỗi thanh toán: " + error);
+          console.error("Payment error", error);
         }
       });
-    }
-
-    function showChord() {
-      const instrument = document.getElementById("instrument").value;
-      const chord = document.getElementById("chord").value;
-      const output = document.getElementById("output");
-      output.innerText = `🎯 Đang hiển thị hợp âm ${chord} cho ${instrument}`;
     }
   </script>
 </body>
