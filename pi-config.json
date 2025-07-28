@@ -1,6 +1,0 @@
-{
-  "app_url": "https://tran682025.github.io/guitar/",
-  "redirect_url": "/guitar/",
-  "whitelisted_origins": ["https://tran682025.github.io"],
-  "permissions": ["payments"]
-}
