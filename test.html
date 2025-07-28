@@ -1,18 +1,17 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>Tran Music Kingdom</title>
+  <title>Pi SDK Test</title>
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 </head>
 <body>
-  <h1>Welcome to Tran Music Kingdom!</h1>
+  <h1>Test Pi SDK</h1>
   <button onclick="login()">Login with Pi</button>
   <script>
     function login() {
-      Pi.authenticate(['username'], function(result) {
+      Pi.authenticate(['username'], function (result) {
         alert("Logged in as " + result.user.username);
-      }, function(error) {
+      }, function (error) {
         alert("Login failed: " + error);
       });
     }
