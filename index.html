@@ -1,25 +1,24 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pichordify - Pi Guitar Chords</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pichordify 🎸</title>
+  <link rel="stylesheet" href="style.css" />
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 </head>
 <body>
-  <div class="app">
-    <h1>Pichordify 🎸</h1>
-    <div class="buttons">
-      <button onclick="login()">Đăng nhập Pi</button>
-      <button onclick="buyPremium()">Mua Premium (1 Pi)</button>
-    </div>
-    <div id="user-info"></div>
-    <div id="chord-list">
-      <h2>Hợp âm cơ bản</h2>
-      <ul id="chords"></ul>
-    </div>
-  </div>
+  <h1>Pichordify 🎸</h1>
+
+  <button onclick="login()" style="background-color:yellow">Đăng nhập Pi</button>
+  <button onclick="payPremium()">Mua Premium (1 Pi)</button>
+
+  <h2>Hợp âm cơ bản</h2>
+  <div id="chords"></div>
+
+  <h2>Trạng thái Premium</h2>
+  <div id="premium-status">🔒 Chưa mua Premium</div>
+
   <script src="app.js"></script>
 </body>
 </html>
