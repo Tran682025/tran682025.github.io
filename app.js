@@ -1,46 +1,40 @@
-// Initialize Pi SDK
-Pi.init({ version: "2.0", sandbox: false });
+// Khởi tạo Pi SDK ở chế độ sandbox (thử nghiệm, không trừ Pi thật)
+Pi.init({ version: "2.0", sandbox: true });
 
-const chordsElement = document.getElementById('chords');
-const userInfo = document.getElementById('user-info');
-
-// Fetch chords
-fetch('chords/basic.json')
-  .then(response => response.json())
-  .then(data => {
-    data.forEach(chord => {
-      const li = document.createElement('li');
-      li.textContent = chord.name + " - " + chord.fingering;
-      chordsElement.appendChild(li);
-    });
-  });
-
+// Hàm Đăng nhập
 function login() {
-  alert("Đang gửi yêu cầu đăng nhập Pi...");
   const scopes = ['username', 'payments'];
-  const onIncompletePaymentFound = (payment) => {
-    console.log('Incomplete payment found:', payment);
-  };
-
-  Pi.authenticate(scopes, onIncompletePaymentFound)
-    .then(auth => {
-      const username = auth.user.username;
-      alert("Login thành công! Xin chào, " + username);
-      userInfo.innerHTML = `<p>Xin chào, <b>${username}</b>!</p>`;
-    })
-    .catch(error => alert("Đăng nhập thất bại: " + error));
+  Pi.authenticate(scopes, function(payment) {
+    console.log("Incomplete payment found:", payment);
+  }).then(function(auth) {
+    console.log("Authentication success", auth);
+    alert("Xin chào, " + auth.user.username + " 👋");
+  }).catch(function(error) {
+    console.error("Authentication failed:", error);
+    alert("Đăng nhập thất bại 😥");
+  });
 }
 
-function buyPremium() {
-  alert("Đang khởi tạo thanh toán 1 Pi Premium...");
+// Hàm mua Premium thử nghiệm
+function payPremium() {
   Pi.createPayment({
     amount: 1,
-    memo: "PICHORDIFY Premium",
-    metadata: { type: "premium" }
+    memo: "Pichordify Premium Access",
+    metadata: { type: "premium", item: "access" }
   }, {
-    onReadyForServerApproval: (paymentId) => alert("Sẵn sàng duyệt: " + paymentId),
-    onReadyForServerCompletion: (paymentId) => alert("Thanh toán hoàn tất: " + paymentId),
-    onCancel: () => alert("Thanh toán bị hủy."),
-    onError: (error) => alert("Lỗi: " + error)
+    onReadyForServerApproval: function(paymentId) {
+      console.log("Ready for approval:", paymentId);
+      alert("Thanh toán thử nghiệm đã khởi tạo ✔️ (Không trừ Pi thật)");
+    },
+    onReadyForServerCompletion: function(paymentId, txid) {
+      console.log("Ready to complete:", paymentId, txid);
+      alert("Đã hoàn tất thanh toán thử nghiệm 🎉");
+    },
+    onCancel: function(paymentId) {
+      alert("Bạn đã hủy thanh toán.");
+    },
+    onError: function(error, paymentId) {
+      alert("Lỗi thanh toán: " + error);
+    }
   });
 }
