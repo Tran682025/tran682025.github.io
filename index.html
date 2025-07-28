@@ -1,62 +1,99 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8" />
-    <title>PiChordify</title>
-    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-    <script>
-      Pi.init({
-        version: "2.0",
-        sandbox: true,
-        endpoint: "pchordifykingdom7723.pinet.io"
-      });
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PiChordify</title>
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+  <style>
+    body {
+      background: linear-gradient(to bottom, #5f2c82, #49a09d);
+      font-family: Arial, sans-serif;
+      color: white;
+      text-align: center;
+      padding: 50px;
+    }
+    h1 {
+      font-size: 2.5em;
+      margin-bottom: 20px;
+    }
+    button {
+      padding: 15px 30px;
+      margin: 10px;
+      border: none;
+      border-radius: 10px;
+      font-size: 18px;
+      cursor: pointer;
+    }
+    .login-btn {
+      background-color: yellow;
+      color: black;
+    }
+    .premium-btn {
+      background-color: white;
+      color: purple;
+    }
+    .chords {
+      margin-top: 40px;
+      font-size: 20px;
+      line-height: 1.8em;
+    }
+    .emoji {
+      font-size: 1.2em;
+    }
+  </style>
+</head>
+<body>
+  <h1><span class="emoji">🎸</span> PiChordify</h1>
 
-      function login() {
-        const scopes = ['username', 'payments'];
-        const onIncompletePaymentFound = (payment) => {
-          console.log('Incomplete payment found:', payment);
-        };
+  <button class="login-btn" onclick="login()">Đăng nhập Pi</button>
+  <br>
+  <button class="premium-btn" onclick="buy()">Mua gói Premium (0.5 Pi)</button>
 
-        Pi.authenticate(scopes, onIncompletePaymentFound)
-          .then(function(auth) {
-            alert("Chào bạn: " + auth.user.username);
-            console.log('✅ Auth success:', auth);
-          })
-          .catch(function(error) {
-            alert("Đăng nhập thất bại: " + error);
-            console.error('❌ Auth error:', error);
-          });
-      }
+  <div class="chords">
+    <p>🎵 C G Am F</p>
+    <p>🎵 Dm G C F</p>
+    <p>🎵 Em A D G</p>
+  </div>
 
-      function pay() {
-        Pi.createPayment({
-          amount: 0.1,
-          memo: "Gói Premium 0.1 Pi",
-          metadata: { type: "premium" }
+  <script>
+    Pi.init({ version: "2.0", sandbox: true });
+
+    function login() {
+      const scopes = ['username', 'payments'];
+      const onIncompletePaymentFound = (payment) => {
+        console.log('Incomplete payment found:', payment);
+      };
+
+      Pi.authenticate(scopes, onIncompletePaymentFound)
+        .then(function(auth) {
+          alert("Xin chào, " + auth.user.username);
         })
-          .then(function(payment) {
-            alert("Thanh toán thành công!");
-            console.log('✅ Payment:', payment);
-          })
-          .catch(function(error) {
-            alert("Thanh toán thất bại: " + error);
-            console.error('❌ Payment error:', error);
-          });
-      }
-    </script>
-    <style>
-      body { font-family: sans-serif; background: linear-gradient(#4b2e83, #673ab7); color: white; text-align: center; padding: 50px; }
-      button { margin: 10px; padding: 15px 30px; font-size: 16px; border-radius: 10px; border: none; cursor: pointer; }
-      .login-btn { background-color: yellow; color: black; font-weight: bold; }
-      .pay-btn { background-color: white; color: purple; font-weight: bold; }
-    </style>
-  </head>
-  <body>
-    <h1>🎸 PiChordify</h1>
-    <button class="login-btn" onclick="login()">Đăng nhập Pi</button><br />
-    <button class="pay-btn" onclick="pay()">Mua gói Premium</button><br /><br />
-    <div>🎵 C G Am F</div>
-    <div>🎵 Dm G C F</div>
-    <div>🎵 Em A D G</div>
-  </body>
+        .catch(function(error) {
+          alert("Lỗi đăng nhập: " + error);
+        });
+    }
+
+    function buy() {
+      Pi.createPayment({
+        amount: 0.5,
+        memo: "Gói Premium PiChordify",
+        metadata: { type: "premium_chords" }
+      }, {
+        onReadyForServerApproval: function(paymentId) {
+          alert("Giao dịch đang chờ duyệt server: " + paymentId);
+        },
+        onReadyForServerCompletion: function(paymentId, txid) {
+          alert("Thanh toán thành công! TxID: " + txid);
+        },
+        onCancel: function(paymentId) {
+          alert("Đã huỷ thanh toán");
+        },
+        onError: function(error, payment) {
+          alert("Lỗi: " + error);
+        }
+      });
+    }
+  </script>
+</body>
 </html>
