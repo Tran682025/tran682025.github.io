@@ -1,70 +1,58 @@
-<!-- File: guitar/index.html -->
 <!DOCTYPE html>
 <html>
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>PiChordify</title>
-  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-  <style>
-    body {
-      background: linear-gradient(to bottom, #5b0888, #2d1a4b);
-      color: white;
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding-top: 100px;
-    }
-    h1 {
-      font-size: 36px;
-      margin-bottom: 30px;
-    }
-    button {
-      font-size: 20px;
-      padding: 15px 30px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      margin: 15px;
-    }
-    .login-btn {
-      background-color: #ffdb00;
-      color: #000;
-      font-weight: bold;
-    }
-    .premium-btn {
-      background-color: #ffffff;
-      color: #800080;
-      font-weight: bold;
-    }
-  </style>
-</head>
-<body>
-  <h1>🎸 PiChordify</h1>
-  <button class="login-btn" onclick="login()">Đăng nhập Pi</button><br>
-  <button class="premium-btn" onclick="buy()">Mua gói Premium (0.5 Pi)</button>
+  <head>
+    <meta charset="UTF-8" />
+    <title>PiChordify</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: linear-gradient(to right, #6a11cb, #2575fc);
+        color: white;
+        text-align: center;
+        margin: 0;
+        padding: 0;
+      }
 
-  <script>
-    Pi.init({ version: "2.0", sandbox: true });
+      h1 {
+        font-size: 3em;
+        margin-top: 50px;
+      }
 
-    function login() {
-      const scopes = ['username', 'payments'];
-      const onIncompletePaymentFound = (payment) => {
-        console.log('Incomplete payment found: ', payment);
-      };
+      .buttons {
+        margin-top: 40px;
+      }
 
-      Pi.authenticate(scopes, onIncompletePaymentFound)
-        .then(auth => {
-          alert("Xin chào, " + auth.user.username);
-        })
-        .catch(error => {
-          console.error("Login failed", error);
-          alert("Đăng nhập thất bại: " + error);
-        });
-    }
+      .buttons button {
+        background: white;
+        color: #2575fc;
+        border: none;
+        padding: 15px 30px;
+        margin: 10px;
+        font-size: 1.2em;
+        font-weight: bold;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: 0.3s;
+      }
 
-    function buy() {
-      alert("Thanh toán thử 0.5 Pi (demo)");
-    }
-  </script>
-</body>
-</html>
+      .buttons button:hover {
+        background: #ffeb3b;
+        color: #000;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🎸 PiChordify</h1>
+    <div class="buttons">
+      <button onclick="login()">🔐 Đăng nhập Pi</button>
+      <button onclick="buy()">💎 Mua gói Premium (0.5 Pi)</button>
+    </div>
+
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+    <script>
+      Pi.init({ version: "2.0", sandbox: true });
+
+      function login() {
+        const scopes = ["username", "payments"];
+        const onI
