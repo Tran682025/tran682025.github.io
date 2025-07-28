@@ -1,38 +1,42 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <title>PiChordify 🎸</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <title>PiChordify</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
   <style>
     body {
-      background-color: #3c0073;
+      background-color: #3b0080;
       color: white;
-      font-family: Arial, sans-serif;
+      font-family: 'Segoe UI', sans-serif;
       text-align: center;
       padding-top: 100px;
     }
+
     h1 {
-      font-size: 40px;
-      margin-bottom: 10px;
+      font-size: 3em;
+      margin-bottom: 0.3em;
     }
+
     p {
-      font-size: 20px;
-      margin-bottom: 40px;
+      font-size: 1.2em;
+      margin-bottom: 2em;
     }
-    button {
-      background-color: #ffa500;
+
+    .button {
+      background-color: orange;
       color: white;
+      padding: 15px 25px;
       border: none;
-      padding: 15px 30px;
-      font-size: 18px;
-      margin: 10px;
       border-radius: 8px;
+      font-size: 1.1em;
       cursor: pointer;
+      margin: 10px;
     }
-    button:hover {
-      opacity: 0.9;
+
+    .button:hover {
+      background-color: #ff9900;
     }
   </style>
 </head>
@@ -40,48 +44,56 @@
   <h1>🎸 PiChordify</h1>
   <p>Chơi nhạc – Học hợp âm – Thanh toán bằng Pi</p>
 
-  <button onclick="login()">Đăng nhập Pi</button>
-  <button onclick="pay()">Mua Premium (0.5 Pi)</button>
+  <button class="button" onclick="loginWithPi()">Đăng nhập Pi</button>
+  <button class="button" onclick="buyPremium()">Mua Premium (0.5 Pi)</button>
 
   <script>
-    Pi.init({ version: "2.0", sandbox: false });
+    Pi.init({ version: "2.0", sandbox: true });
 
-    function login() {
+    let user;
+
+    function loginWithPi() {
       const scopes = ['username', 'payments'];
-      const onIncompletePaymentFound = (payment) => {
-        console.log('Incomplete payment found:', payment);
-      };
-
       Pi.authenticate(scopes, onIncompletePaymentFound)
-        .then(function(auth) {
-          console.log('Authentication success', auth);
-          alert("Xin chào, " + auth.user.username);
+        .then(auth => {
+          user = auth.user;
+          alert("Xin chào, " + user.username);
         })
-        .catch(function(error) {
-          console.error('Authentication failed:', error);
-          alert("Đăng nhập thất bại: " + error);
+        .catch(err => {
+          console.error("Đăng nhập thất bại", err);
+          alert("Đăng nhập thất bại: " + err);
         });
     }
 
-    function pay() {
-      Pi.createPayment({
+    function onIncompletePaymentFound(payment) {
+      console.log("Thanh toán chưa hoàn tất:", payment);
+    }
+
+    function buyPremium() {
+      if (!user) {
+        alert("Vui lòng đăng nhập trước.");
+        return;
+      }
+
+      const paymentData = {
         amount: 0.5,
-        memo: "Mua Premium PiChordify",
-        metadata: { type: "premium" }
-      }, {
-        onReadyForServerApproval: function(paymentId) {
-          console.log("Ready for server approval", paymentId);
-        },
-        onReadyForServerCompletion: function(paymentId, txid) {
-          console.log("Ready for server completion", paymentId, txid);
-        },
-        onCancel: function(paymentId) {
-          console.log("Payment cancelled", paymentId);
-        },
-        onError: function(error, payment) {
-          console.error("Payment error", error);
-        }
-      });
+        memo: "Mua gói Premium PiChordify",
+        metadata: { type: "premium", app: "PiChordify" }
+      };
+
+      Pi.createPayment(paymentData)
+        .then(payment => {
+          console.log("Đã gửi thanh toán:", payment);
+          alert("Đang xử lý thanh toán...");
+          return Pi.completePayment(payment.identifier);
+        })
+        .then(() => {
+          alert("Thanh toán hoàn tất! Cảm ơn bạn đã mua Premium.");
+        })
+        .catch(err => {
+          console.error("Lỗi thanh toán:", err);
+          alert("Thanh toán thất bại: " + err);
+        });
     }
   </script>
 </body>
