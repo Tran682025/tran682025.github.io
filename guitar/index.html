@@ -1,166 +1,64 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Pi Guitar Premium</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PiChordify</title>
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background-color: #f5f5f5;
+      font-family: sans-serif;
+      background: linear-gradient(to bottom, #6a0dad, #4dabf7);
+      color: white;
       text-align: center;
-      padding: 10px;
-    }
-    h1 {
-      font-size: 1.8rem;
-      margin: 15px 0;
+      padding: 20px;
     }
     button {
-      background: #7b24ff;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      padding: 10px 12px;
-      margin: 6px auto;
       display: block;
-      width: 260px;
-      font-size: 1rem;
-      cursor: pointer;
-    }
-    button:hover {
-      opacity: 0.9;
-    }
-    .controls, .songs, .status {
-      margin-top: 10px;
-    }
-    .speed-control {
       width: 80%;
       margin: 10px auto;
+      padding: 15px;
+      font-size: 16px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
     }
-    .instrument-buttons button {
-      display: inline-block;
-      width: 90px;
-      margin: 4px;
-    }
-    #log {
-      background: #fff;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      padding: 8px;
-      width: 90%;
-      margin: 10px auto;
-      font-size: 0.9rem;
-      text-align: left;
-      min-height: 30px;
-    }
+    .login-btn { background: yellow; color: black; font-weight: bold; }
+    .premium-btn { background: white; color: purple; font-weight: bold; }
+    .chord { font-size: 20px; margin: 15px; color: #e0e0ff; }
+    .note { font-size: 26px; color: violet; }
   </style>
 </head>
 <body>
+  <h1>🎸 PiChordify</h1>
 
-  <h1>🎸 Pi Guitar Premium</h1>
-  
-  <button onclick="loginWithPi()">Đăng nhập với Pi</button>
-  <button onclick="payWithPi()">Mua Premium 1 Pi/tháng</button>
-  
-  <p id="status">Chưa đăng nhập.</p>
+  <button class="login-btn" onclick="loginWithPi()">Đăng nhập Pi</button>
+  <button class="premium-btn" onclick="payWithPi()">Mua gói Premium (0.5 Pi)</button>
 
-  <h3>Chọn bài hát demo</h3>
-  <div class="songs">
-    <button onclick="selectSong('Cảm Ơn Người Tình')">Cảm Ơn Người Tình</button>
-    <button onclick="selectSong('Hallelujah')">Hallelujah</button>
-    <button onclick="selectSong('Perfect (Ed Sheeran)')">Perfect (Ed Sheeran)</button>
-  </div>
-
-  <div class="controls">
-    <button id="playPauseBtn" onclick="togglePlay()">▶ Play</button>
-    <button onclick="restart()">⟳ Restart</button>
-  </div>
-  <p>Tốc độ: <span id="speedLabel">100%</span></p>
-  <input class="speed-control" type="range" min="50" max="150" value="100" step="10" oninput="updateSpeed(this.value)">
-
-  <h3>Hợp âm hiện tại: <span id="currentChord">G</span></h3>
-  <div>
-    <button onclick="showChord('G')">G</button>
-    <button onclick="showChord('Em')">Em</button>
-    <button onclick="showChord('C')">C</button>
-  </div>
-
-  <h3>Lời bài hát</h3>
-  <p id="lyrics">I found a love ... darling you look perfect tonight ...</p>
-  <p><i>(Mua Premium để xem đầy đủ)</i></p>
-
-  <div class="instrument-buttons">
-    <button>Guitar</button>
-    <button>Ukulele</button>
-    <button>Piano</button>
-    <button>Mandolin</button>
-  </div>
-
-  <hr>
-
-  <h2>Test Pi SDK</h2>
-  <button onclick="loginTest()">Đăng nhập test</button>
-  <button onclick="payTest()">Thanh toán test (0.01 Pi)</button>
-  <pre id="log">[LOG] Ready...</pre>
+  <div class="chord"><span class="note">🎵</span> C G Am F</div>
+  <div class="chord"><span class="note">🎵</span> Dm G C F</div>
+  <div class="chord"><span class="note">🎵</span> Em A D G</div>
 
   <script>
-    // Init Pi SDK (sandbox)
     Pi.init({ version: "2.0", sandbox: true });
 
-    let isPlaying = false;
-
-    // Premium Login
     function loginWithPi() {
-      Pi.authenticate(['username', 'payments'], (payment) => {
-        console.log('Payment found:', payment);
-      }).then(auth => {
-        document.getElementById('status').innerText = "Xin chào, " + auth.user.username;
-      }).catch(error => {
-        alert("Đăng nhập thất bại: " + error);
-      });
+      const scopes = ["username", "payments"];
+      const onIncompletePaymentFound = (payment) => {
+        console.log("Incomplete payment found:", payment);
+      };
+
+      Pi.authenticate(scopes, onIncompletePaymentFound)
+        .then(auth => {
+          alert("Xin chào, " + auth.user.username + "!");
+        })
+        .catch(error => {
+          alert("Đăng nhập thất bại: " + error);
+        });
     }
 
-    // Premium Payment
     function payWithPi() {
-      alert("Thanh toán 1 Pi/tháng (demo).");
-    }
-
-    // Guitar Controls
-    function togglePlay() {
-      isPlaying = !isPlaying;
-      document.getElementById('playPauseBtn').innerText = isPlaying ? "⏸ Pause" : "▶ Play";
-    }
-    function restart() {
-      alert("Khởi động lại bài hát.");
-    }
-    function updateSpeed(val) {
-      document.getElementById('speedLabel').innerText = val + "%";
-    }
-    function selectSong(song) {
-      alert("Chọn bài hát: " + song);
-    }
-    function showChord(chord) {
-      document.getElementById('currentChord').innerText = chord;
-    }
-
-    // Test Pi SDK login
-    function log(msg) {
-      document.getElementById('log').innerText += "\n" + msg;
-    }
-    function loginTest() {
-      log("Đang login...");
-      Pi.authenticate(['username', 'payments'], (payment) => {
-        log("Incomplete payment: " + JSON.stringify(payment));
-      }).then(auth => {
-        log("Login thành công: " + auth.user.username);
-      }).catch(error => {
-        log("Login lỗi: " + error);
-      });
-    }
-    function payTest() {
-      log("Thanh toán test (0.01 Pi)...");
-      alert("Demo thanh toán test");
+      alert("Thanh toán thử 0.5 Pi (demo)");
     }
   </script>
 </body>
