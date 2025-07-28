@@ -22,7 +22,7 @@ function login() {
     alert("Xin chào, " + auth.user.username + " 👋");
 
     // Sau khi đăng nhập thành công, fetch hợp âm
-    fetch('basicchords.json')
+    fetch('basic.json')
       .then(response => response.json())
       .then(data => {
         renderChords(data);
