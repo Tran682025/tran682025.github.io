@@ -1,108 +1,28 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <title>PiChordify Premium</title>
-  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      background-color: #f7f7f7;
-      padding: 2rem;
-    }
-    h1 {
-      font-size: 2.5rem;
-      color: #5a2a83;
-    }
-    .btn {
-      display: block;
-      margin: 1rem auto;
-      padding: 1rem 2rem;
-      border: none;
-      border-radius: 12px;
-      font-size: 1.2rem;
-      cursor: pointer;
-      width: 80%;
-      max-width: 300px;
-      color: white;
-    }
-    .login { background-color: #8a2be2; }
-    .pay { background-color: #28a745; }
-    .info, a { margin-top: 2rem; color: #5a2a83; font-weight: bold; text-decoration: underline; }
-    .tools { margin-top: 3rem; background: #fff; padding: 1.5rem; border-radius: 12px; box-shadow: 0 0 8px #ccc; }
-    select, input[type=range] {
-      margin-top: 1rem;
-      padding: 0.5rem;
-      font-size: 1rem;
-    }
-  </style>
+  <meta charset="UTF-8">
+  <title>CHORDIFY TRANMUSICKINGDOM</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
-<body>
-  <h1>🎵 PiChordify Premium</h1>
-  <p>Dịch vụ nâng cấp trải nghiệm âm nhạc cho Pioneer</p>
+<body style="font-family:sans-serif; background:#f0f0f0; text-align:center; padding:40px;">
 
-  <button class="btn login" onclick="login()">🔐 Đăng nhập Pi</button>
-  <button class="btn pay" onclick="pay()">💎 Mua gói Premium</button>
+  <h1>🎼 CHORDIFY TRANMUSICKINGDOM 🎼</h1>
+  <p style="font-size:18px; margin-bottom:30px;">
+    Nơi bạn có thể khám phá hợp âm cho Guitar, Ukulele và Piano – <br>
+    tích hợp AI và Pi Network cho thế hệ âm nhạc Web3!
+  </p>
 
-  <div class="tools">
-    <h3>🎛️ Bộ công cụ hợp âm</h3>
-    <p>🎸 Chọn loại đàn:</p>
-    <select>
-      <option>Guitar</option>
-      <option>Ukulele</option>
-    </select>
+  <a href="chordify-full.html">
+    <button style="padding:12px 28px; font-size:16px; background-color:#ffd700; border:none; border-radius:8px; cursor:pointer;">
+      🚀 Vào ứng dụng ngay
+    </button>
+  </a>
 
-    <p>🎚️ Tốc độ:</p>
-    <input type="range" min="60" max="180" value="100" />
-    <p>🎯 Transpose / Capo:</p>
-    <input type="range" min="-6" max="6" value="0" />
-    <p>📂 File nhạc: (đang phát triển)</p>
-  </div>
+  <p style="margin-top:50px; font-size:14px; color:#555;">
+    Cần hỗ trợ? Liên hệ tại:<br>
+    <a href="https://apppitrankingdom8289.pinet.com" target="_blank">apppitrankingdom8289.pinet.com</a>
+  </p>
 
-  <a href="privacy-policy.html">🔒 Chính sách bảo mật</a>
-  <p class="info">Mọi thắc mắc xin liên hệ AI Studio: <br><strong>apppitrankingdom8289.pinet.com</strong></p>
-
-  <script>
-    Pi.init({ version: "2.0", sandbox: true });
-
-    function login() {
-      const scopes = ['username', 'payments'];
-      const onIncompletePaymentFound = (payment) => {
-        console.log('Incomplete payment found:', payment);
-      };
-      Pi.authenticate(scopes, onIncompletePaymentFound)
-        .then(function(auth) {
-          alert("Xin chào, " + auth.user.username);
-          console.log(auth);
-        })
-        .catch(function(error) {
-          alert("Đăng nhập thất bại: " + error);
-          console.error(error);
-        });
-    }
-
-    function pay() {
-      const paymentData = {
-        amount: 0.01,
-        memo: "Nâng cấp Premium Pichordify",
-        metadata: { type: "premium" }
-      };
-      Pi.createPayment(paymentData, {
-        onReadyForServerApproval: function(paymentId) {
-          console.log("Chờ duyệt từ server:", paymentId);
-        },
-        onReadyForServerCompletion: function(paymentId, txid) {
-          console.log("Chờ hoàn tất:", paymentId, txid);
-        },
-        onCancel: function(paymentId) {
-          alert("Thanh toán bị huỷ.");
-        },
-        onError: function(error, paymentId) {
-          alert("Lỗi thanh toán: " + error);
-        }
-      });
-    }
-  </script>
 </body>
 </html>
