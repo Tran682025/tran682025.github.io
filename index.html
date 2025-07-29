@@ -2,121 +2,81 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PiChordify Kingdom 🎸</title>
+  <title>PiChordify Kingdom</title>
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
   <style>
     body {
+      font-family: sans-serif;
       background-color: #2e004f;
-      color: #fff;
-      font-family: 'Segoe UI', sans-serif;
+      color: white;
       text-align: center;
-      padding: 60px 20px;
+      padding: 2rem;
     }
     h1 {
-      font-size: 2.8em;
-      margin-bottom: 10px;
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
     }
-    p {
-      font-size: 1.2em;
-      margin-bottom: 30px;
-    }
-    .btn {
-      padding: 15px 30px;
-      margin: 15px;
-      font-size: 1.1em;
+    button {
+      font-size: 1.1rem;
+      padding: 0.8rem 1.5rem;
+      margin: 0.5rem;
+      border-radius: 10px;
       border: none;
-      border-radius: 8px;
       cursor: pointer;
-      transition: all 0.3s ease;
     }
-    .login-btn {
-      background-color: #fbc02d;
-      color: #000;
+    #premium-btn {
+      background-color: #444;
+      color: #ccc;
+      cursor: not-allowed;
     }
-    .premium-btn {
-      background-color: #9e9e9e;
-      color: #fff;
+    #login-btn {
+      background-color: gold;
+      color: black;
     }
-    .file-upload {
-      margin-top: 40px;
-      font-size: 1em;
+    footer {
+      margin-top: 2rem;
     }
-    input[type="file"] {
-      padding: 10px;
-      border-radius: 6px;
+    footer a {
+      color: #66ccff;
+      text-decoration: none;
     }
   </style>
 </head>
 <body>
 
-  <h1>🎸 PiChordify Kingdom</h1>
-  <p>Trải nghiệm âm nhạc, học hợp âm, thanh toán bằng Pi</p>
+  <h1>🎸 PiChordify</h1>
+  <p>Trợ lý học hợp âm & luyện tai trên nền tảng Pi Network</p>
 
-  <button class="btn login-btn" onclick="login()">🔐 Đăng nhập Pi</button>
-  <br>
-  <button class="btn premium-btn" onclick="makePayment()">💎 Mua Premium (0.5 Pi)</button>
-
-  <div class="file-upload">
-    <p>🎵 Chọn file nhạc (MP3):</p>
-    <input type="file" accept="audio/*" onchange="handleFile(this)">
-    <p id="filename" style="margin-top:10px;"></p>
+  <div>
+    <button id="login-btn" onclick="login()">🔐 Đăng nhập Pi</button>
+    <button id="premium-btn" disabled>💎 Mua Premium (0.5 Pi)</button>
   </div>
 
-  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+  <div style="margin-top:2rem;">
+    <label for="file">🎵 Chọn file nhạc (MP3):</label>
+    <input type="file" id="file" accept=".mp3" />
+  </div>
+
+  <footer>
+    <p><a href="terms.html" target="_blank">📄 Điều khoản sử dụng</a> | <a href="privacy.html" target="_blank">🔒 Chính sách bảo mật</a></p>
+  </footer>
+
   <script>
-    window.addEventListener('DOMContentLoaded', () => {
-      if (!window.Pi) {
-        alert("❌ Pi SDK chưa hoạt động hoặc không nhận diện app!");
-      } else {
-        Pi.init({ version: "2.0", sandbox: true });
-        alert("✅ Pi SDK đã sẵn sàng!");
-      }
-    });
+    Pi.init({ version: "2.0", sandbox: true });
 
     function login() {
-      if (!window.Pi) {
-        alert("Không thể đăng nhập. SDK chưa tải.");
-        return;
-      }
-      Pi.authenticate(['username', 'payments'], payment => {
-        console.log("Found incomplete payment:", payment);
-      }).then(auth => {
-        alert("Xin chào, " + auth.user.username);
-      }).catch(error => {
-        alert("Đăng nhập thất bại: " + error);
-      });
-    }
+      const scopes = ['username', 'payments'];
+      const onIncompletePaymentFound = (payment) => {
+        console.log('Incomplete payment found:', payment);
+      };
 
-    function makePayment() {
-      if (!window.Pi) {
-        alert("SDK chưa sẵn sàng để thanh toán.");
-        return;
-      }
-      Pi.createPayment({
-        amount: 0.5,
-        memo: "Mua quyền truy cập Premium",
-        metadata: { type: "premium_access" }
-      }, {
-        onReadyForServerApproval(paymentId) {
-          console.log("Đợi phê duyệt: ", paymentId);
-        },
-        onReadyForServerCompletion(paymentId, txid) {
-          console.log("Đợi hoàn tất: ", paymentId, txid);
-        },
-        onCancel(paymentId) {
-          alert("Bạn đã hủy thanh toán.");
-        },
-        onError(error, payment) {
-          alert("Lỗi thanh toán: " + error);
-        }
-      });
-    }
-
-    function handleFile(input) {
-      const file = input.files[0];
-      if (file) {
-        document.getElementById("filename").innerText = "Đã chọn: " + file.name;
-      }
+      Pi.authenticate(scopes, onIncompletePaymentFound)
+        .then(function(auth) {
+          alert("✅ Pi SDK đã sẵn sàng!\nXin chào, " + auth.user.username);
+        })
+        .catch(function(error) {
+          alert("⚠️ Đăng nhập thất bại: " + error);
+        });
     }
   </script>
 </body>
