@@ -1,96 +1,97 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PiChordifyKingdom</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PiChordify</title>
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background-color: #360044;
+      background-color: #3b005c;
       color: white;
+      font-family: Arial, sans-serif;
       text-align: center;
-      padding: 2em;
+      padding: 2rem;
     }
-    h1 {
-      font-size: 3em;
-    }
-    button {
-      font-size: 1.2em;
-      margin: 1em;
-      padding: 1em 2em;
+    button, a {
+      display: block;
+      margin: 1rem auto;
+      padding: 1rem;
+      font-size: 1.2rem;
+      text-decoration: none;
       border: none;
-      border-radius: 10px;
-      cursor: pointer;
+      border-radius: 8px;
     }
-    #loginBtn {
+    .login-btn {
       background-color: gold;
       color: black;
     }
-    #payBtn {
+    .premium-btn {
       background-color: #444;
-      color: lightblue;
+      color: #8be9fd;
     }
-    #fileInput {
-      margin-top: 1em;
-      font-size: 1em;
+    input[type="file"] {
+      margin: 1rem auto;
+      font-size: 1rem;
     }
-    a {
-      color: #58d3f7;
-      display: block;
-      margin-top: 2em;
+    .link-text {
+      color: #8be9fd;
       text-decoration: none;
+      font-size: 1rem;
+      margin-top: 1rem;
     }
   </style>
 </head>
 <body>
   <h1>🎸 PiChordify</h1>
-  <p>Trợ lý học hợp âm & luyện tai<br>trên nền tảng Pi Network</p>
+  <p>Trợ lý học hợp âm & luyện tai trên nền tảng Pi Network</p>
 
-  <button id="loginBtn" onclick="login()">🔐 Đăng nhập Pi</button>
-  <br>
-  <button id="payBtn" onclick="pay()">💎 Mua Premium (0.5 Pi)</button>
+  <button class="login-btn" onclick="login()">🔐 Đăng nhập Pi</button>
+  <button class="premium-btn" onclick="makePayment()">💎 Mua Premium (0.5 Pi)</button>
 
   <p>🎵 Chọn file nhạc (MP3):</p>
-  <input id="fileInput" type="file" accept="audio/mpeg">
+  <input type="file" accept=".mp3" />
 
-  <a href="terms.html">📄 Điều khoản sử dụng</a>
-  <a href="privacy.html">🔒 Chính sách bảo mật</a>
+  <a class="link-text" href="terms-of-use.html">📄 Điều khoản sử dụng</a>
+  <a class="link-text" href="privacy-policy.html">🔒 Chính sách bảo mật</a>
 
   <script>
     Pi.init({ version: "2.0", sandbox: true });
 
     function login() {
       const scopes = ['username', 'payments'];
-      Pi.authenticate(scopes, function(payment) {
+      const onIncompletePaymentFound = (payment) => {
         console.log('Incomplete payment found:', payment);
-      }).then(function(auth) {
-        alert("Xin chào, " + auth.user.username);
-      }).catch(function(error) {
-        alert("Đăng nhập thất bại: " + error);
-      });
-    }
-
-    function pay() {
-      const paymentData = {
-        amount: 0.5,
-        memo: "Mua Premium cho PiChordify",
-        metadata: { type: "premium" }
       };
 
-      Pi.createPayment(paymentData, {
+      Pi.authenticate(scopes, onIncompletePaymentFound)
+        .then(function(auth) {
+          console.log('Authentication success', auth);
+          alert("Xin chào, " + auth.user.username);
+        })
+        .catch(function(error) {
+          console.error('Authentication failed:', error);
+          alert("Đăng nhập thất bại: " + error);
+        });
+    }
+
+    function makePayment() {
+      Pi.createPayment({
+        amount: 0.5,
+        memo: "Mua gói Premium PiChordify",
+        metadata: { type: "premium" }
+      }, {
         onReadyForServerApproval: function(paymentId) {
-          console.log("Đang chờ xác nhận: " + paymentId);
+          console.log("Ready for server approval: ", paymentId);
         },
         onReadyForServerCompletion: function(paymentId, txid) {
-          alert("Thanh toán thành công! Mã giao dịch: " + txid);
+          console.log("Ready for server completion: ", paymentId, txid);
         },
         onCancel: function(paymentId) {
-          alert("Đã huỷ giao dịch.");
+          console.log("Payment cancelled: ", paymentId);
         },
         onError: function(error, payment) {
-          alert("Lỗi thanh toán: " + error);
+          console.error("Payment error: ", error);
         }
       });
     }
