@@ -1,112 +1,72 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PiChordify Full</title>
-  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+  <title>PiChordify Kingdom</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background-color: #fff;
+      font-family: sans-serif;
+      background-color: #f0f4f8;
+      padding: 20px;
       text-align: center;
-      padding: 2rem;
     }
     h1 {
-      font-size: 2.2rem;
-      color: #7e22ce;
+      color: #663399;
     }
-    button {
-      font-size: 1.1rem;
-      margin: 1rem;
-      padding: 0.8rem 1.5rem;
-      border-radius: 0.5rem;
-      border: none;
-      cursor: pointer;
+    select, button {
+      padding: 10px;
+      font-size: 16px;
+      margin: 10px;
     }
-    #login-btn {
-      background-color: #a855f7;
-      color: white;
-    }
-    #premium-btn {
-      background-color: #22c55e;
-      color: white;
-    }
-    #chord-area {
-      margin-top: 2rem;
-    }
-    .section {
-      margin-top: 3rem;
-      text-align: left;
-    }
-    label, select, input {
-      font-size: 1rem;
+    .chord-display {
+      margin-top: 20px;
+      font-size: 18px;
+      color: #333;
+      background-color: #fff;
+      border-radius: 10px;
+      padding: 20px;
+      display: none;
     }
   </style>
 </head>
 <body>
-  <h1>🎸 PiChordify Full</h1>
-  <p>Chọn file nhạc, chọn loại đàn và điều chỉnh tốc độ chơi nhạc.</p>
+  <h1>🎶 Welcome to PiChordify Kingdom 🎶</h1>
+  <p>Khám phá hợp âm cho các nhạc cụ phổ biến!</p>
 
-  <button id="login-btn">🔐 Đăng nhập Pi</button>
-  <button id="premium-btn">💎 Nâng cấp Premium</button>
+  <label for="instrument">🎵 Chọn nhạc cụ:</label>
+  <select id="instrument" onchange="showChords()">
+    <option value="">-- Chọn --</option>
+    <option value="guitar">🎸 Guitar</option>
+    <option value="piano">🎹 Piano</option>
+    <option value="ukulele">🎶 Ukulele</option>
+  </select>
 
-  <div class="section">
-    <label for="instrument">🎻 Loại nhạc cụ:</label>
-    <select id="instrument">
-      <option value="guitar">Guitar</option>
-      <option value="piano">Piano</option>
-      <option value="ukulele">Ukulele</option>
-    </select>
-    <br /><br />
-
-    <label for="speed">⚡ Tốc độ (BPM):</label>
-    <input type="range" id="speed" min="60" max="180" value="100" />
-    <span id="speed-value">100</span>
-    <br /><br />
-
-    <label for="capo">🧢 Capo (ngăn):</label>
-    <input type="number" id="capo" min="0" max="12" value="0" />
-    <br /><br />
-
-    <label for="file-url">🔗 Link bài hát:</label>
-    <input type="text" id="file-url" placeholder="Nhập URL mp3 hoặc YouTube" size="40" />
-    <br /><br />
-    <button onclick="loadChordify()">🎶 Phân tích hợp âm</button>
-  </div>
-
-  <div id="chord-area"></div>
+  <div class="chord-display" id="chordBox"></div>
 
   <script>
-    Pi.init({ version: "2.0", sandbox: true });
+    const chordBox = document.getElementById('chordBox');
 
-    document.getElementById("login-btn").addEventListener("click", () => {
-      const scopes = ['username', 'payments'];
-      Pi.authenticate(scopes, (payment) => {
-        console.log("Found incomplete payment:", payment);
-      }).then(auth => {
-        alert("Chào mừng, " + auth.user.username);
-      }).catch(err => {
-        alert("Đăng nhập thất bại: " + err);
-      });
-    });
+    function showChords() {
+      const instrument = document.getElementById('instrument').value;
+      let chords = '';
 
-    document.getElementById("premium-btn").addEventListener("click", () => {
-      alert("Chức năng thanh toán sẽ được tích hợp sau.");
-    });
+      switch (instrument) {
+        case 'guitar':
+          chords = '🎸 Guitar Chords: C – G – Am – F';
+          break;
+        case 'piano':
+          chords = '🎹 Piano Chords: Cmaj – Gmaj – Amin – Fmaj';
+          break;
+        case 'ukulele':
+          chords = '🎶 Ukulele Chords: C – G – Am – F (simplified)';
+          break;
+        default:
+          chords = '';
+      }
 
-    document.getElementById("speed").addEventListener("input", function () {
-      document.getElementById("speed-value").textContent = this.value;
-    });
-
-    function loadChordify() {
-      const url = document.getElementById("file-url").value;
-      const instrument = document.getElementById("instrument").value;
-      const speed = document.getElementById("speed").value;
-      const capo = document.getElementById("capo").value;
-      
-      const output = `🎼 Đang phân tích: <strong>${url}</strong><br/>🎹 Nhạc cụ: <strong>${instrument}</strong><br/>⚡ Tốc độ: <strong>${speed} BPM</strong><br/>🧢 Capo: <strong>${capo}</strong>`;
-      document.getElementById("chord-area").innerHTML = output;
+      chordBox.textContent = chords;
+      chordBox.style.display = chords ? 'block' : 'none';
     }
   </script>
 </body>
