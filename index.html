@@ -2,83 +2,98 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>PiChordify Kingdom</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PiChordify</title>
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
   <style>
     body {
-      font-family: sans-serif;
-      background-color: #2e004f;
+      font-family: Arial, sans-serif;
+      background-color: #36004d;
       color: white;
       text-align: center;
-      padding: 2rem;
+      padding: 2em;
     }
     h1 {
-      font-size: 2.5rem;
-      margin-bottom: 1rem;
+      font-size: 3em;
     }
     button {
-      font-size: 1.1rem;
-      padding: 0.8rem 1.5rem;
-      margin: 0.5rem;
-      border-radius: 10px;
+      font-size: 1.2em;
+      margin: 1em;
+      padding: 1em 2em;
       border: none;
+      border-radius: 10px;
       cursor: pointer;
     }
-    #premium-btn {
-      background-color: #444;
-      color: #ccc;
-      cursor: not-allowed;
-    }
-    #login-btn {
+    #loginBtn {
       background-color: gold;
       color: black;
     }
-    footer {
-      margin-top: 2rem;
+    #payBtn {
+      background-color: #444;
+      color: lightblue;
     }
-    footer a {
-      color: #66ccff;
+    #fileInput {
+      margin-top: 1em;
+      font-size: 1em;
+    }
+    a {
+      color: #58d3f7;
+      display: block;
+      margin-top: 2em;
       text-decoration: none;
     }
   </style>
 </head>
 <body>
-
   <h1>🎸 PiChordify</h1>
-  <p>Trợ lý học hợp âm & luyện tai trên nền tảng Pi Network</p>
+  <p>Trợ lý học hợp âm & luyện tai<br>trên nền tảng Pi Network</p>
 
-  <div>
-    <button id="login-btn" onclick="login()">🔐 Đăng nhập Pi</button>
-    <button id="premium-btn" disabled>💎 Mua Premium (0.5 Pi)</button>
-  </div>
+  <button id="loginBtn" onclick="login()">🔐 Đăng nhập Pi</button>
+  <br>
+  <button id="payBtn" onclick="pay()">💎 Mua Premium (0.5 Pi)</button>
 
-  <div style="margin-top:2rem;">
-    <label for="file">🎵 Chọn file nhạc (MP3):</label>
-    <input type="file" id="file" accept=".mp3" />
-  </div>
+  <p>🎵 Chọn file nhạc (MP3):</p>
+  <input id="fileInput" type="file" accept="audio/mpeg">
 
-  <footer>
-    <p><a href="terms.html" target="_blank">📄 Điều khoản sử dụng</a> | <a href="privacy.html" target="_blank">🔒 Chính sách bảo mật</a></p>
-  </footer>
+  <a href="terms.html">📄 Điều khoản sử dụng</a>
+  <a href="privacy.html">🔒 Chính sách bảo mật</a>
 
   <script>
     Pi.init({ version: "2.0", sandbox: true });
 
     function login() {
       const scopes = ['username', 'payments'];
-      const onIncompletePaymentFound = (payment) => {
+      Pi.authenticate(scopes, function(payment) {
         console.log('Incomplete payment found:', payment);
+      }).then(function(auth) {
+        alert("Xin chào, " + auth.user.username);
+      }).catch(function(error) {
+        alert("Đăng nhập thất bại: " + error);
+      });
+    }
+
+    function pay() {
+      const paymentData = {
+        amount: 0.5,
+        memo: "Mua Premium cho PiChordify",
+        metadata: { type: "premium" }
       };
 
-      Pi.authenticate(scopes, onIncompletePaymentFound)
-        .then(function(auth) {
-          alert("✅ Pi SDK đã sẵn sàng!\nXin chào, " + auth.user.username);
-        })
-        .catch(function(error) {
-          alert("⚠️ Đăng nhập thất bại: " + error);
-        });
+      Pi.createPayment(paymentData, {
+        onReadyForServerApproval: function(paymentId) {
+          console.log("Đang chờ xác nhận: " + paymentId);
+        },
+        onReadyForServerCompletion: function(paymentId, txid) {
+          alert("Thanh toán thành công! Mã giao dịch: " + txid);
+        },
+        onCancel: function(paymentId) {
+          alert("Đã huỷ giao dịch.");
+        },
+        onError: function(error, payment) {
+          alert("Lỗi thanh toán: " + error);
+        }
+      });
     }
   </script>
 </body>
 </html>
-<!-- rebuild GitHub Pages -->
