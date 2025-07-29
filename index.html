@@ -2,95 +2,103 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>PiChordify</title>
-  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PiChordify ✨</title>
   <style>
     body {
-      background-color: #330066;
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #2e005a;
       color: white;
       text-align: center;
-      font-family: 'Arial', sans-serif;
       padding: 60px 20px;
     }
     h1 {
-      font-size: 48px;
-      margin-bottom: 10px;
+      font-size: 2.5em;
+      margin-bottom: 0.2em;
     }
     p {
-      font-size: 20px;
-      margin-bottom: 40px;
+      font-size: 1.2em;
+      margin-top: 0;
     }
-    button {
-      background-color: orange;
-      color: white;
+    .btn {
       padding: 15px 30px;
-      margin: 10px;
-      font-size: 18px;
+      margin: 15px;
+      font-size: 1.1em;
       border: none;
       border-radius: 8px;
       cursor: pointer;
     }
-    button:disabled {
-      background-color: grey;
-      cursor: not-allowed;
+    .login-btn {
+      background-color: #f9a825;
+      color: black;
+    }
+    .premium-btn {
+      background-color: #9e9e9e;
+      color: white;
     }
   </style>
 </head>
 <body>
+
   <h1>🎸 PiChordify</h1>
   <p>Chơi nhạc – Học hợp âm – Thanh toán bằng Pi</p>
 
-  <button onclick="loginWithPi()">Đăng nhập Pi</button>
-  <button id="buyPremiumBtn" onclick="buyPremium()" disabled>Mua Premium (0.5 Pi)</button>
+  <button class="btn login-btn" onclick="login()">Đăng nhập Pi</button>
+  <br>
+  <button class="btn premium-btn" onclick="makePayment()">Mua Premium (0.5 Pi)</button>
 
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
   <script>
-    Pi.init({ version: "2.0", sandbox: true });
+    window.addEventListener('DOMContentLoaded', () => {
+      if (!window.Pi) {
+        alert("Pi SDK chưa sẵn sàng. Hãy mở trang này trong Pi Browser.");
+      } else {
+        Pi.init({ version: "2.0", sandbox: true });
+      }
+    });
 
-    let user = null;
-
-    function loginWithPi() {
-      const scopes = ['username', 'payments'];
-      const onIncompletePaymentFound = (payment) => {
-        console.log('Incomplete payment found:', payment);
-      };
-
-      Pi.authenticate(scopes, onIncompletePaymentFound)
-        .then(function(auth) {
-          user = auth.user;
-          alert("Xin chào, " + user.username);
-          document.getElementById("buyPremiumBtn").disabled = false;
-        })
-        .catch(function(error) {
-          alert("Đăng nhập thất bại: " + error);
-        });
-    }
-
-    function buyPremium() {
-      if (!user) {
-        alert("Vui lòng đăng nhập trước.");
+    function login() {
+      if (!window.Pi) {
+        alert("SDK Pi chưa sẵn sàng. Vui lòng dùng Pi Browser để đăng nhập.");
         return;
       }
+      Pi.authenticate(['username', 'payments'], (payment) => {
+        console.log('Found incomplete payment:', payment);
+      })
+      .then(auth => {
+        alert("Xin chào, " + auth.user.username);
+      })
+      .catch(err => {
+        alert("Đăng nhập thất bại: " + err);
+      });
+    }
 
+    function makePayment() {
+      if (!window.Pi) {
+        alert("SDK Pi chưa sẵn sàng. Hãy dùng Pi Browser để thanh toán.");
+        return;
+      }
       Pi.createPayment({
         amount: 0.5,
-        memo: "Mua Premium PiChordify",
-        metadata: { type: "premium_access" }
+        memo: "Mua quyền truy cập Premium",
+        metadata: { feature: "premium_chordify" }
       }, {
-        onReadyForServerApproval: function(paymentId) {
-          console.log("Ready for server approval:", paymentId);
+        onReadyForServerApproval(paymentId) {
+          console.log("Đợi server duyệt: ", paymentId);
         },
-        onReadyForServerCompletion: function(paymentId, txid) {
-          console.log("Payment completed:", paymentId, txid);
-          alert("Thanh toán thành công!");
+        onReadyForServerCompletion(paymentId, txid) {
+          console.log("Đợi hoàn tất server: ", paymentId, txid);
         },
-        onCancel: function(paymentId) {
-          alert("Đã hủy thanh toán.");
+        onCancel(paymentId) {
+          alert("Bạn đã hủy thanh toán");
         },
-        onError: function(error, paymentId) {
+        onError(error, payment) {
           alert("Lỗi thanh toán: " + error);
         }
       });
     }
   </script>
+
 </body>
 </html>
