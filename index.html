@@ -1,28 +1,119 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <title>CHORDIFY TRANMUSICKINGDOM</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PiChordify Kingdom</title>
+  <style>
+    body {
+      background-color: #f0f0ff;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    h1 {
+      color: #6a0dad;
+      font-size: 2em;
+    }
+    select, button {
+      padding: 10px;
+      margin: 10px;
+      font-size: 1em;
+    }
+    .chords {
+      margin-top: 20px;
+      font-size: 1.2em;
+    }
+    .btn-group {
+      margin-top: 30px;
+    }
+  </style>
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+  <script>
+    Pi.init({ version: "2.0", sandbox: true });
+
+    function login() {
+      const scopes = ['username', 'payments'];
+      const onIncompletePaymentFound = (payment) => {
+        console.log('Incomplete payment found:', payment);
+      };
+
+      Pi.authenticate(scopes, onIncompletePaymentFound)
+        .then(function(auth) {
+          console.log('Authentication success', auth);
+          alert("Xin chào, " + auth.user.username);
+        })
+        .catch(function(error) {
+          console.error('Authentication failed:', error);
+          alert("Đăng nhập thất bại: " + error);
+        });
+    }
+
+    function pay() {
+      Pi.createPayment({
+        amount: 0.01,
+        memo: "Mua Premium PiChordify",
+        metadata: { type: "premium-access" }
+      }, {
+        onReadyForServerApproval: function(paymentId) {
+          console.log("Ready for approval: ", paymentId);
+        },
+        onReadyForServerCompletion: function(paymentId, txid) {
+          console.log("Payment completed: ", paymentId, txid);
+        },
+        onCancel: function(paymentId) {
+          console.log("Payment cancelled: ", paymentId);
+        },
+        onError: function(error, paymentId) {
+          console.error("Payment failed: ", error);
+        }
+      });
+    }
+
+    function showChords() {
+      const song = document.getElementById("songSelect").value;
+      const chordsDiv = document.getElementById("chords");
+      let chords = "";
+
+      if (song === "amazing-grace") {
+        chords = "G - C - G - D\nG - C - G - D - G";
+      } else if (song === "hallelujah") {
+        chords = "C - Am - C - Am\nF - G - C - G";
+      } else {
+        chords = "🎶 Hãy chọn một bài nhạc để xem hợp âm 🎶";
+      }
+
+      chordsDiv.textContent = chords;
+    }
+  </script>
 </head>
-<body style="font-family:sans-serif; background:#f0f0f0; text-align:center; padding:40px;">
+<body>
+  <h1>🎶 Welcome to PiChordify Kingdom 🎶</h1>
+  <p>Khám phá hợp âm cho các nhạc cụ phổ biến!</p>
 
-  <h1>🎼 CHORDIFY TRANMUSICKINGDOM 🎼</h1>
-  <p style="font-size:18px; margin-bottom:30px;">
-    Nơi bạn có thể khám phá hợp âm cho Guitar, Ukulele và Piano – <br>
-    tích hợp AI và Pi Network cho thế hệ âm nhạc Web3!
-  </p>
+  <label for="instrument">🎵 Chọn nhạc cụ:</label>
+  <select id="instrument">
+    <option>-- Chọn --</option>
+    <option>🎸 Guitar</option>
+    <option>🎹 Piano</option>
+    <option>🥁 Cajon</option>
+    <option>🎻 Violin</option>
+  </select>
 
-  <a href="chordify-full.html">
-    <button style="padding:12px 28px; font-size:16px; background-color:#ffd700; border:none; border-radius:8px; cursor:pointer;">
-      🚀 Vào ứng dụng ngay
-    </button>
-  </a>
+  <br />
 
-  <p style="margin-top:50px; font-size:14px; color:#555;">
-    Cần hỗ trợ? Liên hệ tại:<br>
-    <a href="https://apppitrankingdom8289.pinet.com" target="_blank">apppitrankingdom8289.pinet.com</a>
-  </p>
+  <label for="songSelect">🎼 Chọn bài nhạc:</label>
+  <select id="songSelect" onchange="showChords()">
+    <option value="">-- Chọn --</option>
+    <option value="amazing-grace">Amazing Grace</option>
+    <option value="hallelujah">Hallelujah</option>
+  </select>
 
+  <div class="chords" id="chords">🎶 Chưa có hợp âm nào được chọn 🎶</div>
+
+  <div class="btn-group">
+    <button onclick="login()">🔐 Đăng nhập với Pi</button>
+    <button onclick="pay()">💎 Mua Premium (0.01 Pi)</button>
+  </div>
 </body>
 </html>
