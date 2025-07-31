@@ -3,65 +3,53 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kiểm tra thanh toán Pi</title>
+  <title>Thanh toán Pi 0.01</title>
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-  <script>
-    Pi.init({ version: "2.0", sandbox: false });
-
-    function payTest() {
-      const paymentData = {
-        amount: 0.01,
-        memo: "Test thanh toán Pi",
-        metadata: { purpose: "test_payment" }
-      };
-
-      Pi.createPayment(paymentData, {
-        onReadyForServerApproval: function(paymentId) {
-          console.log("Chờ duyệt:", paymentId);
-          alert("🔄 Giao dịch đang chờ server duyệt: " + paymentId);
-        },
-        onReadyForServerCompletion: function(paymentId, txid) {
-          console.log("TXID:", txid);
-          alert("✅ Thanh toán thành công!\nTXID: " + txid);
-        },
-        onCancel: function(paymentId) {
-          console.warn("⛔ Đã hủy:", paymentId);
-          alert("🚫 Bạn đã hủy thanh toán.");
-        },
-        onError: function(error, payment) {
-          console.error("Lỗi:", error);
-          alert("⚠️ Lỗi xảy ra: " + error);
-        }
-      });
-    }
-  </script>
   <style>
     body {
-      background-color: #f8f6ff;
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f3f0fa;
+      font-family: 'Segoe UI', sans-serif;
       text-align: center;
       padding: 50px;
     }
-    h1 {
-      font-size: 24px;
-      color: #222;
-    }
     button {
+      padding: 12px 24px;
       font-size: 18px;
-      padding: 12px 25px;
-      background-color: #f0f0f0;
-      border: 2px solid #ccc;
+      border: none;
       border-radius: 8px;
+      background-color: #e3e3e3;
       cursor: pointer;
-      margin-top: 20px;
-    }
-    button:hover {
-      background-color: #e0e0e0;
     }
   </style>
 </head>
 <body>
-  <h1>🎯 Kiểm tra thanh toán thật 0.01 Pi</h1>
-  <button onclick="payTest()">🔑 Thanh toán test 0.01 Pi</button>
+  <h2>🎯 Kiểm tra thanh toán thật 0.01 Pi</h2>
+  <button onclick="makePayment()">🔑 Thanh toán test 0.01 Pi</button>
+
+  <script>
+    Pi.init({ version: "2.0", sandbox: false });
+
+    function makePayment() {
+      const paymentData = {
+        amount: 0.01,
+        memo: "Test thanh toán thật",
+        metadata: { type: "test" }
+      };
+
+      const onIncompletePaymentFound = (payment) => {
+        console.log("Incomplete payment found:", payment);
+      };
+
+      Pi.createPayment(paymentData, onIncompletePaymentFound)
+        .then(function(payment) {
+          console.log("Payment completed:", payment);
+          alert("Thanh toán thành công!");
+        })
+        .catch(function(error) {
+          console.error("Payment failed:", error);
+          alert("Thanh toán thất bại: " + error);
+        });
+    }
+  </script>
 </body>
 </html>
