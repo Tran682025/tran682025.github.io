@@ -1,91 +1,121 @@
 <!DOCTYPE html>
 <html lang="vi">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Pi Payment Demo</title>
-    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        padding: 20px;
-        background: #f4f4f4;
-      }
-      h1 {
-        color: #8a2be2;
-      }
-      button {
-        margin: 10px 0;
-        padding: 10px 20px;
-        font-size: 16px;
-        cursor: pointer;
-      }
-      .guide {
-        background: #fffbe7;
-        border-left: 5px solid orange;
-        padding: 10px;
-        margin-top: 30px;
-      }
-    </style>
-  </head>
-  <body>
-    <h1>🎵 Chào mừng đến với PiChordify Kingdom!</h1>
-    <p>👉 Vui lòng đăng nhập trước khi thanh toán:</p>
-    <button onclick="login()">Đăng nhập Pi</button>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PiChordify Kingdom</title>
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      background-color: #fff;
+      color: #000;
+    }
+    h1 {
+      font-size: 2em;
+      color: #7c3aed;
+    }
+    button {
+      margin: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      background-color: #eee;
+      cursor: pointer;
+    }
+    .icons {
+      margin-top: 20px;
+    }
+    .icons span {
+      font-size: 30px;
+      margin: 0 10px;
+      cursor: pointer;
+    }
+    .guide {
+      margin-top: 20px;
+      border: 1px solid orange;
+      padding: 10px;
+      background-color: #fffbea;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Chào mừng đến với <br><strong>PiChordify Kingdom!</strong></h1>
+  
+  <p>👉 Vui lòng đăng nhập trước khi thanh toán:</p>
+  <button onclick="login()">Đăng nhập Pi</button>
 
-    <p>💰 Sau khi đăng nhập, chọn gói để thanh toán:</p>
-    <button onclick="pay('Premium 0.1 Pi', 0.1)">Thanh toán 0.1 Pi</button>
+  <p>💰 Sau khi đăng nhập, chọn gói để thanh toán:</p>
+  <button onclick="makePayment()">Thanh toán 0.1 Pi</button>
 
-    <div class="guide">
-      <strong>📘 Hướng dẫn:</strong><br/>
-      1. Bấm nút "Đăng nhập Pi"<br/>
-      2. Sau khi hiện tên người dùng, bấm nút "Thanh toán 0.1 Pi"<br/>
-      3. Thao tác trong ví Pi (Pi Browser) để hoàn tất<br/>
-      4. Nếu bị hủy/tắt sớm, hệ thống sẽ thông báo<br/>
-      5. Nếu không phản hồi, thử lại sau vài phút
-    </div>
+  <div class="icons">
+    <span title="Guitar">🎸</span>
+    <span title="Piano">🎹</span>
+    <span title="Ukulele">🪕</span>
+    <span title="Mandolin">🎻</span>
+    <span title="Hướng dẫn" onclick="toggleGuide()">ℹ️</span>
+  </div>
 
-    <script>
-      Pi.init({ version: "2.0", sandbox: true });
+  <div class="guide" id="guideBox">
+    <h3>📘 Hướng dẫn:</h3>
+    <p>1. Bấm nút "Đăng nhập Pi"</p>
+    <p>2. Sau khi hiện tên người dùng, bấm nút "Thanh toán 0.1 Pi"</p>
+    <p>3. Thao tác trong ví Pi (Pi Browser) để hoàn tất</p>
+    <p>4. Nếu bị huỷ/tắt sớm, hệ thống sẽ thông báo</p>
+  </div>
 
-      let username = "";
-      function login() {
-        const scopes = ['username', 'payments'];
-        const onIncompletePaymentFound = (payment) => {
-          console.log('Incomplete payment found:', payment);
-        };
+  <script>
+    Pi.init({ version: "2.0", sandbox: true });
+    let username = "";
+    const planName = "premium_plan";
 
-        Pi.authenticate(scopes, onIncompletePaymentFound)
-          .then(function(auth) {
-            username = auth.user.username;
-            alert("Xin chào, " + username);
-          })
-          .catch(function(error) {
-            alert("Đăng nhập thất bại: " + error);
-          });
-      }
-
-      function pay(planName, amount) {
-        Pi.createPayment({
-          amount: amount,
-          memo: planName,
-          metadata: { type: "premium_package", plan: planName }
-        }, {
-          onReadyForServerApproval: function(paymentId) {
-            console.log("Chờ duyệt... " + paymentId);
-          },
-          onReadyForServerCompletion: function(paymentId, txid) {
-            console.log("Hoàn tất giao dịch: " + txid);
-            alert("Cảm ơn bạn đã mua gói: " + planName);
-          },
-          onCancel: function(paymentId) {
-            alert("Bạn đã huỷ thanh toán.");
-          },
-          onError: function(error, payment) {
-            alert("Lỗi thanh toán: " + error);
-          }
+    function login() {
+      const scopes = ['username', 'payments'];
+      const onIncompletePaymentFound = (payment) => {
+        console.log('Incomplete payment found: ', payment);
+      };
+      Pi.authenticate(scopes, onIncompletePaymentFound)
+        .then(function(auth) {
+          username = auth.user.username;
+          alert("Xin chào, " + username);
+        })
+        .catch(function(error) {
+          alert("Đăng nhập thất bại: " + error);
         });
+    }
+
+    function makePayment() {
+      if (!username) {
+        alert("Vui lòng đăng nhập trước!");
+        return;
       }
-    </script>
-  </body>
+      Pi.createPayment({
+        amount: 0.1,
+        memo: "Thanh toán premium cho " + username,
+        metadata: { type: "premium_package", plan: planName },
+        onReadyForServerApproval: function (paymentId) {
+          console.log("Chờ duyệt..." + paymentId);
+        },
+        onReadyForServerCompletion: function (paymentId, txid) {
+          console.log("Hoàn tất giao dịch: " + txid);
+          alert("Cảm ơn bạn đã mua gói: " + planName);
+        },
+        onCancel: function (paymentId) {
+          alert("Bạn đã huỷ thanh toán.");
+        },
+        onError: function (error, payment) {
+          alert("Lỗi thanh toán: " + error);
+        }
+      });
+    }
+
+    function toggleGuide() {
+      const box = document.getElementById("guideBox");
+      box.style.display = box.style.display === "none" ? "block" : "none";
+    }
+  </script>
+</body>
 </html>
