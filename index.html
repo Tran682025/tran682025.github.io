@@ -1,118 +1,91 @@
 <!DOCTYPE html>
 <html lang="vi">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PiChordify Kingdom 🎶</title>
-  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-  <style>
-    body {
-      background-color: #f2ecff;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      text-align: center;
-      padding: 20px;
-    }
-    h1 {
-      color: #8000c8;
-      font-size: 2.5em;
-    }
-    select, button {
-      font-size: 1em;
-      padding: 10px;
-      margin: 10px;
-    }
-    .premium-option {
-      margin: 10px 0;
-    }
-    .highlight {
-      font-weight: bold;
-      color: #8000c8;
-    }
-  </style>
-</head>
-<body>
-  <h1>🎶 Welcome to <span class="highlight">PiChordify Kingdom</span> 🎶</h1>
-  <p>Khám phá hợp âm cho các nhạc cụ phổ biến!</p>
-
-  <div>
-    <label>🎵 Chọn nhạc cụ:
-      <select>
-        <option>-- Chọn --</option>
-        <option>Guitar</option>
-        <option>Piano</option>
-        <option>Ukulele</option>
-      </select>
-    </label>
-  </div>
-
-  <div>
-    <label>🎼 Chọn bài nhạc:
-      <select>
-        <option>-- Chọn --</option>
-        <option>Happy Birthday</option>
-        <option>We Wish You A Merry Christmas</option>
-        <option>Canon in D</option>
-      </select>
-    </label>
-  </div>
-
-  <p>🎶 Chưa có hợp âm nào được chọn 🎶</p>
-
-  <button onclick="loginWithPi()">🔐 Đăng nhập với Pi</button>
-
-  <div class="premium-option">
-    <label for="plan">💎 Chọn gói học:</label>
-    <select id="plan">
-      <option value="0.3">Gói Dạo Nhạc (0.3 Pi)</option>
-      <option value="1">Gói Hoàng Tử Phím Nhạc (1 Pi)</option>
-      <option value="3.14">Gói Master PiChordify (3.14 Pi)</option>
-      <option value="31.4159">Gói Divine GCV Edition (31.4159 Pi)</option>
-    </select>
-  </div>
-
-  <button onclick="buyPremium()">💎 Mua Gói Premium</button>
-
-  <script>
-    Pi.init({ version: "2.0", sandbox: false });
-
-    function loginWithPi() {
-      const scopes = ['username', 'payments'];
-      Pi.authenticate(scopes, function (payment) {
-        console.log('Incomplete payment found:', payment);
-      }).then(function (auth) {
-        alert("Xin chào, " + auth.user.username);
-      }).catch(function (error) {
-        alert("Đăng nhập thất bại: " + error);
-      });
-    }
-
-    function buyPremium() {
-      const planValue = document.getElementById("plan").value;
-      const planName = document.getElementById("plan").selectedOptions[0].text;
-      if (planValue == "31.4159") {
-        const confirmed = confirm("⚠️ Cảnh báo: Bạn sắp đạt cảnh giới âm nhạc thần thánh với " + planName + ". Tiếp tục?");
-        if (!confirmed) return;
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Pi Payment Demo</title>
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        background: #f4f4f4;
       }
-      Pi.createPayment({
-        amount: planValue,
-        memo: "Thanh toán gói: " + planName,
-        metadata: { type: "premium_plan", name: planName }
-      }, {
-        onReadyForServerApproval: function (paymentId) {
-          console.log("Chờ duyệt...", paymentId);
-        },
-        onReadyForServerCompletion: function (paymentId, txid) {
-          console.log("Hoàn tất giao dịch:", txid);
-          alert("Cảm ơn bạn đã mua gói: " + planName);
-        },
-        onCancel: function (paymentId) {
-          alert("Bạn đã huỷ thanh toán.");
-        },
-        onError: function (error, payment) {
-          alert("Lỗi thanh toán: " + error);
-        }
-      });
-    }
-  </script>
-</body>
+      h1 {
+        color: #8a2be2;
+      }
+      button {
+        margin: 10px 0;
+        padding: 10px 20px;
+        font-size: 16px;
+        cursor: pointer;
+      }
+      .guide {
+        background: #fffbe7;
+        border-left: 5px solid orange;
+        padding: 10px;
+        margin-top: 30px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🎵 Chào mừng đến với PiChordify Kingdom!</h1>
+    <p>👉 Vui lòng đăng nhập trước khi thanh toán:</p>
+    <button onclick="login()">Đăng nhập Pi</button>
+
+    <p>💰 Sau khi đăng nhập, chọn gói để thanh toán:</p>
+    <button onclick="pay('Premium 0.1 Pi', 0.1)">Thanh toán 0.1 Pi</button>
+
+    <div class="guide">
+      <strong>📘 Hướng dẫn:</strong><br/>
+      1. Bấm nút "Đăng nhập Pi"<br/>
+      2. Sau khi hiện tên người dùng, bấm nút "Thanh toán 0.1 Pi"<br/>
+      3. Thao tác trong ví Pi (Pi Browser) để hoàn tất<br/>
+      4. Nếu bị hủy/tắt sớm, hệ thống sẽ thông báo<br/>
+      5. Nếu không phản hồi, thử lại sau vài phút
+    </div>
+
+    <script>
+      Pi.init({ version: "2.0", sandbox: true });
+
+      let username = "";
+      function login() {
+        const scopes = ['username', 'payments'];
+        const onIncompletePaymentFound = (payment) => {
+          console.log('Incomplete payment found:', payment);
+        };
+
+        Pi.authenticate(scopes, onIncompletePaymentFound)
+          .then(function(auth) {
+            username = auth.user.username;
+            alert("Xin chào, " + username);
+          })
+          .catch(function(error) {
+            alert("Đăng nhập thất bại: " + error);
+          });
+      }
+
+      function pay(planName, amount) {
+        Pi.createPayment({
+          amount: amount,
+          memo: planName,
+          metadata: { type: "premium_package", plan: planName }
+        }, {
+          onReadyForServerApproval: function(paymentId) {
+            console.log("Chờ duyệt... " + paymentId);
+          },
+          onReadyForServerCompletion: function(paymentId, txid) {
+            console.log("Hoàn tất giao dịch: " + txid);
+            alert("Cảm ơn bạn đã mua gói: " + planName);
+          },
+          onCancel: function(paymentId) {
+            alert("Bạn đã huỷ thanh toán.");
+          },
+          onError: function(error, payment) {
+            alert("Lỗi thanh toán: " + error);
+          }
+        });
+      }
+    </script>
+  </body>
 </html>
