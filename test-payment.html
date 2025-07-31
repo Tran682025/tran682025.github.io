@@ -1,47 +1,67 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <title>Test Thanh Toán 0.01 Pi</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kiểm tra thanh toán Pi</title>
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-</head>
-<body style="font-family:sans-serif;text-align:center;padding-top:50px;background-color:#f9f9ff">
-
-  <h2>🎯 Kiểm tra thanh toán thật 0.01 Pi</h2>
-  <button onclick="payNow()" style="padding:12px 20px;font-size:16px">🔑 Thanh toán test 0.01 Pi</button>
-
   <script>
     Pi.init({ version: "2.0", sandbox: false });
 
-    function payNow() {
+    function payTest() {
       const paymentData = {
         amount: 0.01,
-        memo: "Test giao dịch thật",
-        metadata: { type: "test" }
-      };
-
-      const onIncompletePaymentFound = (payment) => {
-        console.warn("Incomplete payment:", payment);
+        memo: "Test thanh toán Pi",
+        metadata: { purpose: "test_payment" }
       };
 
       Pi.createPayment(paymentData, {
-        onReadyForServerApproval: (paymentId) => {
-          console.log("Approve payment:", paymentId);
-          Pi.approvePayment(paymentId);
+        onReadyForServerApproval: function(paymentId) {
+          console.log("Chờ duyệt:", paymentId);
+          alert("🔄 Giao dịch đang chờ server duyệt: " + paymentId);
         },
-        onReadyForServerCompletion: (paymentId, txId) => {
-          console.log("Complete payment:", paymentId);
-          Pi.completePayment(paymentId);
+        onReadyForServerCompletion: function(paymentId, txid) {
+          console.log("TXID:", txid);
+          alert("✅ Thanh toán thành công!\nTXID: " + txid);
         },
-        onCancel: (paymentId) => {
-          alert("❌ Bạn đã huỷ thanh toán.");
+        onCancel: function(paymentId) {
+          console.warn("⛔ Đã hủy:", paymentId);
+          alert("🚫 Bạn đã hủy thanh toán.");
         },
-        onError: (error, payment) => {
-          alert("⚠️ Lỗi: " + error);
-          console.error(error);
+        onError: function(error, payment) {
+          console.error("Lỗi:", error);
+          alert("⚠️ Lỗi xảy ra: " + error);
         }
-      }, onIncompletePaymentFound);
+      });
     }
   </script>
+  <style>
+    body {
+      background-color: #f8f6ff;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      text-align: center;
+      padding: 50px;
+    }
+    h1 {
+      font-size: 24px;
+      color: #222;
+    }
+    button {
+      font-size: 18px;
+      padding: 12px 25px;
+      background-color: #f0f0f0;
+      border: 2px solid #ccc;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    button:hover {
+      background-color: #e0e0e0;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎯 Kiểm tra thanh toán thật 0.01 Pi</h1>
+  <button onclick="payTest()">🔑 Thanh toán test 0.01 Pi</button>
 </body>
 </html>
