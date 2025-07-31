@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>Test Thanh Toán 0.01 Pi</title>
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+</head>
+<body style="font-family:sans-serif;text-align:center;padding-top:50px;background-color:#f9f9ff">
+
+  <h2>🎯 Kiểm tra thanh toán thật 0.01 Pi</h2>
+  <button onclick="payNow()" style="padding:12px 20px;font-size:16px">🔑 Thanh toán test 0.01 Pi</button>
+
+  <script>
+    Pi.init({ version: "2.0", sandbox: false });
+
+    function payNow() {
+      const paymentData = {
+        amount: 0.01,
+        memo: "Test giao dịch thật",
+        metadata: { type: "test" }
+      };
+
+      const onIncompletePaymentFound = (payment) => {
+        console.warn("Incomplete payment:", payment);
+      };
+
+      Pi.createPayment(paymentData, {
+        onReadyForServerApproval: (paymentId) => {
+          console.log("Approve payment:", paymentId);
+          Pi.approvePayment(paymentId);
+        },
+        onReadyForServerCompletion: (paymentId, txId) => {
+          console.log("Complete payment:", paymentId);
+          Pi.completePayment(paymentId);
+        },
+        onCancel: (paymentId) => {
+          alert("❌ Bạn đã huỷ thanh toán.");
+        },
+        onError: (error, payment) => {
+          alert("⚠️ Lỗi: " + error);
+          console.error(error);
+        }
+      }, onIncompletePaymentFound);
+    }
+  </script>
+</body>
+</html>
