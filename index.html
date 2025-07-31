@@ -3,104 +3,116 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PiChordify Kingdom</title>
+  <title>PiChordify Kingdom 🎶</title>
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
   <style>
     body {
-      font-family: sans-serif;
+      background-color: #f2ecff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       text-align: center;
-      background-color: #fff;
-      color: #000;
+      padding: 20px;
     }
     h1 {
-      font-size: 2em;
-      color: #7c3aed;
+      color: #8000c8;
+      font-size: 2.5em;
     }
-    button {
+    select, button {
+      font-size: 1em;
+      padding: 10px;
       margin: 10px;
-      padding: 10px 20px;
-      font-size: 16px;
-      border: none;
-      border-radius: 8px;
-      background-color: #eee;
-      cursor: pointer;
     }
-    .icons {
-      margin-top: 20px;
+    .premium-option {
+      margin: 10px 0;
     }
-    .icons span {
-      font-size: 30px;
+    .highlight {
+      font-weight: bold;
+      color: #8000c8;
+    }
+    .instrument-icons img {
+      width: 64px;
       margin: 0 10px;
       cursor: pointer;
+      transition: transform 0.2s ease;
     }
-    .guide {
-      margin-top: 20px;
-      border: 1px solid orange;
-      padding: 10px;
-      background-color: #fffbea;
-      display: none;
+    .instrument-icons img:hover {
+      transform: scale(1.2);
+    }
+    .info-btn {
+      font-size: 1.2em;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: #8000c8;
     }
   </style>
 </head>
 <body>
-  <h1>Chào mừng đến với <br><strong>PiChordify Kingdom!</strong></h1>
-  
-  <p>👉 Vui lòng đăng nhập trước khi thanh toán:</p>
-  <button onclick="login()">Đăng nhập Pi</button>
+  <h1>🎶 Welcome to <span class="highlight">PiChordify Kingdom</span> 🎶</h1>
+  <p>Khám phá hợp âm cho các nhạc cụ phổ biến!</p>
 
-  <p>💰 Sau khi đăng nhập, chọn gói để thanh toán:</p>
-  <button onclick="makePayment()">Thanh toán 0.1 Pi</button>
-
-  <div class="icons">
-    <span title="Guitar">🎸</span>
-    <span title="Piano">🎹</span>
-    <span title="Ukulele">🪕</span>
-    <span title="Mandolin">🎻</span>
-    <span title="Hướng dẫn" onclick="toggleGuide()">ℹ️</span>
+  <div class="instrument-icons">
+    <img src="https://cdn-icons-png.flaticon.com/512/727/727245.png" alt="Guitar" title="Guitar">
+    <img src="https://cdn-icons-png.flaticon.com/512/65/65014.png" alt="Piano" title="Piano">
+    <img src="https://cdn-icons-png.flaticon.com/512/562/562148.png" alt="Ukulele" title="Ukulele">
   </div>
 
-  <div class="guide" id="guideBox">
-    <h3>📘 Hướng dẫn:</h3>
-    <p>1. Bấm nút "Đăng nhập Pi"</p>
-    <p>2. Sau khi hiện tên người dùng, bấm nút "Thanh toán 0.1 Pi"</p>
-    <p>3. Thao tác trong ví Pi (Pi Browser) để hoàn tất</p>
-    <p>4. Nếu bị huỷ/tắt sớm, hệ thống sẽ thông báo</p>
+  <p>🎼 Chọn bài nhạc & điều chỉnh hợp âm theo ý bạn!</p>
+
+  <button onclick="loginWithPi()">🔐 Đăng nhập với Pi</button>
+
+  <div class="premium-option">
+    <label for="plan">💎 Chọn gói học:</label>
+    <select id="plan">
+      <option value="0.3">Gói Dạo Nhạc (0.3 Pi)</option>
+      <option value="1">Gói Hoàng Tử Phím Nhạc (1 Pi)</option>
+      <option value="3.14">Gói Master PiChordify (3.14 Pi)</option>
+      <option value="31.4159">Gói Divine GCV Edition (31.4159 Pi)</option>
+    </select>
   </div>
+
+  <button onclick="buyPremium()">💎 Mua Gói Premium</button>
+
+  <p>
+    <button class="info-btn" onclick="showGuide()">ℹ️</button>
+  </p>
 
   <script>
-    Pi.init({ version: "2.0", sandbox: true });
-    let username = "";
-    const planName = "premium_plan";
+    Pi.init({ version: "2.0", sandbox: false });
 
-    function login() {
+    function loginWithPi() {
       const scopes = ['username', 'payments'];
       const onIncompletePaymentFound = (payment) => {
-        console.log('Incomplete payment found: ', payment);
+        console.log('Incomplete payment found:', payment);
       };
+
       Pi.authenticate(scopes, onIncompletePaymentFound)
         .then(function(auth) {
-          username = auth.user.username;
-          alert("Xin chào, " + username);
+          console.log('Authentication success', auth);
+          alert("Xin chào, " + auth.user.username);
         })
         .catch(function(error) {
+          console.error('Authentication failed:', error);
           alert("Đăng nhập thất bại: " + error);
         });
     }
 
-    function makePayment() {
-      if (!username) {
-        alert("Vui lòng đăng nhập trước!");
-        return;
+    function buyPremium() {
+      const planValue = document.getElementById("plan").value;
+      const planName = document.getElementById("plan").selectedOptions[0].text;
+      if (planValue == "31.4159") {
+        const confirmed = confirm("⚠️ Cảnh báo: Bạn sắp đạt cảnh giới âm nhạc thần thánh với " + planName + ". Tiếp tục?");
+        if (!confirmed) return;
       }
       Pi.createPayment({
-        amount: 0.1,
-        memo: "Thanh toán premium cho " + username,
-        metadata: { type: "premium_package", plan: planName },
+        amount: planValue,
+        memo: "Thanh toán gói: " + planName,
+        metadata: { type: "premium_plan", name: planName }
+      }, {
         onReadyForServerApproval: function (paymentId) {
-          console.log("Chờ duyệt..." + paymentId);
+          console.log("Chờ duyệt...", paymentId);
         },
         onReadyForServerCompletion: function (paymentId, txid) {
-          console.log("Hoàn tất giao dịch: " + txid);
+          console.log("Hoàn tất giao dịch:", txid);
           alert("Cảm ơn bạn đã mua gói: " + planName);
         },
         onCancel: function (paymentId) {
@@ -112,9 +124,8 @@
       });
     }
 
-    function toggleGuide() {
-      const box = document.getElementById("guideBox");
-      box.style.display = box.style.display === "none" ? "block" : "none";
+    function showGuide() {
+      alert("🔍 Hướng dẫn:\n\n1. Chọn nhạc cụ bằng cách nhấn vào hình\n2. Dán link bài nhạc hoặc tìm bài có sẵn\n3. Đăng nhập ví Pi để sử dụng\n4. Chọn gói học và thanh toán nếu muốn trải nghiệm đầy đủ!");
     }
   </script>
 </body>
