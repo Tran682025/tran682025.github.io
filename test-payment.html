@@ -1,55 +1,34 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Thanh toán Pi 0.01</title>
-  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-  <style>
-    body {
-      background-color: #f3f0fa;
-      font-family: 'Segoe UI', sans-serif;
-      text-align: center;
-      padding: 50px;
-    }
-    button {
-      padding: 12px 24px;
-      font-size: 18px;
-      border: none;
-      border-radius: 8px;
-      background-color: #e3e3e3;
-      cursor: pointer;
-    }
-  </style>
-</head>
-<body>
-  <h2>🎯 Kiểm tra thanh toán thật 0.01 Pi</h2>
-  <button onclick="makePayment()">🔑 Thanh toán test 0.01 Pi</button>
+<script src="https://sdk.minepi.com/pi-sdk.js"></script>
+<script>
+  Pi.init({ version: "2.0", sandbox: false });
 
-  <script>
-    Pi.init({ version: "2.0", sandbox: false });
+  function makePayment() {
+    const scopes = ['username', 'payments'];
+    const onIncompletePaymentFound = (payment) => {
+      console.log("Incomplete payment found:", payment);
+    };
 
-    function makePayment() {
-      const paymentData = {
-        amount: 0.01,
-        memo: "Test thanh toán thật",
-        metadata: { type: "test" }
-      };
-
-      const onIncompletePaymentFound = (payment) => {
-        console.log("Incomplete payment found:", payment);
-      };
-
-      Pi.createPayment(paymentData, onIncompletePaymentFound)
-        .then(function(payment) {
-          console.log("Payment completed:", payment);
-          alert("Thanh toán thành công!");
-        })
-        .catch(function(error) {
-          console.error("Payment failed:", error);
-          alert("Thanh toán thất bại: " + error);
-        });
-    }
-  </script>
-</body>
-</html>
+    Pi.authenticate(scopes, onIncompletePaymentFound)
+      .then(function(auth) {
+        console.log("Authentication success", auth);
+        const paymentData = {
+          amount: 0.01,
+          memo: "Test thanh toán thật",
+          metadata: { type: "test" }
+        };
+        Pi.createPayment(paymentData, onIncompletePaymentFound)
+          .then(function(payment) {
+            console.log("Payment completed:", payment);
+            alert("Thanh toán thành công!");
+          })
+          .catch(function(error) {
+            console.error("Payment failed:", error);
+            alert("Thanh toán thất bại: " + error);
+          });
+      })
+      .catch(function(error) {
+        console.error("Authentication failed:", error);
+        alert("Đăng nhập thất bại: " + error);
+      });
+  }
+</script>
