@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Test Thanh Toán Pi</title>
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+  </head>
+  <body style="text-align:center; font-family:sans-serif; padding:30px; background:#f9f9ff;">
+    <h2>🎵 Pi Payment Test – Dự án PiChordify 🎵</h2>
+    <button onclick="payWithPi()" style="font-size:18px; padding:10px 20px;">💎 Thanh toán 0.3 Pi</button>
+
+    <script>
+      Pi.init({ version: "2.0", sandbox: false });
+
+      function payWithPi() {
+        const scopes = ['username', 'payments'];
+        const onIncomplete = (payment) => {
+          console.log("Incomplete payment:", payment);
+        };
+
+        Pi.authenticate(scopes, onIncomplete)
+          .then(function(auth) {
+            console.log("Authenticated as:", auth.user.username);
+
+            const paymentData = {
+              amount: 0.3,
+              memo: "Thanh toán test cho PiChordify Kingdom",
+              metadata: { purpose: "test_payment_step11" }
+            };
+
+            Pi.createPayment(paymentData, {
+              onReadyForServerApproval: function(paymentId) {
+                console.log("✅ Server approval needed for:", paymentId);
+              },
+              onReadyForServerCompletion: function(paymentId, txid) {
+                console.log("✅ Payment complete:", paymentId, txid);
+                alert("🎉 Thanh toán thành công! Mục 11 đã xong.");
+              },
+              onCancel: function(paymentId) {
+                console.warn("❌ Đã huỷ:", paymentId);
+                alert("Bạn đã huỷ thanh toán.");
+              },
+              onError: function(error, payment) {
+                console.error("❌ Lỗi thanh toán:", error);
+                alert("Có lỗi xảy ra, thử lại sau.");
+              }
+            });
+
+          })
+          .catch(function(error) {
+            console.error("Đăng nhập thất bại:", error);
+            alert("Không thể đăng nhập với Pi.");
+          });
+      }
+    </script>
+  </body>
+</html>
