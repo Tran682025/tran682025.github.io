@@ -1,34 +1,20 @@
-<script src="https://sdk.minepi.com/pi-sdk.js"></script>
-<script>
-  Pi.init({ version: "2.0", sandbox: false });
-
-  function makePayment() {
-    const scopes = ['username', 'payments'];
-    const onIncompletePaymentFound = (payment) => {
-      console.log("Incomplete payment found:", payment);
-    };
-
-    Pi.authenticate(scopes, onIncompletePaymentFound)
-      .then(function(auth) {
-        console.log("Authentication success", auth);
-        const paymentData = {
-          amount: 0.01,
-          memo: "Test thanh toán thật",
-          metadata: { type: "test" }
-        };
-        Pi.createPayment(paymentData, onIncompletePaymentFound)
-          .then(function(payment) {
-            console.log("Payment completed:", payment);
-            alert("Thanh toán thành công!");
-          })
-          .catch(function(error) {
-            console.error("Payment failed:", error);
-            alert("Thanh toán thất bại: " + error);
-          });
-      })
-      .catch(function(error) {
-        console.error("Authentication failed:", error);
-        alert("Đăng nhập thất bại: " + error);
-      });
+Pi.createPayment(
+  paymentData,
+  {
+    onReadyForServerApproval: function(paymentId) {
+      console.log("Approve this payment server-side:", paymentId);
+    },
+    onReadyForServerCompletion: function(paymentId, txid) {
+      console.log("Complete this payment server-side:", paymentId, txid);
+      alert("Thanh toán thành công! ✔️");
+    },
+    onCancel: function(paymentId) {
+      console.log("Payment cancelled:", paymentId);
+      alert("Bạn đã huỷ thanh toán.");
+    },
+    onError: function(error, payment) {
+      console.error("Payment failed:", error);
+      alert("Thanh toán thất bại!");
+    }
   }
-</script>
+)
