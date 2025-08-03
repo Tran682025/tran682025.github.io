@@ -1,89 +1,31 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>🎸 Demo bolero 1 – Hợp âm & âm thanh</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      text-align: center;
-      background-color: #fff;
-      color: #333;
-    }
-    button {
-      padding: 10px 20px;
-      margin: 10px;
-      font-size: 18px;
-      border: none;
-      background-color: #9146ff;
-      color: white;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-    button:hover {
-      background-color: #7400d4;
-    }
-    #chord-display {
-      font-size: 2rem;
-      font-weight: bold;
-      margin-top: 20px;
-    }
-  </style>
+  <title>Bolero Auto Demo</title>
 </head>
-<body>
-  <h1>🎵 Bài 1 – "Lưu Tình Nhớ Ơi"</h1>
-  <p>🔥 Phiên bản bolero demo hợp âm dành cho Pioneer thử nghiệm!</p>
+<body style="text-align: center; margin-top: 50px; background-color: #fffaf0;">
+  <h1>🎵 Auto Bolero Looper 🎵</h1>
+  <p>Phát tự động, không cần bấm!</p>
 
-  <div>
-    <button onclick="playAll()">▶️ Phát nhạc</button>
-    <button onclick="pauseAll()">⏸️ Dừng</button>
-    <button onclick="toggleMute()">🔇 Bật/Tắt trống</button>
-  </div>
-
-  <div id="chord-display">👉 Hợp âm sẽ hiển thị tại đây...</div>
-
-  <!-- Audio elements -->
-  <audio id="drum" src="bolero_drum_loop.wav" loop></audio>
-  <audio id="piano" src="piano_mid.wav" loop></audio>
+  <audio id="piano" src="pi-guitar-backend/piano_mid.wav" autoplay loop></audio>
+  <audio id="drum" src="pi-guitar-backend/bolero_drum_loop.wav" autoplay loop></audio>
 
   <script>
-    const drum = document.getElementById("drum");
     const piano = document.getElementById("piano");
-    const chords = ["Am", "Dm", "G", "C", "F", "E7", "Am"];
-    let chordIndex = 0;
-    let chordInterval;
-    let isMuted = false;
+    const drum = document.getElementById("drum");
 
-    function playAll() {
-      try {
-        drum.play().catch(()=>{});
-        piano.play().catch(()=>{});
-      } catch (e) {}
-      chordIndex = 0;
-      updateChord();
-      chordInterval = setInterval(updateChord, 2000);
-    }
+    // Chạy lại nếu gặp lỗi
+    piano.addEventListener('error', () => {
+      console.error("Piano không tải được.");
+    });
+    drum.addEventListener('error', () => {
+      console.error("Drum không tải được.");
+    });
 
-    function pauseAll() {
-      try {
-        drum.pause();
-        piano.pause();
-      } catch (e) {}
-      clearInterval(chordInterval);
-    }
-
-    function toggleMute() {
-      isMuted = !isMuted;
-      drum.muted = isMuted;
-      piano.muted = isMuted;
-    }
-
-    function updateChord() {
-      const display = document.getElementById("chord-display");
-      display.innerText = "Hợp âm: " + chords[chordIndex];
-      chordIndex = (chordIndex + 1) % chords.length;
-    }
+    // Đảm bảo phát lại nếu bị dừng
+    piano.play().catch(() => {});
+    drum.play().catch(() => {});
   </script>
 </body>
 </html>
