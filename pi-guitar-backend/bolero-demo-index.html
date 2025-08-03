@@ -1,20 +1,23 @@
-<body>
-  <h1>🎵 Auto Bolero Looper 🎵</h1>
-  <p>Phát tự động, không cần bấm!</p>
-  <button onclick="startLooper()">🎧 Chạm để bắt đầu</button>
+<button onclick="startLooper()">🎧 Chạm để bắt đầu</button>
 
-  <script>
-    let started = false;
-    function startLooper() {
-      if (started) return;
-      started = true;
+<script>
+  let started = false;
 
-      const audio1 = new Audio('drum_loop.wav');
-      const audio2 = new Audio('piano_mid.wav');
+  function startLooper() {
+    if (started) return;
+    started = true;
+
+    try {
+      const audio1 = new Audio('pi-guitar-backend/drum_looper.wav');
+      const audio2 = new Audio('pi-guitar-backend/piano_mid.wav');
+
       audio1.loop = true;
       audio2.loop = true;
-      audio1.play();
-      audio2.play();
+
+      audio1.play().catch(e => console.error("Lỗi audio1:", e));
+      audio2.play().catch(e => console.error("Lỗi audio2:", e));
+    } catch (e) {
+      console.error("Lỗi chính:", e);
     }
-  </script>
-</body>
+  }
+</script>
