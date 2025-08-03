@@ -8,22 +8,14 @@
   <h1>🎵 Auto Bolero Looper 🎵</h1>
   <p>Phát tự động, không cần bấm!</p>
 
-  <audio id="piano" src="pi-guitar-backend/piano_mid.wav" autoplay loop></audio>
-  <audio id="drum" src="pi-guitar-backend/bolero_drum_loop.wav" autoplay loop></audio>
+  <audio id="piano" src="piano_mid.wav" autoplay loop></audio>
+  <audio id="drum" src="bolero_drum_loop.wav" autoplay loop></audio>
 
   <script>
     const piano = document.getElementById("piano");
     const drum = document.getElementById("drum");
 
-    // Chạy lại nếu gặp lỗi
-    piano.addEventListener('error', () => {
-      console.error("Piano không tải được.");
-    });
-    drum.addEventListener('error', () => {
-      console.error("Drum không tải được.");
-    });
-
-    // Đảm bảo phát lại nếu bị dừng
+    // Đảm bảo tự động phát lại nếu bị dừng
     piano.play().catch(() => {});
     drum.play().catch(() => {});
   </script>
