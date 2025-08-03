@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bolero Demo 1 - Tranmusickingdom</title>
+  <style>
+    body {
+      background-color: #f4efff;
+      font-family: 'Segoe UI', sans-serif;
+      text-align: center;
+      padding: 2rem;
+      color: #4b0082;
+    }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+    .controls {
+      margin: 2rem 0;
+    }
+    button {
+      background-color: #a46ef4;
+      border: none;
+      color: white;
+      padding: 1rem 2rem;
+      margin: 0.5rem;
+      font-size: 1.2rem;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button:hover {
+      background-color: #7a48d0;
+    }
+    #chord-display {
+      margin-top: 2rem;
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+    audio {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>BOLERO DEMO 1 - "Mưa Đêm Tỉnh Nhỏ"</h1>
+  <p>Phiên bản số hóa bài nhạc Bolero dành cho Pioneer</p>
+  <p><strong>Tên file GitHub:</strong> <code>/pi-guitar-backend/bolero-demo-1/index.html</code></p>
+
+  <div class="controls">
+    <button onclick="playAll()">Phát nhạc</button>
+    <button onclick="pauseAll()">Dừng</button>
+    <button onclick="toggleDrum()">Tắt/Bật Trống</button>
+  </div>
+
+  <div id="chord-display">Hợp âm: Chưa bắt đầu...</div>
+
+  <audio id="drum" src="drum_loop.wav" loop></audio>
+  <audio id="piano" src="piano.mid" loop></audio>
+
+  <script>
+    const drum = document.getElementById("drum");
+    const piano = document.getElementById("piano");
+    const chords = [
+      "Am", "Dm", "G", "C", "F", "E7", "Am", "Am"
+    ];
+    let chordIndex = 0;
+    let chordInterval;
+    let drumMuted = false;
+
+    function playAll() {
+      drum.play();
+      piano.play();
+      chordIndex = 0;
+      document.getElementById("chord-display").innerText = "Hợp âm: " + chords[chordIndex];
+      chordInterval = setInterval(() => {
+        chordIndex = (chordIndex + 1) % chords.length;
+        document.getElementById("chord-display").innerText = "Hợp âm: " + chords[chordIndex];
+      }, 4000);
+    }
+
+    function pauseAll() {
+      drum.pause();
+      piano.pause();
+      clearInterval(chordInterval);
+      document.getElementById("chord-display").innerText = "Hợp âm: Đã dừng.";
+    }
+
+    function toggleDrum() {
+      if (drumMuted) {
+        drum.volume = 1;
+        drumMuted = false;
+      } else {
+        drum.volume = 0;
+        drumMuted = true;
+      }
+    }
+  </script>
+</body>
+</html>
