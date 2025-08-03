@@ -3,96 +3,113 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BOLERO DEMO 1 - Bài Tình Nhỏ</title>
+  <title>Bolero Demo 1</title>
   <style>
     body {
-      background-color: #fefeff;
-      font-family: 'Segoe UI', sans-serif;
+      font-family: Arial, sans-serif;
       text-align: center;
-      color: #004;
+      padding: 20px;
+      background-color: #ffffff;
+      color: #000033;
     }
     h1 {
       font-size: 2rem;
-      margin-bottom: 1rem;
+      margin-bottom: 0.5rem;
+      color: #000066;
     }
-    .controls {
-      margin: 2rem;
+    h2 {
+      font-size: 1.5rem;
+      color: #000066;
     }
     button {
-      background-color: #4e6ef2;
+      margin: 10px;
+      padding: 12px 24px;
+      font-size: 1rem;
       border: none;
-      color: white;
-      padding: 1rem 2rem;
-      margin: 0.5rem;
-      font-size: 1.2rem;
-      border-radius: 10px;
+      border-radius: 12px;
       cursor: pointer;
-      transition: 0.3s;
+      background-color: #4e6cf1;
+      color: white;
+      transition: background-color 0.3s;
     }
     button:hover {
-      background-color: #7480d0;
+      background-color: #3b54c4;
     }
-    #chord-display {
-      margin-top: 2rem;
+    .chord-display {
       font-size: 1.5rem;
+      margin-top: 20px;
       font-weight: bold;
+      color: #000066;
     }
     audio {
-      margin-top: 1rem;
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
-  <h1>BOLERO DEMO 1 - "Bài Tình Nhỏ"</h1>
+
+  <h1>BOLERO DEMO 1 - "Bài Tình Nhớ"</h1>
   <p>🌟 Phiên bản số 5 hoà hợp nhịp bolero dành cho Pioneer!</p>
   <p><strong>Trên file Github:</strong> <code>/pi-guitar-backend/bolero-demo-index.html</code></p>
 
   <div class="controls">
-    <button onclick="playAll()">▶️Phát nhạc</button>
-    <button onclick="pauseAll()">⏹Dừng</button>
-    <button onclick="toggleDrum()">🥁Tắt/Bật Trống</button>
+    <button onclick="playAll()">▶️ Phát nhạc</button>
+    <button onclick="stopAll()">⏹️ Dừng</button>
+    <button onclick="toggleDrum()">🥁 Tắt/Bật Trống</button>
   </div>
 
-  <div id="chord-display">🎼 Hợp âm sẽ hiển thị ở đây...</div>
-
-  <!-- Cho phép Pioneer test nghe thử -->
-  <audio id="drum" src="bolero_drum_loop.wav" loop controls></audio>
+  <audio id="drum" src="bolero_drum_loop.wav" loop></audio>
   <audio id="piano" src="piano_mid.wav" loop></audio>
+
+  <div class="chord-display" id="chord-display">🎶 Hợp âm sẽ hiện tại đây...</div>
 
   <script>
     const drum = document.getElementById("drum");
     const piano = document.getElementById("piano");
-    const chords = ["Am", "Dm", "G", "C", "F", "E7", "Am", "Am"];
+    const chordDisplay = document.getElementById("chord-display");
+
+    const chords = ["A", "D", "E7", "C#m", "F#m", "Bm", "E", "A"];
     let chordIndex = 0;
-    let chordInterval;
+    let chordInterval = null;
     let drumMuted = false;
 
     function playAll() {
-      drum.play();
       piano.play();
+      if (!drumMuted) drum.play();
+
       chordIndex = 0;
-      document.getElementById("chord-display").innerText = "Hợp âm: " + chords[chordIndex];
+      updateChord();
+
       chordInterval = setInterval(() => {
         chordIndex = (chordIndex + 1) % chords.length;
-        document.getElementById("chord-display").innerText = "Hợp âm: " + chords[chordIndex];
-      }, 4000);
+        updateChord();
+      }, 2000);
     }
 
-    function pauseAll() {
-      drum.pause();
+    function stopAll() {
       piano.pause();
+      piano.currentTime = 0;
+      drum.pause();
+      drum.currentTime = 0;
+
       clearInterval(chordInterval);
+      chordDisplay.innerText = "🎶 Hợp âm đã dừng...";
     }
 
     function toggleDrum() {
+      drumMuted = !drumMuted;
       if (drumMuted) {
-        drum.muted = false;
-        drumMuted = false;
+        drum.pause();
+        drum.currentTime = 0;
       } else {
-        drum.muted = true;
-        drumMuted = true;
+        drum.play();
       }
     }
+
+    function updateChord() {
+      chordDisplay.innerText = "Hợp âm: " + chords[chordIndex];
+    }
   </script>
+
 </body>
 </html>
