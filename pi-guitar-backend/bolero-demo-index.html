@@ -1,115 +1,89 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bolero Demo 1</title>
+  <meta charset="UTF-8">
+  <title>🎸 Demo bolero 1 – Hợp âm & âm thanh</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: sans-serif;
       text-align: center;
-      padding: 20px;
-      background-color: #ffffff;
-      color: #000033;
-    }
-    h1 {
-      font-size: 2rem;
-      margin-bottom: 0.5rem;
-      color: #000066;
-    }
-    h2 {
-      font-size: 1.5rem;
-      color: #000066;
+      background-color: #fff;
+      color: #333;
     }
     button {
+      padding: 10px 20px;
       margin: 10px;
-      padding: 12px 24px;
-      font-size: 1rem;
+      font-size: 18px;
       border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      background-color: #4e6cf1;
+      background-color: #9146ff;
       color: white;
-      transition: background-color 0.3s;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.3s;
     }
     button:hover {
-      background-color: #3b54c4;
+      background-color: #7400d4;
     }
-    .chord-display {
-      font-size: 1.5rem;
-      margin-top: 20px;
+    #chord-display {
+      font-size: 2rem;
       font-weight: bold;
-      color: #000066;
-    }
-    audio {
-      margin-top: 10px;
+      margin-top: 20px;
     }
   </style>
 </head>
 <body>
+  <h1>🎵 Bài 1 – "Lưu Tình Nhớ Ơi"</h1>
+  <p>🔥 Phiên bản bolero demo hợp âm dành cho Pioneer thử nghiệm!</p>
 
-  <h1>BOLERO DEMO 1 - "Bài Tình Nhớ"</h1>
-  <p>🌟 Phiên bản số 5 hoà hợp nhịp bolero dành cho Pioneer!</p>
-  <p><strong>Trên file Github:</strong> <code>/pi-guitar-backend/bolero-demo-index.html</code></p>
-
-  <div class="controls">
+  <div>
     <button onclick="playAll()">▶️ Phát nhạc</button>
-    <button onclick="stopAll()">⏹️ Dừng</button>
-    <button onclick="toggleDrum()">🥁 Tắt/Bật Trống</button>
+    <button onclick="pauseAll()">⏸️ Dừng</button>
+    <button onclick="toggleMute()">🔇 Bật/Tắt trống</button>
   </div>
 
+  <div id="chord-display">👉 Hợp âm sẽ hiển thị tại đây...</div>
+
+  <!-- Audio elements -->
   <audio id="drum" src="bolero_drum_loop.wav" loop></audio>
   <audio id="piano" src="piano_mid.wav" loop></audio>
-
-  <div class="chord-display" id="chord-display">🎶 Hợp âm sẽ hiện tại đây...</div>
 
   <script>
     const drum = document.getElementById("drum");
     const piano = document.getElementById("piano");
-    const chordDisplay = document.getElementById("chord-display");
-
-    const chords = ["A", "D", "E7", "C#m", "F#m", "Bm", "E", "A"];
+    const chords = ["Am", "Dm", "G", "C", "F", "E7", "Am"];
     let chordIndex = 0;
-    let chordInterval = null;
-    let drumMuted = false;
+    let chordInterval;
+    let isMuted = false;
 
     function playAll() {
-      piano.play();
-      if (!drumMuted) drum.play();
-
+      try {
+        drum.play().catch(()=>{});
+        piano.play().catch(()=>{});
+      } catch (e) {}
       chordIndex = 0;
       updateChord();
-
-      chordInterval = setInterval(() => {
-        chordIndex = (chordIndex + 1) % chords.length;
-        updateChord();
-      }, 2000);
+      chordInterval = setInterval(updateChord, 2000);
     }
 
-    function stopAll() {
-      piano.pause();
-      piano.currentTime = 0;
-      drum.pause();
-      drum.currentTime = 0;
-
-      clearInterval(chordInterval);
-      chordDisplay.innerText = "🎶 Hợp âm đã dừng...";
-    }
-
-    function toggleDrum() {
-      drumMuted = !drumMuted;
-      if (drumMuted) {
+    function pauseAll() {
+      try {
         drum.pause();
-        drum.currentTime = 0;
-      } else {
-        drum.play();
-      }
+        piano.pause();
+      } catch (e) {}
+      clearInterval(chordInterval);
+    }
+
+    function toggleMute() {
+      isMuted = !isMuted;
+      drum.muted = isMuted;
+      piano.muted = isMuted;
     }
 
     function updateChord() {
-      chordDisplay.innerText = "Hợp âm: " + chords[chordIndex];
+      const display = document.getElementById("chord-display");
+      display.innerText = "Hợp âm: " + chords[chordIndex];
+      chordIndex = (chordIndex + 1) % chords.length;
     }
   </script>
-
 </body>
 </html>
