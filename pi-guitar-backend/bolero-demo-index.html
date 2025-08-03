@@ -1,23 +1,20 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Bolero Auto Demo</title>
-</head>
-<body style="text-align: center; margin-top: 50px; background-color: #fffaf0;">
+<body>
   <h1>🎵 Auto Bolero Looper 🎵</h1>
   <p>Phát tự động, không cần bấm!</p>
-
-  <audio id="piano" src="piano_mid.wav" autoplay loop></audio>
-  <audio id="drum" src="bolero_drum_loop.wav" autoplay loop></audio>
+  <button onclick="startLooper()">🎧 Chạm để bắt đầu</button>
 
   <script>
-    const piano = document.getElementById("piano");
-    const drum = document.getElementById("drum");
+    let started = false;
+    function startLooper() {
+      if (started) return;
+      started = true;
 
-    // Đảm bảo tự động phát lại nếu bị dừng
-    piano.play().catch(() => {});
-    drum.play().catch(() => {});
+      const audio1 = new Audio('drum_loop.wav');
+      const audio2 = new Audio('piano_mid.wav');
+      audio1.loop = true;
+      audio2.loop = true;
+      audio1.play();
+      audio2.play();
+    }
   </script>
 </body>
-</html>
