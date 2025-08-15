@@ -1,132 +1,218 @@
-<!DOCTYPE html>
+<!-- index.html  (PiChordify Kingdom – Sandbox Payment + Transposer Demo – v2) -->
+<!doctype html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PiChordify Kingdom 🎶</title>
-  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <title>PiChordify Kingdom</title>
   <style>
-    body {
-      background-color: #f2ecff;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      text-align: center;
-      padding: 20px;
-    }
-    h1 {
-      color: #8000c8;
-      font-size: 2.5em;
-    }
-    select, button {
-      font-size: 1em;
-      padding: 10px;
-      margin: 10px;
-    }
-    .premium-option {
-      margin: 10px 0;
-    }
-    .highlight {
-      font-weight: bold;
-      color: #8000c8;
-    }
-    .instrument-icons img {
-      width: 64px;
-      margin: 0 10px;
-      cursor: pointer;
-      transition: transform 0.2s ease;
-    }
-    .instrument-icons img:hover {
-      transform: scale(1.2);
-    }
-    .info-btn {
-      font-size: 1.2em;
-      cursor: pointer;
-      border: none;
-      background: none;
-      color: #8000c8;
-    }
+    :root{--pri:#6b21a8;--bg:#f3eaff;}
+    body{font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);margin:0;padding:24px}
+    .wrap{max-width:760px;margin:auto}
+    .brand{display:flex;align-items:center;gap:12px}
+    .brand h1{color:var(--pri);margin:0;font-size:38px}
+    .card{background:#fff;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.08);padding:20px;margin:16px 0}
+    button{padding:12px 16px;border-radius:12px;border:0;background:var(--pri);color:#fff;font-weight:700;cursor:pointer}
+    button[disabled]{opacity:.5;cursor:not-allowed}
+    .muted{color:#555}
+    .ok{color:#047857}
+    .err{color:#b91c1c}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
+    .controls{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0}
+    select,input[type="number"]{padding:10px;border-radius:10px;border:1px solid #ddd}
+    .chords{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
+    .pill{border:1px solid #ddd;border-radius:12px;padding:8px 12px;background:#fafafa}
+    .hint{background:#f8f3ff;border-left:4px solid var(--pri);padding:8px 12px;border-radius:8px}
+    .badge{background:#fae8ff;color:#7e22ce;border-radius:999px;padding:2px 10px;font-size:12px;margin-left:6px}
+    .divider{height:1px;background:#eee;margin:14px 0}
   </style>
+  <!-- Pi SDK -->
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 </head>
 <body>
-  <h1>🎶 Welcome to <span class="highlight">PiChordify Kingdom</span> 🎶</h1>
-  <p>Khám phá hợp âm cho các nhạc cụ phổ biến!</p>
+  <div class="wrap">
+    <!-- ===== Logo / Nhạc cụ ===== -->
+    <div class="brand">
+      <!-- SVG logo đơn giản (nốt nhạc + ký hiệu Pi) -->
+      <svg width="42" height="42" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+        <circle cx="32" cy="32" r="30" stroke="#6b21a8" stroke-width="4"/>
+        <path d="M22 40a6 6 0 1 0 0 12a6 6 0 0 0 0-12Zm0-16V16h20v20a6 6 0 1 0 4 5.657V20H26v16a6 6 0 0 0-4-12Z" fill="#6b21a8"/>
+        <text x="31" y="38" font-size="16" text-anchor="middle" fill="#6b21a8">π</text>
+      </svg>
+      <h1>PiChordify Kingdom <span class="badge">Sandbox</span></h1>
+    </div>
+    <p class="muted">Bản minh họa **thanh toán Pi** + **mở khóa bài hợp âm** kèm <b>transposer</b>.</p>
 
-  <div class="instrument-icons">
-    <img src="https://cdn-icons-png.flaticon.com/512/727/727245.png" alt="Guitar" title="Guitar">
-    <img src="https://cdn-icons-png.flaticon.com/512/65/65014.png" alt="Piano" title="Piano">
-    <img src="https://cdn-icons-png.flaticon.com/512/562/562148.png" alt="Ukulele" title="Ukulele">
+    <!-- ===== Auth ===== -->
+    <div class="card">
+      <div id="authState" class="muted">Chưa đăng nhập</div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button id="btnLogin">🔐 Đăng nhập với Pi</button>
+        <button id="btnLogout" disabled>🚪 Đăng xuất</button>
+      </div>
+      <div class="hint" style="margin-top:10px">Tip: Đây là môi trường <b>Sandbox</b>. Bạn cần mở bằng <b>Pi Browser</b> (sandbox) để thử thanh toán.</div>
+    </div>
+
+    <!-- ===== Product / Payment ===== -->
+    <div class="card">
+      <h3>💎 Gói Dạo Nhạc — 0.3 Pi</h3>
+      <p class="muted">Mua gói để mở khoá 1 bài hợp âm mẫu + công cụ transpose.</p>
+      <button id="btnBuy" disabled>🛒 Mua ngay (0.3 Pi)</button>
+      <div id="status" style="margin-top:12px" class="mono muted"></div>
+      <pre id="log" class="mono" style="white-space:pre-wrap"></pre>
+      <div class="divider"></div>
+      <p class="muted">Sau khi thanh toán thành công, phần nội dung bên dưới sẽ tự mở.</p>
+    </div>
+
+    <!-- ===== Unlocked Content: Chords + Transposer ===== -->
+    <div class="card" id="content" style="display:none">
+      <h3>✅ Nội dung đã mở khóa</h3>
+      <p class="ok">Chúc mừng! Huynh đã mở <b>Gói Dạo Nhạc</b>. Hãy khám phá hợp âm và đổi tông tức thì.</p>
+
+      <div class="controls">
+        <label>🎼 Chọn ca khúc:
+          <select id="songSel">
+            <option value="demo1">Demo 1 — (C  G  Am  F | C  G  F  F)</option>
+            <option value="demo2">Demo 2 — (G  D  Em  C | G  D  C  C)</option>
+          </select>
+        </label>
+        <label>♯/♭ Dịch tông (semitone):
+          <input id="shiftInp" type="number" min="-6" max="6" value="0" />
+        </label>
+        <button id="applyBtn">🔄 Transpose</button>
+      </div>
+
+      <div class="hint">Hợp âm (đã dịch tông):</div>
+      <div id="chordView" class="chords" aria-live="polite"></div>
+    </div>
   </div>
-
-  <p>🎼 Chọn bài nhạc & điều chỉnh hợp âm theo ý bạn!</p>
-
-  <button onclick="loginWithPi()">🔐 Đăng nhập với Pi</button>
-
-  <div class="premium-option">
-    <label for="plan">💎 Chọn gói học:</label>
-    <select id="plan">
-      <option value="0.3">Gói Dạo Nhạc (0.3 Pi)</option>
-      <option value="1">Gói Hoàng Tử Phím Nhạc (1 Pi)</option>
-      <option value="3.14">Gói Master PiChordify (3.14 Pi)</option>
-      <option value="31.4159">Gói Divine GCV Edition (31.4159 Pi)</option>
-    </select>
-  </div>
-
-  <button onclick="buyPremium()">💎 Mua Gói Premium</button>
-
-  <p>
-    <button class="info-btn" onclick="showGuide()">ℹ️</button>
-  </p>
 
   <script>
-    Pi.init({ version: "2.0", sandbox: false });
+    /************* Pi SDK (SANDBOX) *************/
+    Pi.init({ version: "2.0", sandbox: true });
 
-    function loginWithPi() {
-      const scopes = ['username', 'payments'];
-      const onIncompletePaymentFound = (payment) => {
-        console.log('Incomplete payment found:', payment);
+    const $ = (id) => document.getElementById(id);
+    const log = (m) => { $("log").textContent += m + "\n"; };
+    const setStatus = (t, cls="muted") => { const el=$("status"); el.className = "mono " + cls; el.textContent=t; };
+
+    let currentUser = null;
+    const onIncompletePaymentFound = (p) => log("⚠️ Incomplete payment: " + p.identifier);
+
+    $("btnLogin").onclick = async () => {
+      try {
+        const auth = await Pi.authenticate(["username","payments"], onIncompletePaymentFound);
+        currentUser = auth.user;
+        $("authState").textContent = "Đã đăng nhập: @" + auth.user.username;
+        $("btnLogout").disabled = false;
+        $("btnBuy").disabled = false;
+        log("✅ Auth ok: " + JSON.stringify(auth.user));
+      } catch (e) {
+        setStatus("Đăng nhập thất bại: " + e?.message, "err");
+      }
+    };
+
+    $("btnLogout").onclick = () => {
+      currentUser = null;
+      $("authState").textContent = "Chưa đăng nhập";
+      $("btnLogout").disabled = true;
+      $("btnBuy").disabled = true;
+      setStatus("Đã đăng xuất.", "muted");
+    };
+
+    $("btnBuy").onclick = async () => {
+      if (!currentUser) return setStatus("Hãy đăng nhập trước.", "err");
+
+      const paymentData = {
+        amount: 0.3,
+        memo: "PiChordify: Gói Dạo Nhạc",
+        metadata: { productId: "chordify_demo_01" }
       };
 
-      Pi.authenticate(scopes, onIncompletePaymentFound)
-        .then(function(auth) {
-          console.log('Authentication success', auth);
-          alert("Xin chào, " + auth.user.username);
-        })
-        .catch(function(error) {
-          console.error('Authentication failed:', error);
-          alert("Đăng nhập thất bại: " + error);
+      const onCancel = (r) => { setStatus("❌ Người dùng hủy: " + r, "err"); log("cancel: " + r); };
+      const onError  = (e) => { setStatus("💥 Lỗi: " + (e?.message || e), "err"); log("error: " + JSON.stringify(e)); };
+
+      const onReadyForServerApproval = async (paymentId) => {
+        setStatus("Đang gửi lên server phê duyệt…", "muted");
+        const r = await fetch("https://YOUR_SERVER_HOST/api/approve", {
+          method:"POST", headers:{ "Content-Type":"application/json" },
+          body: JSON.stringify({ paymentId })
         });
+        if (!r.ok) throw new Error((await r.json())?.error || "Approve failed");
+        setStatus("Server đã phê duyệt. Chờ hoàn tất…", "muted");
+      };
+
+      const onReadyForServerCompletion = async (paymentId, txId) => {
+        setStatus("Đang hoàn tất giao dịch trên server…", "muted");
+        const r = await fetch("https://YOUR_SERVER_HOST/api/complete", {
+          method:"POST", headers:{ "Content-Type":"application/json" },
+          body: JSON.stringify({ paymentId, txId })
+        });
+        if (!r.ok) throw new Error((await r.json())?.error || "Complete failed");
+        setStatus("🎉 Thanh toán thành công!", "ok");
+        $("content").style.display = "block";
+        // hiển thị ngay bài mặc định
+        renderChords();
+      };
+
+      try { await Pi.createPayment(paymentData, onReadyForServerApproval, onReadyForServerCompletion, onCancel, onError); }
+      catch(e){ onError(e); }
+    };
+
+    /************* Transposer đơn giản *************/
+    const CHROMA = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+    const altToSharp = { "Db":"C#", "Eb":"D#", "Gb":"F#", "Ab":"G#", "Bb":"A#" };
+
+    const SONGS = {
+      demo1: "C  G  Am  F  |  C  G  F  F",
+      demo2: "G  D  Em  C  |  G  D  C  C"
+    };
+
+    function normalizeRoot(root){
+      if (altToSharp[root]) return altToSharp[root];
+      return root;
     }
 
-    function buyPremium() {
-      const planValue = document.getElementById("plan").value;
-      const planName = document.getElementById("plan").selectedOptions[0].text;
-      if (planValue == "31.4159") {
-        const confirmed = confirm("⚠️ Cảnh báo: Bạn sắp đạt cảnh giới âm nhạc thần thánh với " + planName + ". Tiếp tục?");
-        if (!confirmed) return;
-      }
-      Pi.createPayment({
-        amount: planValue,
-        memo: "Thanh toán gói: " + planName,
-        metadata: { type: "premium_plan", name: planName }
-      }, {
-        onReadyForServerApproval: function (paymentId) {
-          console.log("Chờ duyệt...", paymentId);
-        },
-        onReadyForServerCompletion: function (paymentId, txid) {
-          console.log("Hoàn tất giao dịch:", txid);
-          alert("Cảm ơn bạn đã mua gói: " + planName);
-        },
-        onCancel: function (paymentId) {
-          alert("Bạn đã huỷ thanh toán.");
-        },
-        onError: function (error, payment) {
-          alert("Lỗi thanh toán: " + error);
+    function transposeChord(ch, shift){
+      // Tách phần root + quality (m, 7, maj7… ở đây chỉ xử lý 'm')
+      const m = ch.match(/^([A-G](?:#|b)?)(m?)/i);
+      if (!m) return ch;
+      const root = normalizeRoot(m[1].toUpperCase());
+      const quality = m[2] || "";
+      const idx = CHROMA.indexOf(root);
+      if (idx === -1) return ch;
+      const next = (idx + (shift%12) + 12) % 12;
+      return CHROMA[next] + quality;
+    }
+
+    function transposeLine(line, shift){
+      return line.split(/\s+/).map(tok=>{
+        if (/^[|]$/.test(tok)) return tok;
+        if (!tok) return "";
+        return transposeChord(tok, shift);
+      }).join("  ");
+    }
+
+    function renderChords(){
+      const song = $("songSel").value;
+      const shift = parseInt($("shiftInp").value || "0", 10);
+      const lines = SONGS[song].split("|").map(s=>s.trim());
+      $("chordView").innerHTML = "";
+      lines.forEach((ln,i)=>{
+        const div = document.createElement("div");
+        div.className = "pill mono";
+        div.textContent = transposeLine(ln, shift);
+        $("chordView").appendChild(div);
+        if (i < lines.length-1) {
+          const bar = document.createElement("div");
+          bar.className = "pill";
+          bar.textContent = "|";
+          $("chordView").appendChild(bar);
         }
       });
     }
 
-    function showGuide() {
-      alert("🔍 Hướng dẫn:\n\n1. Chọn nhạc cụ bằng cách nhấn vào hình\n2. Dán link bài nhạc hoặc tìm bài có sẵn\n3. Đăng nhập ví Pi để sử dụng\n4. Chọn gói học và thanh toán nếu muốn trải nghiệm đầy đủ!");
-    }
+    $("applyBtn").onclick = renderChords;
+    $("songSel").onchange = renderChords;
   </script>
 </body>
 </html>
