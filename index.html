@@ -1,282 +1,211 @@
-<!-- index.html  (PiChordify Kingdom – Sandbox Payment + Transposer Demo – v2) -->
 <!doctype html>
 <html lang="vi">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PiChordify Kingdom</title>
+  <link rel="icon" href="data:," />
   <style>
-    :root{--pri:#6b21a8;--bg:#f3eaff;}
-    body{font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);margin:0;padding:24px}
-    .wrap{max-width:760px;margin:auto}
-    .brand{display:flex;align-items:center;gap:12px}
-    .brand h1{color:var(--pri);margin:0;font-size:38px}
-    .card{background:#fff;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.08);padding:20px;margin:16px 0}
-    button{padding:12px 16px;border-radius:12px;border:0;background:var(--pri);color:#fff;font-weight:700;cursor:pointer}
-    button[disabled]{opacity:.5;cursor:not-allowed}
-    .muted{color:#555}
-    .ok{color:#047857}
-    .err{color:#b91c1c}
-    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
-    .controls{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0}
-    select,input[type="number"]{padding:10px;border-radius:10px;border:1px solid #ddd}
-    .chords{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
-    .pill{border:1px solid #ddd;border-radius:12px;padding:8px 12px;background:#fafafa}
-    .hint{background:#f8f3ff;border-left:4px solid var(--pri);padding:8px 12px;border-radius:8px}
-    .badge{background:#fae8ff;color:#7e22ce;border-radius:999px;padding:2px 10px;font-size:12px;margin-left:6px}
-    .divider{height:1px;background:#eee;margin:14px 0}
+    :root{--pi:#7d3cff;--bg:#f6edff;--ink:#261b39;}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;}
+    .wrap{max-width:920px;margin:24px auto;padding:0 16px}
+    h1{margin:0 0 8px;font-size:40px;color:var(--pi);letter-spacing:.5px}
+    .note{opacity:.7}
+    .card{background:#fff;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.06);padding:16px;margin:14px 0}
+    .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+    button{border:0;border-radius:12px;padding:12px 16px;font-weight:700;cursor:pointer}
+    .btn{background:var(--pi);color:#fff}
+    .btn.outline{background:#fff;border:2px solid var(--pi);color:var(--pi)}
+    .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:#eee;margin:4px 6px 0 0;font-family:ui-monospace,Consolas,monospace}
+    .mono{font-family:ui-monospace,Consolas,monospace}
+    label{font-size:14px;opacity:.9}
+    input,select{padding:10px;border:1px solid #ddd;border-radius:10px}
+    .muted{opacity:.6}
   </style>
-  <!-- Pi SDK -->
-  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 </head>
 <body>
   <div class="wrap">
-    <!-- ===== Logo / Nhạc cụ ===== -->
-    <div class="brand">
-      <!-- SVG logo đơn giản (nốt nhạc + ký hiệu Pi) -->
-      <svg width="42" height="42" viewBox="0 0 64 64" fill="none" aria-hidden="true">
-        <circle cx="32" cy="32" r="30" stroke="#6b21a8" stroke-width="4"/>
-        <path d="M22 40a6 6 0 1 0 0 12a6 6 0 0 0 0-12Zm0-16V16h20v20a6 6 0 1 0 4 5.657V20H26v16a6 6 0 0 0-4-12Z" fill="#6b21a8"/>
-        <text x="31" y="38" font-size="16" text-anchor="middle" fill="#6b21a8">π</text>
-      </svg>
-      <h1>PiChordify Kingdom <span class="badge">Sandbox</span></h1>
-    </div>
-    <p class="muted">Bản minh họa **thanh toán Pi** + **mở khóa bài hợp âm** kèm <b>transposer</b>.</p>
+    <h1>PiChordify Kingdom</h1>
+    <div class="note">Bản minh hoạ <b>thanh toán Pi</b> + <b>mở khoá hợp âm</b> kèm transposer. (Sandbox hỗ trợ test)</div>
 
-    <!-- ===== Auth ===== -->
+    <!-- Đăng nhập & trạng thái -->
     <div class="card">
-      <div id="authState" class="muted">Chưa đăng nhập</div>
-      <div style="display:flex;gap:8px;margin-top:12px">
-        <button id="btnLogin">🔐 Đăng nhập với Pi</button>
-        <button id="btnLogout" disabled>🚪 Đăng xuất</button>
+      <div class="row">
+        <button class="btn" id="loginBtn">🔐 Đăng nhập với Pi</button>
+        <button class="btn outline" id="logoutBtn">🚪 Đăng xuất</button>
+        <div id="hello" class="pill mono">Chưa đăng nhập</div>
       </div>
-      <div class="hint" style="margin-top:10px">Tip: Đây là môi trường <b>Sandbox</b>. Bạn cần mở bằng <b>Pi Browser</b> (sandbox) để thử thanh toán.</div>
+      <div style="margin-top:8px">
+        <b>Premium:</b>
+        <span id="premium-status" class="pill">🔒 Chưa mua Premium</span>
+      </div>
+      <div style="margin-top:10px">
+        <button class="btn" id="buyBtn">🎶 Mua Premium – 1 Pi</button>
+        <span class="muted mono">Tip: thêm <code>?onSandbox=1</code> vào URL khi test.</span>
+      </div>
     </div>
 
-    <!-- ===== Product / Payment ===== -->
+    <!-- Transposer & Hợp âm -->
     <div class="card">
-      <h3>💎 Gói Dạo Nhạc — 0.3 Pi</h3>
-      <p class="muted">Mua gói để mở khoá 1 bài hợp âm mẫu + công cụ transpose.</p>
-      <button id="btnBuy" disabled>🛒 Mua ngay (0.3 Pi)</button>
-      <div id="status" style="margin-top:12px" class="mono muted"></div>
-      <pre id="log" class="mono" style="white-space:pre-wrap"></pre>
-      <div class="divider"></div>
-      <p class="muted">Sau khi thanh toán thành công, phần nội dung bên dưới sẽ tự mở.</p>
-    </div>
+      <div class="row">
+        <label for="songSel">Bài hát:</label>
+        <select id="songSel"></select>
 
-    <!-- ===== Unlocked Content: Chords + Transposer ===== -->
-    <div class="card" id="content" style="display:none">
-      <h3>✅ Nội dung đã mở khóa</h3>
-      <p class="ok">Chúc mừng! Huynh đã mở <b>Gói Dạo Nhạc</b>. Hãy khám phá hợp âm và đổi tông tức thì.</p>
-
-      <div class="controls">
-        <label>🎼 Chọn ca khúc:
-          <select id="songSel">
-            <option value="demo1">Demo 1 — (C  G  Am  F | C  G  F  F)</option>
-            <option value="demo2">Demo 2 — (G  D  Em  C | G  D  C  C)</option>
-          </select>
-        </label>
-        <label>♯/♭ Dịch tông (semitone):
-          <input id="shiftInp" type="number" min="-6" max="6" value="0" />
-        </label>
-        <button id="applyBtn">🔄 Transpose</button>
+        <label for="shiftInp">Shift (±12):</label>
+        <input id="shiftInp" type="number" step="1" value="0" class="mono" style="width:90px" />
+        <button id="applyBtn" class="btn outline">Áp dụng</button>
       </div>
-
-      <div class="hint">Hợp âm (đã dịch tông):</div>
-      <div id="chordView" class="chords" aria-live="polite"></div>
+      <div id="chordView" style="margin-top:12px"></div>
     </div>
   </div>
 
+  <!-- Pi SDK -->
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
   <script>
-    /************* Pi SDK (SANDBOX) *************/
-    Pi.init({ version: "2.0", sandbox: true });
+    /***** CONFIG *****/
+    // Sửa URL này thành Worker của Trẫm:
+    const WORKER_URL = "https://pichordifykingdom.workers.dev";
 
-    const $ = (id) => document.getElementById(id);
-    const log = (m) => { $("log").textContent += m + "\n"; };
-    const setStatus = (t, cls="muted") => { const el=$("status"); el.className = "mono " + cls; el.textContent=t; };
+    // Sandbox: bật khi có ?onSandbox=1
+    const isSandbox = new URL(location.href).searchParams.get("onSandbox") === "1";
+    Pi.init({ version: "2.0", sandbox: isSandbox });
 
-    let currentUser = null;
-    const onIncompletePaymentFound = (p) => log("⚠️ Incomplete payment: " + p.identifier);
+    /***** UI HOÁ TRẠNG THÁI *****/
+    function updateHello(name) {
+      const el = document.getElementById("hello");
+      el.textContent = name ? `Xin chào @${name} 👋` : "Chưa đăng nhập";
+    }
+    function updatePremiumStatus(isPremium) {
+      const el = document.getElementById("premium-status");
+      if (isPremium) el.textContent = "✅ Đã mua Premium";
+      else el.textContent = "🔒 Chưa mua Premium";
+    }
 
-    $("btnLogin").onclick = async () => {
-      try {
-        const auth = await Pi.authenticate(["username","payments"], onIncompletePaymentFound);
-        currentUser = auth.user;
-        $("authState").textContent = "Đã đăng nhập: @" + auth.user.username;
-        $("btnLogout").disabled = false;
-        $("btnBuy").disabled = false;
-        log("✅ Auth ok: " + JSON.stringify(auth.user));
-      } catch (e) {
-        setStatus("Đăng nhập thất bại: " + e?.message, "err");
-      }
-    };
-
-    $("btnLogout").onclick = () => {
-      currentUser = null;
-      $("authState").textContent = "Chưa đăng nhập";
-      $("btnLogout").disabled = true;
-      $("btnBuy").disabled = true;
-      setStatus("Đã đăng xuất.", "muted");
-    };
-
-    $("btnBuy").onclick = async () => {
-      if (!currentUser) return setStatus("Hãy đăng nhập trước.", "err");
-
-      const paymentData = {
-        amount: 0.3,
-        memo: "PiChordify: Gói Dạo Nhạc",
-        metadata: { productId: "chordify_demo_01" }
-      };
-
-      const onCancel = (r) => { setStatus("❌ Người dùng hủy: " + r, "err"); log("cancel: " + r); };
-      const onError  = (e) => { setStatus("💥 Lỗi: " + (e?.message || e), "err"); log("error: " + JSON.stringify(e)); };
-
-      const onReadyForServerApproval = async (paymentId) => {
-        setStatus("Đang gửi lên server phê duyệt…", "muted");
-        const r = await fetch("https://YOUR_SERVER_HOST/api/approve", {
-          method:"POST", headers:{ "Content-Type":"application/json" },
-          body: JSON.stringify({ paymentId })
-        });
-        if (!r.ok) throw new Error((await r.json())?.error || "Approve failed");
-        setStatus("Server đã phê duyệt. Chờ hoàn tất…", "muted");
-      };
-
-      const onReadyForServerCompletion = async (paymentId, txId) => {
-        setStatus("Đang hoàn tất giao dịch trên server…", "muted");
-        const r = await fetch("https://YOUR_SERVER_HOST/api/complete", {
-          method:"POST", headers:{ "Content-Type":"application/json" },
-          body: JSON.stringify({ paymentId, txId })
-        });
-        if (!r.ok) throw new Error((await r.json())?.error || "Complete failed");
-        setStatus("🎉 Thanh toán thành công!", "ok");
-        $("content").style.display = "block";
-        // hiển thị ngay bài mặc định
-        renderChords();
-      };
-
-      try { await Pi.createPayment(paymentData, onReadyForServerApproval, onReadyForServerCompletion, onCancel, onError); }
-      catch(e){ onError(e); }
-    };
-
-    /************* Transposer đơn giản *************/
-    const CHROMA = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
-    const altToSharp = { "Db":"C#", "Eb":"D#", "Gb":"F#", "Ab":"G#", "Bb":"A#" };
-
+    /***** SONG DATA + TRANSPOSER DEMO *****/
     const SONGS = {
-      demo1: "C  G  Am  F  |  C  G  F  F",
-      demo2: "G  D  Em  C  |  G  D  C  C"
+      // Demo 2 bài (Trẫm có thể thay nội dung thực)
+      "Tình Ca Demo": "C G Am F | C G C | F G C",
+      "Hello Pi": "Dm G C Am | F G C"
     };
-
-    function normalizeRoot(root){
-      if (altToSharp[root]) return altToSharp[root];
-      return root;
+    const CHORDS = ["C","C#","Db","D","D#","Eb","E","F","F#","Gb","G","G#","Ab","A","A#","Bb","B"];
+    function normalize(ch){return ch.replace(/[^A-G#b]/g,"");}
+    function shiftChord(ch, s){
+      const base = normalize(ch);
+      let i = CHORDS.indexOf(base);
+      if (i<0) return ch;
+      let j = (i + s + CHORDS.length) % CHORDS.length;
+      return ch.replace(base, CHORDS[j]);
     }
-
-    function transposeChord(ch, shift){
-      // Tách phần root + quality (m, 7, maj7… ở đây chỉ xử lý 'm')
-      const m = ch.match(/^([A-G](?:#|b)?)(m?)/i);
-      if (!m) return ch;
-      const root = normalizeRoot(m[1].toUpperCase());
-      const quality = m[2] || "";
-      const idx = CHROMA.indexOf(root);
-      if (idx === -1) return ch;
-      const next = (idx + (shift%12) + 12) % 12;
-      return CHROMA[next] + quality;
-    }
-
     function transposeLine(line, shift){
-      return line.split(/\s+/).map(tok=>{
-        if (/^[|]$/.test(tok)) return tok;
-        if (!tok) return "";
-        return transposeChord(tok, shift);
-      }).join("  ");
+      return line.split(/\s+/).map(t=>shiftChord(t,shift)).join(" ");
     }
-
     function renderChords(){
-      const song = $("songSel").value;
-      const shift = parseInt($("shiftInp").value || "0", 10);
+      const song = document.getElementById("songSel").value;
+      const shift = parseInt(document.getElementById("shiftInp").value || "0", 10);
       const lines = SONGS[song].split("|").map(s=>s.trim());
-      $("chordView").innerHTML = "";
+      const box = document.getElementById("chordView");
+      box.innerHTML = "";
       lines.forEach((ln,i)=>{
-        const div = document.createElement("div");
-        div.className = "pill mono";
-        div.textContent = transposeLine(ln, shift);
-        $("chordView").appendChild(div);
-        if (i < lines.length-1) {
-          const bar = document.createElement("div");
-          bar.className = "pill";
-          bar.textContent = "|";
-          $("chordView").appendChild(bar);
+        const d = document.createElement("div");
+        d.className = "pill mono";
+        d.textContent = transposeLine(ln, shift);
+        box.appendChild(d);
+        if (i<lines.length-1){
+          const sep = document.createElement("div");
+          sep.className="pill";
+          sep.textContent="|";
+          box.appendChild(sep);
         }
       });
     }
+    // fill select
+    (function initSongs(){
+      const sel = document.getElementById("songSel");
+      Object.keys(SONGS).forEach(k=>{
+        const opt=document.createElement("option");
+        opt.value=k; opt.textContent=k;
+        sel.appendChild(opt);
+      });
+      sel.value = Object.keys(SONGS)[0];
+      renderChords();
+    })();
 
-    $("applyBtn").onclick = renderChords;
-    $("songSel").onchange = renderChords;
+    /***** HELPER GỌI WORKER *****/
+    async function callAPI(path, body){
+      const r = await fetch(`${WORKER_URL}${path}`,{
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify(body||{})
+      });
+      if(!r.ok){
+        const t = await r.text().catch(()=> "");
+        throw new Error(`API ${path} failed: ${r.status} ${t}`);
+      }
+      return r.json();
+    }
+
+    /***** LOGIN / LOGOUT *****/
+    async function login(){
+      try{
+        const auth = await Pi.authenticate(["username","payments"], () => {});
+        updateHello(auth.user.username);
+        // có thể fetch data cơ bản sau login
+      }catch(e){
+        alert("Đăng nhập thất bại: " + (e?.message||e));
+      }
+    }
+    function logout(){
+      updateHello("");
+    }
+
+    /***** MUA PREMIUM – CÓ APPROVE/COMPLETE SERVER *****/
+    async function payPremium(){
+      try{
+        await Pi.authenticate(["username","payments"], () => {});
+        await Pi.createPayment(
+          {
+            amount: 1, // đổi giá tùy ý
+            memo: "PiChordify Premium Access",
+            metadata: { type: "premium", item: "access" }
+          },
+          {
+            onReadyForServerApproval: (paymentId) => {
+              return callAPI("/approve",{ paymentId });
+            },
+            onReadyForServerCompletion: (paymentId, txid) => {
+              return callAPI("/complete",{ paymentId, txid }).then(()=>{
+                localStorage.setItem("pck_premium","true");
+                updatePremiumStatus(true);
+                alert("Thanh toán thành công ✅");
+              });
+            },
+            onCancel: (paymentId) => {
+              console.log("User cancelled", paymentId);
+              alert("Đã huỷ thanh toán.");
+            },
+            onError: (error, paymentId) => {
+              console.error("Payment error", error, paymentId);
+              alert("Lỗi thanh toán: " + (error?.message||error));
+            }
+          }
+        );
+      }catch(e){
+        alert("Có lỗi khi mua Premium: " + (e?.message||e));
+      }
+    }
+
+    /***** EVENT BINDINGS *****/
+    document.getElementById("loginBtn").onclick = login;
+    document.getElementById("logoutBtn").onclick = logout;
+    document.getElementById("buyBtn").onclick = payPremium;
+    document.getElementById("applyBtn").onclick = renderChords;
+    document.getElementById("songSel").onchange = renderChords;
+
+    // Khôi phục trạng thái premium đã mua (nếu có)
+    (function restorePremium(){
+      const isPremium = localStorage.getItem("pck_premium")==="true";
+      updatePremiumStatus(isPremium);
+    })();
   </script>
 </body>
-  <!-- Pi SDK -->
-<script src="https://sdk.minepi.com/pi-sdk.js"></script>
-<script>
-  // BẬT sandbox khi test bằng Pi Browser: thêm ?onSandbox=1 vào URL
-  const WORKER = "https://pichordify-worker.<WORKER_URL_SUBDOMAIN>.workers.dev";
-
-  // Khởi tạo SDK (v2)
-  Pi.init({ version: "2.0" });
-
-  // Helper gọi backend
-  async function callAPI(path, body) {
-    const r = await fetch(`${WORKER}${path}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body)
-    });
-    if (!r.ok) throw new Error(`API ${path} failed`);
-    return r.json();
-  }
-
-  // Mua 1 “tune” 0.3 Pi (đổi số tiền/memo theo ý)
-  async function buyTune() {
-    try {
-      // Đăng nhập và xin scope payments
-      await Pi.authenticate(["username","payments"], () => {});
-      await Pi.createPayment(
-        { amount: 0.3, memo: "Unlock one chord tune", metadata: { item: "chord_001" } },
-        {
-          onReadyForServerApproval: (paymentId) =>
-            callAPI("/approve", { paymentId }),
-          onReadyForServerCompletion: (paymentId, txid) =>
-            callAPI("/complete", { paymentId, txid })
-              .then(() => {
-                localStorage.setItem("unlocked_chord_001","true");
-                const btn = document.getElementById("pi-buy-btn");
-                if (btn) btn.innerText = "✅ ĐÃ MỞ KHÓA (chord_001)";
-                alert("Đã mở khóa 1 tune!");
-              }),
-          onCancel: (paymentId) => console.log("User cancelled", paymentId),
-          onError: (error, paymentId) => console.error("Payment error", error, paymentId),
-        }
-      );
-    } catch (e) {
-      console.error(e);
-      alert("Có lỗi khi thanh toán. Xem console để debug.");
-    }
-  }
-</script>
-
-<!-- Nút mua Pi: thêm style nhẹ để dễ thấy -->
-<style>
-  .pi-cta{
-    display:inline-block;padding:12px 18px;border-radius:10px;
-    font-weight:700;border:none;cursor:pointer;font-size:16px;
-    box-shadow:0 6px 20px rgba(0,0,0,.1)
-  }
-</style>
-<div style="margin:24px 0">
-  <button id="pi-buy-btn" class="pi-cta" onclick="buyTune()">🎶 Mua gói 0.3 Pi để mở 1 tune</button>
-  <div style="opacity:.7;margin-top:8px;font-size:14px">
-    Tip: test trong <b>Pi Browser</b> kèm <code>?onSandbox=1</code>.
-  </div>
-</div>
-
 </html>
