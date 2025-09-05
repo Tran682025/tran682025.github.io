@@ -33,7 +33,7 @@
     <h1>PiChordify <span class="eagle">Kingdom</span></h1>
     <div class="note">
       Bản minh hoạ <b>thanh toán Pi</b> + <b>mở khoá hợp âm</b> kèm transposer.
-      <span class="muted mono">Mẹo: thêm <code>?sandbox=1</code> vào URL khi test Sandbox.</span>
+      <span class="muted mono">Mẹo: thêm <code>?sandbox=1</code> vào URL khi test Sandbox (Pi Browser).</span>
     </div>
 
     <!-- Đăng nhập & trạng thái -->
@@ -51,7 +51,7 @@
 
       <div style="margin-top:10px">
         <button id="buyBtn">💎 Mua Premium — 1 Pi</button>
-        <span class="muted mono">Giao dịch sẽ gọi Worker <code>/approve</code> & <code>/complete</code>.</span>
+        <span class="muted mono">Giao dịch gọi Worker <code>/approve</code> & <code>/complete</code>.</span>
       </div>
     </div>
 
@@ -75,136 +75,95 @@
     </div>
 
     <div class="note">
-      🦅 <b>Backend:</b> <code>https://pichordifykingdom.workers.dev</code> → <code>/approve</code>, <code>/complete</code>.
-      Đổi domain trong hằng số <code>WORKER_BASE</code> nếu Trẫm đặt tên khác.
+      🦅 <b>Backend:</b> <code>https://pichordify-worker.pichordifykingdom.workers.dev</code>
+      → các endpoint <code>/approve</code>, <code>/complete</code>.
     </div>
   </div>
 
   <script>
   // ========= CONFIG =========
-  // 👉 Nếu Worker của Trẫm có tên khác, sửa dòng này:
-  const WORKER_BASE = 'https://pichordifykingdom.workers.dev';
-
+  // 👉 Đúng tên Worker của Trẫm (theo logs deploy)
+  const WORKER_BASE = 'https://pichordify-worker.pichordifykingdom.workers.dev';
   // Sandbox switch: ?sandbox=1
   const url = new URL(location.href);
   const forceSandbox = url.searchParams.get('sandbox') === '1';
 
   // ========= Pi SDK init =========
-  // Ở Pi Browser production, bỏ sandbox; khi test thì bật với ?sandbox=1
-  Pi.init({ version: "2.0", sandbox: forceSandbox });
+  try {
+    if (!window.Pi || !Pi.init) throw new Error('Pi SDK chưa sẵn sàng. Mở bằng Pi Browser.');
+    Pi.init({ version: "2.0", sandbox: forceSandbox });
+  } catch(e){ console.warn(e); alert(e.message||e); }
 
   // ========= Mini songbook (demo) =========
-  // basic = free; premium = cần mua
   const SONGS = {
     free: [
-      {
-        id: 'free_001',
-        title: 'Happy Day (Free)',
-        lines: [
-          'C  G  Am  F',
-          'C  G  Am  F',
-          'F  G  C   -'
-        ]
-      },
-      {
-        id: 'free_002',
-        title: 'Sunny Road (Free)',
-        lines: [
-          'Dm  G  C  Am',
-          'Dm  G  C  C',
-          'F   G  Em Am'
-        ]
-      }
+      { id:'free_001', title:'Happy Day (Free)', lines:['C  G  Am  F','C  G  Am  F','F  G  C   -'] },
+      { id:'free_002', title:'Sunny Road (Free)', lines:['Dm  G  C  Am','Dm  G  C  C','F   G  Em Am'] }
     ],
     premium: [
-      {
-        id: 'pro_101',
-        title: 'Kingdom Anthem (Pro)',
-        lines: [
-          'G   D   Em   C',
-          'G   D   C    C',
-          'Am  D   G    -'
-        ]
-      },
-      {
-        id: 'pro_102',
-        title: 'Eagle Flight (Pro)',
-        lines: [
-          'Bm  G  D  A',
-          'Bm  G  D  A',
-          'Em  A  D  -'
-        ]
-      }
+      { id:'pro_101', title:'Kingdom Anthem (Pro)', lines:['G   D   Em   C','G   D   C    C','Am  D   G    -'] },
+      { id:'pro_102', title:'Eagle Flight (Pro)',  lines:['Bm  G  D  A','Bm  G  D  A','Em  A  D  -'] }
     ]
   };
-
   const ALL_SONGS = [...SONGS.free, ...SONGS.premium];
+  const PREMIUM_IDS = new Set(SONGS.premium.map(s=>s.id));
 
   // ========= Helpers =========
   const $ = sel => document.querySelector(sel);
+  const ORDER = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 
-  function isPremium() {
-    return localStorage.getItem('pck_premium') === 'true';
-  }
-
+  const isPremium = () => localStorage.getItem('pck_premium') === 'true';
   function updatePremiumStatus(flag){
     const el = $('#premium-status');
-    if(flag){
-      el.textContent = '✅ Đã mua Premium';
-      el.classList.remove('pill');
-      el.classList.add('pill');
-    }else{
-      el.textContent = '🔒 Chưa mua Premium';
-    }
-    const lock = $('#lockMsg');
-    lock.style.display = flag ? 'none' : 'block';
+    if(flag){ el.textContent='✅ Đã mua Premium'; el.classList.add('pill'); }
+    else     el.textContent='🔒 Chưa mua Premium';
   }
 
-  // Very small transposer (C C# D ... B)
-  const ORDER = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
   function transposeChord(ch, shift){
-    // keep minor/7/maj etc
     const m = ch.match(/^([A-G](?:#|b)?)(.*)$/);
     if(!m) return ch;
     let [_, root, tail] = m;
-    // flats -> sharps
-    const flat = {Db:'C#', Eb:'D#', Gb:'F#', Ab:'G#', Bb:'A#'};
-    if(flat[root]) root = flat[root];
+    const flat = {Db:'C#', Eb:'D#', Gb:'F#', Ab:'G%', Bb:'A#'}; // Ab displayed as G%
+    if(flat[root]) root = flat[root].replace('%','#');
     const idx = ORDER.indexOf(root);
     if(idx<0) return ch;
     const next = ORDER[(idx + shift + 12*1000) % 12];
     return next + tail;
   }
-  function transposeLine(line, shift){
-    if(!shift) return line;
-    return line.split(/\s+/).map(tok => {
-      if(!tok) return tok;
-      return transposeChord(tok, shift);
-    }).join('  ');
-  }
+  const transposeLine = (line, shift) =>
+    !shift ? line : line.split(/\s+/).map(tok => tok && transposeChord(tok, shift)).join('  ');
 
   function renderBasicChords(songObj){
     const shift = parseInt($('#shiftInp').value||'0',10);
-    const html = songObj.lines
-      .map(l => `<div class="mono">${transposeLine(l, shift)}</div>`)
-      .join('');
+    const html = songObj.lines.map(l => `<div class="mono">${transposeLine(l, shift)}</div>`).join('');
     $('#chords').innerHTML = html;
   }
 
   function buildSongSelect(){
-    const sel = $('#songSel');
-    sel.innerHTML = '';
+    const sel = $('#songSel'); sel.innerHTML = '';
     ALL_SONGS.forEach(s => {
       const opt = document.createElement('option');
       opt.value = s.id;
-      opt.textContent = s.title + (SONGS.premium.find(p=>p.id===s.id)?' 🔒':'');
+      opt.textContent = s.title + (PREMIUM_IDS.has(s.id)?' 🔒':'');
       sel.appendChild(opt);
     });
+    sel.value = ALL_SONGS[0].id;
   }
 
   function getSelectedSong(){
     const id = $('#songSel').value;
     return ALL_SONGS.find(s => s.id === id);
+  }
+
+  function renderSong(){
+    const s = getSelectedSong();
+    const locked = PREMIUM_IDS.has(s.id) && !isPremium();
+    $('#lockMsg').style.display = locked ? 'block' : 'none';
+    if (locked){
+      $('#chords').innerHTML = `<div class="mono">🔒 Nội dung Premium — hãy mua để mở khoá.</div>`;
+      return;
+    }
+    renderBasicChords(s);
   }
 
   // ========= Backend call (Worker) =========
@@ -216,32 +175,22 @@
       credentials: 'omit',
       mode: 'cors'
     });
-    if(!r.ok){
-      const t = await r.text().catch(()=>r.statusText);
-      throw new Error(`API ${path} failed: ${r.status} ${t}`);
-    }
-    return r.json().catch(()=> ({}));
+    const text = await r.text();
+    try { return JSON.parse(text); } catch { if(!r.ok) throw new Error(text||r.statusText); return {}; }
   }
 
   // ========= Auth =========
   async function login(){
     try{
       const scopes = ['username','payments'];
-      await Pi.authenticate(scopes, function (payment) {
-        console.log('Incomplete payment found:', payment);
-      }).then(function(auth){
-        $('#hello').textContent = `Xin chào: @${auth.user.username} 🎵`;
-      });
+      const auth = await Pi.authenticate(scopes, p => console.log('Incomplete payment:', p));
+      $('#hello').textContent = `Xin chào: @${auth.user.username} 🎵`;
       alert('Đăng nhập thành công!');
     }catch(e){
       alert('Đăng nhập thất bại: ' + (e?.message||e));
     }
   }
-
-  function logout(){
-    // Client chỉ xóa trạng thái cục bộ (Pi Browser tự quản phiên)
-    $('#hello').textContent = 'Chưa đăng nhập';
-  }
+  function logout(){ $('#hello').textContent = 'Chưa đăng nhập'; }
 
   // ========= Payment (Premium) =========
   async function payPremium(){
@@ -252,24 +201,17 @@
         metadata: { type:'premium', item:'access' }
       }, {
         onReadyForServerApproval: async function (paymentId) {
-          // gọi Worker /approve
           await callAPI('/approve', { paymentId });
         },
         onReadyForServerCompletion: async function (paymentId, txid) {
-          // gọi Worker /complete
           await callAPI('/complete', { paymentId, txid });
           localStorage.setItem('pck_premium','true');
           updatePremiumStatus(true);
+          renderSong();
           alert('Thanh toán thành công ✅');
         },
-        onCancel: function (paymentId) {
-          console.log('User cancelled', paymentId);
-          alert('Đã huỷ thanh toán.');
-        },
-        onError: function (error, paymentId) {
-          console.error('Payment error', error, paymentId);
-          alert('Lỗi thanh toán: ' + (error?.message||error));
-        }
+        onCancel: function () { alert('Đã huỷ thanh toán.'); },
+        onError: function (error) { alert('Lỗi thanh toán: ' + (error?.message||error)); }
       });
     }catch(e){
       alert('Có lỗi khi mua Premium: ' + (e?.message||e));
@@ -277,16 +219,16 @@
   }
 
   // ========= UI bindings =========
-  document.getElementById('loginBtn').onclick = login;
-  document.getElementById('logoutBtn').onclick = logout;
-  document.getElementById('buyBtn').onclick = payPremium;
-  document.getElementById('applyBtn').onclick = () => renderBasicChords(getSelectedSong());
-  document.getElementById('songSel').onchange = () => renderBasicChords(getSelectedSong());
+  $('#loginBtn').onclick = login;
+  $('#logoutBtn').onclick = logout;
+  $('#buyBtn').onclick = payPremium;
+  $('#applyBtn').onclick = renderSong;
+  $('#songSel').onchange = renderSong;
 
   // ========= Init view =========
   buildSongSelect();
   updatePremiumStatus(isPremium());
-  renderBasicChords(getSelectedSong());
+  renderSong();
   </script>
 </body>
 </html>
