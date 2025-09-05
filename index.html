@@ -215,4 +215,68 @@
     $("songSel").onchange = renderChords;
   </script>
 </body>
+  <!-- Pi SDK -->
+<script src="https://sdk.minepi.com/pi-sdk.js"></script>
+<script>
+  // BẬT sandbox khi test bằng Pi Browser: thêm ?onSandbox=1 vào URL
+  const WORKER = "https://pichordify-worker.<WORKER_URL_SUBDOMAIN>.workers.dev";
+
+  // Khởi tạo SDK (v2)
+  Pi.init({ version: "2.0" });
+
+  // Helper gọi backend
+  async function callAPI(path, body) {
+    const r = await fetch(`${WORKER}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    if (!r.ok) throw new Error(`API ${path} failed`);
+    return r.json();
+  }
+
+  // Mua 1 “tune” 0.3 Pi (đổi số tiền/memo theo ý)
+  async function buyTune() {
+    try {
+      // Đăng nhập và xin scope payments
+      await Pi.authenticate(["username","payments"], () => {});
+      await Pi.createPayment(
+        { amount: 0.3, memo: "Unlock one chord tune", metadata: { item: "chord_001" } },
+        {
+          onReadyForServerApproval: (paymentId) =>
+            callAPI("/approve", { paymentId }),
+          onReadyForServerCompletion: (paymentId, txid) =>
+            callAPI("/complete", { paymentId, txid })
+              .then(() => {
+                localStorage.setItem("unlocked_chord_001","true");
+                const btn = document.getElementById("pi-buy-btn");
+                if (btn) btn.innerText = "✅ ĐÃ MỞ KHÓA (chord_001)";
+                alert("Đã mở khóa 1 tune!");
+              }),
+          onCancel: (paymentId) => console.log("User cancelled", paymentId),
+          onError: (error, paymentId) => console.error("Payment error", error, paymentId),
+        }
+      );
+    } catch (e) {
+      console.error(e);
+      alert("Có lỗi khi thanh toán. Xem console để debug.");
+    }
+  }
+</script>
+
+<!-- Nút mua Pi: thêm style nhẹ để dễ thấy -->
+<style>
+  .pi-cta{
+    display:inline-block;padding:12px 18px;border-radius:10px;
+    font-weight:700;border:none;cursor:pointer;font-size:16px;
+    box-shadow:0 6px 20px rgba(0,0,0,.1)
+  }
+</style>
+<div style="margin:24px 0">
+  <button id="pi-buy-btn" class="pi-cta" onclick="buyTune()">🎶 Mua gói 0.3 Pi để mở 1 tune</button>
+  <div style="opacity:.7;margin-top:8px;font-size:14px">
+    Tip: test trong <b>Pi Browser</b> kèm <code>?onSandbox=1</code>.
+  </div>
+</div>
+
 </html>
