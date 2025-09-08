@@ -1,234 +1,327 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="vi">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>PiChordify Kingdom</title>
-  <link rel="icon" href="data:,"/>
-  <style>
-    :root{--pi:#7b2bf9;--ink:#261b39;--bg:#f3eaff}
-    html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;}
-    .wrap{max-width:920px;margin:24px auto;padding:16px}
-    .note{opacity:.7;margin:8px 0;font-size:14px;letter-spacing:.5px}
-    .card{background:#fff;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.06);
-      padding:16px;margin:14px 0}
-    .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-    button{border:0;background:var(--pi);color:#fff;padding:10px 16px;border-radius:10px;cursor:pointer;font-weight:700}
-    .btn-outline{background:#fff;color:var(--pi);border:2px solid var(--pi)}
-    .mono{font-family:ui-monospace,Consolas,monospace}
-    label{font-size:14px;opacity:.9}
-    input,select{padding:10px;border:1px solid #ddd;border-radius:10px}
-    .pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#eee;margin:4px;font-family:ui-monospace,Consolas,monospace}
-    .muted{opacity:.65}
-    .chords{line-height:1.9}
-    .eagle{font-weight:800;letter-spacing:.6px}
-  </style>
-
-  <!-- Pi SDK v2 -->
-  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>PiChordify Kingdom — Premium Demo</title>
+<style>
+  :root{--pri:#6c47ff;--mut:#9aa0a6}
+  *{box-sizing:border-box}
+  body{margin:0;background:#f5f6fb;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+  .wrap{max-width:980px;margin:32px auto;padding:0 16px}
+  .card{background:#fff;border-radius:16px;padding:24px;box-shadow:0 8px 28px rgba(0,0,0,.06)}
+  h1{margin:0 0 8px;font-size:28px;color:#3b2e7a}
+  .pill{display:inline-block;font-weight:700;color:#3b2e7a;background:#e8e2ff;padding:6px 12px;border-radius:999px;margin-bottom:12px}
+  .grid{display:grid;grid-template-columns:1fr 260px;gap:20px}
+  textarea,input[type="text"],input[type="number"],select{width:100%;padding:12px;border-radius:10px;border:1px solid #e6e6ef;background:#fbfbff}
+  .hint{font-size:12px;color:#3b2e7a}
+  .row{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}
+  button{padding:10px 16px;border:0;border-radius:10px;cursor:pointer;font-weight:600}
+  .pri{background:var(--pri);color:#fff}
+  .sec{background:#eef2ff;color:#2d2f7a;border:1px solid #e0e3ff}
+  .ghost{background:#f7f7ff;color:#333;border:1px solid #e6e6ef}
+  .warn{color:#b54708}
+  .kbd{font:600 12px ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;background:#f2f4ff;border:1px solid #e1e5ff;padding:2px 6px;border-radius:6px}
+  .mono{font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;white-space:pre-wrap}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .cap{font-size:12px;color:#666;margin-top:6px}
+  .badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#f1f3ff;color:#3640a1;font-weight:600;font-size:12px}
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>PiChordify <span class="eagle">Kingdom</span></h1>
-    <div class="note">
-      Bản minh hoạ <b>thanh toán Pi</b> + <b>mở khoá hợp âm</b> kèm transposer.
-      <span class="muted mono">Mẹo: thêm <code>?sandbox=1</code> vào URL khi test Sandbox (Pi Browser).</span>
-    </div>
+<div class="wrap">
+  <div class="pill">BUILD NEW CHORDIFY</div>
+  <h1>PiChordify Kingdom — Premium Demo</h1>
+  <p>Nhập <b>hợp âm</b> + <b>lời</b> (mỗi dòng một mốc thời gian), rồi <b>Export .srt</b> / <b>PDF</b>.</p>
 
-    <!-- Đăng nhập & trạng thái -->
-    <div class="card">
-      <div class="row" style="margin-top:2px">
-        <button id="loginBtn">🔐 Đăng nhập với Pi</button>
-        <button id="logoutBtn" class="btn-outline">🚪 Đăng xuất</button>
-        <div id="hello" class="pill mono">Chưa đăng nhập</div>
+  <div class="card">
+    <div class="grid">
+      <div>
+        <label>Tiêu đề bài hát</label>
+        <input id="title" type="text" value="Tinh Nong Viet Khuc Lan (sample)" />
       </div>
-
-      <div style="margin-top:10px">
-        <b>Premium:</b>
-        <span id="premium-status" class="pill">🔒 Chưa mua Premium</span>
-      </div>
-
-      <div style="margin-top:10px">
-        <button id="buyBtn">💎 Mua Premium — 1 Pi</button>
-        <span class="muted mono">Giao dịch gọi Worker <code>/approve</code> & <code>/complete</code>.</span>
+      <div>
+        <label>Duration mỗi mục (giây)</label>
+        <input id="dur" type="number" step="0.1" min="0.5" value="2" />
       </div>
     </div>
 
-    <!-- Transposer & Hợp âm -->
-    <div class="card">
-      <div class="row">
-        <div>
-          <label for="songSel">Chọn bài: </label>
-          <select id="songSel"></select>
+    <div class="two" style="margin-top:14px">
+      <div>
+        <label>Hợp âm (mm:ss[.ms] &rarr; chord)</label>
+        <textarea id="chart" rows="14">00:00 Am
+00:05 F
+00:10 C
+00:15 G
+00:20 Dm
+00:25 E
+00:30 Am</textarea>
+        <div class="cap">Transposer:
+          <span class="badge" id="keyBadge">Key: C</span>
+          <select id="transposeSel" style="width:auto;margin-left:8px">
+            <option value="0" selected>0</option>
+            <option value="1">+1</option><option value="2">+2</option><option value="3">+3</option>
+            <option value="4">+4</option><option value="5">+5</option><option value="6">+6</option>
+            <option value="-1">-1</option><option value="-2">-2</option><option value="-3">-3</option>
+            <option value="-4">-4</option><option value="-5">-5</option><option value="-6">-6</option>
+          </select>
         </div>
-        <div>
-          <label for="shiftInp">Transpose (semitones): </label>
-          <input id="shiftInp" class="mono" type="number" value="0" step="1" style="width:120px"/>
+      </div>
+      <div>
+        <label>Lời bài hát (mm:ss[.ms] &rarr; lyric)</label>
+        <textarea id="lyrics" rows="14">00:00 Giới thiệu...
+00:05 Câu 1
+00:10 Câu 2
+00:15 Điệp khúc
+00:20 Câu 3
+00:25 Câu 4
+00:30 Kết</textarea>
+        <div class="hint" style="margin-top:6px">
+          <b>Định dạng dòng (ví dụ) – hỗ trợ:</b><br/>
+          – <code>mm:ss(.ms)</code> hoặc <code>hh:mm:ss(.ms)</code><br/>
+          – Ngăn cách bằng khoảng trắng, dấu gạch (<code>-</code>), hoặc <code>|</code><br/>
+          <b>Ví dụ hợp lệ:</b><br/>
+          00:00 Am &nbsp;&nbsp;|&nbsp;&nbsp; 00:05,250 F#m<br/>
+          00:10,500 C &nbsp;&nbsp;|&nbsp;&nbsp; 00:15 | G<br/>
+          01:00:00 – Dm
         </div>
-        <button id="applyBtn" class="btn-outline">Áp dụng</button>
       </div>
-      <div id="lockMsg" class="note" style="margin-top:8px;display:none">
-        🔒 Đây là nội dung Premium. Hãy mua để mở khoá hơn 100+ tune (demo).
-      </div>
-      <div id="chords" class="chords" style="margin-top:12px"></div>
     </div>
 
-    <div class="note">
-      🦅 <b>Backend:</b> <code>https://pichordify-worker.pichordifykingdom.workers.dev</code>
-      → các endpoint <code>/approve</code>, <code>/complete</code>.
+    <div class="row" style="margin-top:16px">
+      <button class="ghost" onclick="loadSample()">Nạp dữ liệu mẫu</button>
+
+      <button class="sec" onclick="checkPremium()">Kiểm tra Premium</button>
+      <input id="keyEl" placeholder="Premium key" style="width:160px;margin-left:8px;vertical-align:middle">
+
+      <button class="sec" onclick="saveProject()">Gửi Save Project</button>
+      <button class="sec" onclick="openLast()">Open last (KV)</button>
+      <button class="sec" onclick="listProjects()">Danh sách Project</button>
+
+      <input id="delId" placeholder="ID để xoá" style="width:160px">
+      <button class="ghost" onclick="deleteById()">Xoá Project</button>
     </div>
+
+    <div class="row">
+      <input id="trashId" placeholder="ID chuyển thùng rác" style="width:180px">
+      <button class="ghost" onclick="moveToTrash()">Thùng rác</button>
+
+      <button class="sec" onclick="trashList()">Danh sách thùng rác</button>
+
+      <input id="restoreId" placeholder="ID khôi phục" style="width:160px">
+      <button class="sec" onclick="restoreFromTrash()">Khôi phục</button>
+
+      <input id="purgeId" placeholder="ID xoá vĩnh viễn" style="width:180px">
+      <button class="ghost" onclick="purgeForever()">Xoá vĩnh viễn</button>
+    </div>
+
+    <div class="row">
+      <button class="pri" onclick="exportSrt()">Export .srt</button>
+      <button class="pri" onclick="exportPdf()">Export PDF</button>
+    </div>
+
+    <div class="hint" id="summary" style="margin-top:12px"></div>
+    <pre id="out" class="mono" style="margin-top:12px">Sẵn sàng.</pre>
   </div>
+</div>
 
-  <script>
-  // ========= CONFIG =========
-  // 👉 Đúng tên Worker của Trẫm (theo logs deploy)
-  const WORKER_BASE = 'https://pichordify-worker.pichordifykingdom.workers.dev';
-  // Sandbox switch: ?sandbox=1
-  const url = new URL(location.href);
-  const forceSandbox = url.searchParams.get('sandbox') === '1';
+<script>
+/* ===== element refs ===== */
+const out = document.getElementById('out');
+const titleEl = document.getElementById('title');
+const chartEl = document.getElementById('chart');
+const lyricsEl = document.getElementById('lyrics');
+const durEl = document.getElementById('dur');
+const sumEl = document.getElementById('summary');
+const keyBadge = document.getElementById('keyBadge');
+const transposeSel = document.getElementById('transposeSel');
 
-  // ========= Pi SDK init =========
-  try {
-    if (!window.Pi || !Pi.init) throw new Error('Pi SDK chưa sẵn sàng. Mở bằng Pi Browser.');
-    Pi.init({ version: "2.0", sandbox: forceSandbox });
-  } catch(e){ console.warn(e); alert(e.message||e); }
+/* ===== utils ===== */
+function hhmms(sec){
+  sec = Math.max(0, Math.floor(sec));
+  const s = sec % 60, m = Math.floor(sec/60)%60, h = Math.floor(sec/3600);
+  const pad = n => String(n).padStart(2,'0');
+  return h>0 ? `${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
+}
+function sanitizeAscii(name){
+  return (name || "demo").normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/[^\w\-\. ]+/g,"").trim() || "demo";
+}
 
-  // ========= Mini songbook (demo) =========
-  const SONGS = {
-    free: [
-      { id:'free_001', title:'Happy Day (Free)', lines:['C  G  Am  F','C  G  Am  F','F  G  C   -'] },
-      { id:'free_002', title:'Sunny Road (Free)', lines:['Dm  G  C  Am','Dm  G  C  C','F   G  Em Am'] }
-    ],
-    premium: [
-      { id:'pro_101', title:'Kingdom Anthem (Pro)', lines:['G   D   Em   C','G   D   C    C','Am  D   G    -'] },
-      { id:'pro_102', title:'Eagle Flight (Pro)',  lines:['Bm  G  D  A','Bm  G  D  A','Em  A  D  -'] }
-    ]
-  };
-  const ALL_SONGS = [...SONGS.free, ...SONGS.premium];
-  const PREMIUM_IDS = new Set(SONGS.premium.map(s=>s.id));
+/* ===== parse & transpose chords ===== */
+const CHORDS = ["C","C#","Db","D","D#","Eb","E","F","F#","Gb","G","G#","Ab","A","A#","Bb","B"];
+const NOTE_TO_SEM = {C:0,"C#":1,Db:1,D:2,"D#":3,Eb:3,E:4,F:5,"F#":6,Gb:6,G:7,"G#":8,Ab:8,A:9,"A#":10,Bb:10,B:11};
+const SEM_TO_NOTE = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
 
-  // ========= Helpers =========
-  const $ = sel => document.querySelector(sel);
-  const ORDER = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+function transposeChord(ch, shift){
+  // very light parser: root(+accidental) + rest
+  const m = String(ch).match(/^([A-G](?:#|b)?)(.*)$/);
+  if(!m) return ch;
+  const sem = NOTE_TO_SEM[m[1]]; if(sem==null) return ch;
+  const tgt = (sem + (shift|0) + 120) % 12;
+  return SEM_TO_NOTE[tgt] + m[2];
+}
 
-  const isPremium = () => localStorage.getItem('pck_premium') === 'true';
-  function updatePremiumStatus(flag){
-    const el = $('#premium-status');
-    if(flag){ el.textContent='✅ Đã mua Premium'; el.classList.add('pill'); }
-    else     el.textContent='🔒 Chưa mua Premium';
-  }
-
-  function transposeChord(ch, shift){
-    const m = ch.match(/^([A-G](?:#|b)?)(.*)$/);
-    if(!m) return ch;
-    let [_, root, tail] = m;
-    const flat = {Db:'C#', Eb:'D#', Gb:'F#', Ab:'G%', Bb:'A#'}; // Ab displayed as G%
-    if(flat[root]) root = flat[root].replace('%','#');
-    const idx = ORDER.indexOf(root);
-    if(idx<0) return ch;
-    const next = ORDER[(idx + shift + 12*1000) % 12];
-    return next + tail;
-  }
-  const transposeLine = (line, shift) =>
-    !shift ? line : line.split(/\s+/).map(tok => tok && transposeChord(tok, shift)).join('  ');
-
-  function renderBasicChords(songObj){
-    const shift = parseInt($('#shiftInp').value||'0',10);
-    const html = songObj.lines.map(l => `<div class="mono">${transposeLine(l, shift)}</div>`).join('');
-    $('#chords').innerHTML = html;
-  }
-
-  function buildSongSelect(){
-    const sel = $('#songSel'); sel.innerHTML = '';
-    ALL_SONGS.forEach(s => {
-      const opt = document.createElement('option');
-      opt.value = s.id;
-      opt.textContent = s.title + (PREMIUM_IDS.has(s.id)?' 🔒':'');
-      sel.appendChild(opt);
-    });
-    sel.value = ALL_SONGS[0].id;
-  }
-
-  function getSelectedSong(){
-    const id = $('#songSel').value;
-    return ALL_SONGS.find(s => s.id === id);
-  }
-
-  function renderSong(){
-    const s = getSelectedSong();
-    const locked = PREMIUM_IDS.has(s.id) && !isPremium();
-    $('#lockMsg').style.display = locked ? 'block' : 'none';
-    if (locked){
-      $('#chords').innerHTML = `<div class="mono">🔒 Nội dung Premium — hãy mua để mở khoá.</div>`;
-      return;
-    }
-    renderBasicChords(s);
-  }
-
-  // ========= Backend call (Worker) =========
-  async function callAPI(path, body){
-    const r = await fetch(`${WORKER_BASE}${path}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-      credentials: 'omit',
-      mode: 'cors'
-    });
-    const text = await r.text();
-    try { return JSON.parse(text); } catch { if(!r.ok) throw new Error(text||r.statusText); return {}; }
-  }
-
-  // ========= Auth =========
-  async function login(){
-    try{
-      const scopes = ['username','payments'];
-      const auth = await Pi.authenticate(scopes, p => console.log('Incomplete payment:', p));
-      $('#hello').textContent = `Xin chào: @${auth.user.username} 🎵`;
-      alert('Đăng nhập thành công!');
-    }catch(e){
-      alert('Đăng nhập thất bại: ' + (e?.message||e));
+function parseLines(text, wantLyrics=false){
+  const items = [];
+  const lines = String(text||"").split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+  for(const line of lines){
+    const m = line.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?(?:[,\.](\d{1,3}))?\s*[-| ]\s*(.+)$/) ||
+              line.match(/^(\d{1,2}):(\d{2})(?:[,\.](\d{1,3}))?\s+(.+)$/);
+    if(m){
+      // hh:mm(:ss)(.ms) or mm:ss(.ms)
+      let h=0, mm=m[1], ss=m[2], ss3=m[3], ms=m[4], text=m[5]||m[4];
+      if(ss3!=null){ h=Number(mm); mm=ss; ss=ss3; ms=m[4]; }
+      const sec = (h*3600)+(Number(mm)||0)*60+(Number(ss)||0);
+      items.push({ sec, text: text.trim(), isLyric: wantLyrics });
     }
   }
-  function logout(){ $('#hello').textContent = 'Chưa đăng nhập'; }
+  return items;
+}
 
-  // ========= Payment (Premium) =========
-  async function payPremium(){
-    try{
-      await Pi.createPayment({
-        amount: 1,
-        memo: 'PiChordify Premium Access',
-        metadata: { type:'premium', item:'access' }
-      }, {
-        onReadyForServerApproval: async function (paymentId) {
-          await callAPI('/approve', { paymentId });
-        },
-        onReadyForServerCompletion: async function (paymentId, txid) {
-          await callAPI('/complete', { paymentId, txid });
-          localStorage.setItem('pck_premium','true');
-          updatePremiumStatus(true);
-          renderSong();
-          alert('Thanh toán thành công ✅');
-        },
-        onCancel: function () { alert('Đã huỷ thanh toán.'); },
-        onError: function (error) { alert('Lỗi thanh toán: ' + (error?.message||error)); }
-      });
-    }catch(e){
-      alert('Có lỗi khi mua Premium: ' + (e?.message||e));
-    }
+function summarize(items, dur){
+  if(!items.length){ sumEl.textContent=""; return; }
+  const lastSec = items[items.length-1].sec;
+  sumEl.innerHTML = `Có <b>${items.length}</b> mục, tổng khoảng <b>${(lastSec + Number(dur||2)).toFixed(1)}s</b>. Dur = <b>${dur||2}s</b>`;
+}
+
+/* ===== live transpose preview for chords textarea ===== */
+transposeSel.addEventListener('change', ()=>{
+  const shift = Number(transposeSel.value||0);
+  keyBadge.textContent = `Key shift: ${shift>0?`+${shift}`:shift}`;
+  const items = parseLines(chartEl.value,false).map(it => ({...it, text: transposeChord(it.text, shift)}));
+  const preview = items.slice(0,6).map(it => `${hhmms(it.sec)}  ${it.text}`).join('\n');
+  out.textContent = preview || "Không có dòng hợp lệ.";
+});
+
+/* ===== sample ===== */
+function loadSample(){
+  titleEl.value = "Tinh Nong Viet Khuc Lan (sample)";
+  chartEl.value = `00:00 Am
+00:05 F
+00:10 C
+00:15 G
+00:20 Dm
+00:25 E
+00:30 Am`;
+  lyricsEl.value = `00:00 Giới thiệu...
+00:05 Câu 1
+00:10 Câu 2
+00:15 Điệp khúc
+00:20 Câu 3
+00:25 Câu 4
+00:30 Kết`;
+  const items = parseLines(chartEl.value,false);
+  summarize(items, Number(durEl.value||2));
+  out.textContent = "Đã nạp mẫu 7 hợp âm trong 30 giây.";
+}
+
+/* ===== premium ===== */
+async function checkPremium(){
+  const key = document.getElementById('keyEl').value || '';
+  const r = await fetch("/api/premium/status", { headers: { "X-Key": key }});
+  out.textContent = await r.text();
+}
+
+/* ===== save / open / list / delete ===== */
+async function saveProject(){
+  const shift = Number(transposeSel.value||0);
+  const chords = parseLines(chartEl.value,false).map(it => ({...it, text: transposeChord(it.text, shift)}));
+  const lyrics = parseLines(lyricsEl.value,true);
+  const items = [...chords, ...lyrics].sort((a,b)=>a.sec-b.sec);
+  if(!items.length){ out.textContent="Không thấy dòng hợp lệ."; return; }
+  const body = { title: titleEl.value || "Demo", dur: Number(durEl.value||2), items };
+  const r = await fetch("/api/save", { method:"POST", headers:{ "content-type":"application/json" }, body: JSON.stringify(body) });
+  out.textContent = await r.text();
+}
+async function openLast(id){
+  const raw = out.textContent || "";
+  if(!id){
+    const m = raw.match(/"id":"(song-\d+)"/); if(!m){ out.textContent="Chưa thấy ID gần nhất từ save/open."; return; }
+    id = m[1];
   }
+  const r = await fetch("/api/open", { method:"POST", headers:{ "content-type":"application/json" }, body: JSON.stringify({ id }) });
+  const js = await r.json();
+  if(!js.ok || !js.project){ out.textContent = JSON.stringify(js); return; }
+  titleEl.value = js.project.title || "Demo";
+  durEl.value = Number(js.project.dur||2);
+  const chords = js.project.items.filter(x=>!x.isLyric).map(it => `${hhmms(it.sec)} ${it.text}`).join("\n");
+  const lyrics = js.project.items.filter(x=>x.isLyric).map(it => `${hhmms(it.sec)} ${it.text}`).join("\n");
+  chartEl.value = chords; lyricsEl.value = lyrics;
+  summarize(parseLines(chartEl.value), Number(durEl.value||2));
+  out.textContent = JSON.stringify(js);
+}
+async function listProjects(){
+  const r = await fetch("/api/list", { method:"GET" });
+  out.textContent = await r.text();
+}
+async function deleteById(){
+  const id = document.getElementById("delId").value || "";
+  if(!id){ out.textContent="Chưa nhập ID để xoá"; return; }
+  const r = await fetch("/api/delete", { method:"POST", headers:{ "content-type":"application/json" }, body: JSON.stringify({ id }) });
+  out.textContent = await r.text();
+}
 
-  // ========= UI bindings =========
-  $('#loginBtn').onclick = login;
-  $('#logoutBtn').onclick = logout;
-  $('#buyBtn').onclick = payPremium;
-  $('#applyBtn').onclick = renderSong;
-  $('#songSel').onchange = renderSong;
+/* ===== trash flows ===== */
+async function moveToTrash(){
+  const id = document.getElementById("trashId").value || "";
+  if(!id){ out.textContent="Chưa nhập ID để chuyển thùng rác"; return; }
+  const r = await fetch("/api/trash/move", { method:"POST", headers:{ "content-type":"application/json" }, body: JSON.stringify({ id }) });
+  out.textContent = await r.text();
+}
+async function trashList(){
+  const r = await fetch("/api/trash/list");
+  out.textContent = await r.text();
+}
+async function restoreFromTrash(){
+  const id = document.getElementById("restoreId").value || "";
+  if(!id){ out.textContent="Chưa nhập ID khôi phục"; return; }
+  const r = await fetch("/api/trash/restore", { method:"POST", headers:{ "content-type":"application/json" }, body: JSON.stringify({ id }) });
+  out.textContent = await r.text();
+}
+async function purgeForever(){
+  const id = document.getElementById("purgeId").value || "";
+  if(!id){ out.textContent="Chưa nhập ID xoá vĩnh viễn"; return; }
+  const r = await fetch("/api/trash/purge", { method:"POST", headers:{ "content-type":"application/json" }, body: JSON.stringify({ id }) });
+  out.textContent = await r.text();
+}
 
-  // ========= Init view =========
-  buildSongSelect();
-  updatePremiumStatus(isPremium());
-  renderSong();
-  </script>
+/* ===== export ===== */
+async function exportSrt(){
+  const shift = Number(transposeSel.value||0);
+  const chords = parseLines(chartEl.value,false).map(it => ({...it, text: transposeChord(it.text, shift)}));
+  const lyrics = parseLines(lyricsEl.value,true);
+  const items = [...chords, ...lyrics].sort((a,b)=>a.sec-b.sec);
+  if(!items.length){ out.textContent="Không thấy dòng hợp lệ."; return; }
+  const body = { title: titleEl.value || "demo", dur: Number(durEl.value||2), items };
+  const r = await fetch("/api/export", { method:"POST", headers:{ "content-type":"application/json" }, body: JSON.stringify(body) });
+  const blob = await r.blob();
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = sanitizeAscii(titleEl.value) + " - Loi Viet Khuc Lan" + ".srt";
+  a.click(); URL.revokeObjectURL(a.href);
+  out.textContent = "Đã tải .srt";
+}
+async function exportPdf(){
+  const shift = Number(transposeSel.value||0);
+  const chords = parseLines(chartEl.value,false).map(it => ({...it, text: transposeChord(it.text, shift)}));
+  const lyrics = parseLines(lyricsEl.value,true);
+  const items = [...chords, ...lyrics].sort((a,b)=>a.sec-b.sec);
+  if(!items.length){ out.textContent="Không thấy dòng hợp lệ."; return; }
+  const body = { title: titleEl.value || "Chord Sheet", dur: Number(durEl.value||2), items };
+  const r = await fetch("/api/export-pdf", { method:"POST", headers:{ "content-type":"application/json" }, body: JSON.stringify(body) });
+  const blob = await r.blob();
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = sanitizeAscii(titleEl.value) + " - Loi Viet Khuc Lan" + ".pdf";
+  a.click(); URL.revokeObjectURL(a.href);
+  out.textContent = "Đã tải PDF";
+}
+
+/* ===== init summary ===== */
+(function init(){
+  summarize(parseLines(chartEl.value), Number(durEl.value||2));
+})();
+</script>
 </body>
 </html>
