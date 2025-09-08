@@ -1,200 +1,241 @@
 <!doctype html>
 <html lang="vi">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>PiChordify Kingdom — Premium Demo</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>PiChordify Kingdom — Chord & Lyric + YouTube</title>
 <style>
-  :root{--pri:#6c47ff;--mut:#9aa0a6}
+  :root{--pri:#6c47ff;--ink:#1f2430;--mut:#8f98a3;--bg:#f5f6fb;--card:#fff;--line:#e7e9ef;--hl:#fff2cc}
   *{box-sizing:border-box}
-  body{margin:0;background:#f5f6fb;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
-  .wrap{max-width:980px;margin:32px auto;padding:0 16px}
-  .card{background:#fff;border-radius:16px;padding:24px;box-shadow:0 8px 28px rgba(0,0,0,.06)}
-  h1{margin:0 0 8px;font-size:28px;color:#3b2e7a}
-  .pill{display:inline-block;font-weight:700;color:#3b2e7a;background:#e8e2ff;padding:6px 12px;border-radius:999px;margin-bottom:12px}
-  .grid{display:grid;grid-template-columns:1fr 260px;gap:20px}
-  textarea,input[type="text"],input[type="number"],select{width:100%;padding:12px;border-radius:10px;border:1px solid #e6e6ef;background:#fbfbff}
-  .hint{font-size:12px;color:#3b2e7a}
-  .row{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}
-  button{padding:10px 16px;border:0;border-radius:10px;cursor:pointer;font-weight:600}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+  .wrap{max-width:1100px;margin:32px auto;padding:0 16px}
+  .card{background:var(--card);border-radius:16px;padding:24px;box-shadow:0 8px 28px rgba(0,0,0,.06)}
+  h1{margin:0 0 8px;font-size:28px;color:#2e2a88}
+  .pill{display:inline-block;margin-bottom:12px;font-weight:800;color:#2e2a88;background:#e8edff;padding:6px 12px;border-radius:999px}
+  .grid{display:grid;gap:18px}
+  .g2{grid-template-columns:1fr 280px}
+  .g3{grid-template-columns:1fr 1fr}
+  textarea,input[type="text"],input[type="number"],input[type="url"],select{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:#fbfbff}
+  textarea{font:13px/1.45 ui-monospace,SFMono-Regular,Consolas,Menlo,monospace}
+  .hint{font-size:12px;color:var(--mut)}
+  .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  button{padding:10px 14px;border:0;border-radius:10px;cursor:pointer;font-weight:700}
   .pri{background:var(--pri);color:#fff}
-  .sec{background:#eef2ff;color:#2d2f7a;border:1px solid #e0e3ff}
-  .ghost{background:#f7f7ff;color:#333;border:1px solid #e6e6ef}
-  .warn{color:#b54708}
-  .kbd{font:600 12px ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;background:#f2f4ff;border:1px solid #e1e5ff;padding:2px 6px;border-radius:6px}
+  .sec{background:#111;color:#fff}
+  .ghost{background:#eef1ff;color:#2e2a88}
   .mono{font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;white-space:pre-wrap}
-  .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-  .cap{font-size:12px;color:#666;margin-top:6px}
-  .badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#f1f3ff;color:#3640a1;font-weight:600;font-size:12px}
+  pre{background:#f8f9fe;border:1px solid var(--line);border-radius:12px;padding:12px}
+  .timeline{border:1px solid var(--line);border-radius:12px;background:#fff;max-height:360px;overflow:auto;padding:8px}
+  .item{display:grid;grid-template-columns:92px 56px 1fr;gap:10px;align-items:center;padding:6px 8px;border-radius:10px;cursor:pointer}
+  .item:hover{background:#f6f8ff}
+  .item.active{background:var(--hl);box-shadow:inset 0 0 0 2px #ffe082}
+  .badge{display:inline-block;padding:2px 8px;border-radius:999px;background:#f1f3ff;color:#3b3f9f;font-weight:700;font-size:12px}
+  .yt{display:grid;grid-template-columns:480px 1fr;gap:18px;align-items:start}
+  #player{background:#000;border-radius:12px;overflow:hidden}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="pill">BUILD NEW CHORDIFY</div>
-  <h1>PiChordify Kingdom — Premium Demo</h1>
-  <p>Nhập <b>hợp âm</b> + <b>lời</b> (mỗi dòng một mốc thời gian), rồi <b>Export .srt</b> / <b>PDF</b>.</p>
+  <h1>PiChordify Kingdom — YouTube Sync</h1>
 
   <div class="card">
-    <div class="grid">
+    <!-- YouTube controls -->
+    <div class="grid g2">
       <div>
-        <label>Tiêu đề bài hát</label>
-        <input id="title" type="text" value="Tinh Nong Viet Khuc Lan (sample)" />
+        <label>YouTube URL</label>
+        <div class="row">
+          <input id="ytUrl" type="url" placeholder="https://www.youtube.com/watch?v=XXXXXXXXXXX" style="flex:1">
+          <button class="pri" onclick="loadYoutube()">Play</button>
+          <button class="ghost" onclick="seekRel(-5)">⏪ -5s</button>
+          <button class="ghost" onclick="seekRel(5)">⏩ +5s</button>
+        </div>
+        <div class="hint">Dán link YouTube rồi bấm <b>Play</b>. Timeline sẽ tự bám theo thời gian phát.</div>
       </div>
       <div>
-        <label>Duration mỗi mục (giây)</label>
-        <input id="dur" type="number" step="0.1" min="0.5" value="2" />
+        <label>Tiêu đề bài hát</label>
+        <input id="title" type="text" value="Tinh Nong Viet Khuc Lan (sample)">
       </div>
     </div>
 
-    <div class="two" style="margin-top:14px">
+    <div class="grid g3" style="margin-top:14px">
       <div>
-        <label>Hợp âm (mm:ss[.ms] &rarr; chord)</label>
-        <textarea id="chart" rows="14">00:00 Am
+        <label>Hợp âm (mm:ss[.ms] → chord)</label>
+        <textarea id="chart" rows="12">00:00 Am
 00:05 F
 00:10 C
 00:15 G
 00:20 Dm
 00:25 E
 00:30 Am</textarea>
-        <div class="cap">Transposer:
-          <span class="badge" id="keyBadge">Key: C</span>
-          <select id="transposeSel" style="width:auto;margin-left:8px">
+        <div class="row" style="margin-top:6px">
+          <span class="badge" id="keyBadge">Transpose</span>
+          <select id="transposeSel" style="width:120px">
             <option value="0" selected>0</option>
             <option value="1">+1</option><option value="2">+2</option><option value="3">+3</option>
             <option value="4">+4</option><option value="5">+5</option><option value="6">+6</option>
             <option value="-1">-1</option><option value="-2">-2</option><option value="-3">-3</option>
             <option value="-4">-4</option><option value="-5">-5</option><option value="-6">-6</option>
           </select>
+          <button class="ghost" onclick="loadSample()">Nạp mẫu</button>
         </div>
       </div>
       <div>
-        <label>Lời bài hát (mm:ss[.ms] &rarr; lyric)</label>
-        <textarea id="lyrics" rows="14">00:00 Giới thiệu...
-00:05 Câu 1
-00:10 Câu 2
-00:15 Điệp khúc
-00:20 Câu 3
-00:25 Câu 4
-00:30 Kết</textarea>
+        <label>Lời bài hát (mm:ss[.ms] → lyric)</label>
+        <textarea id="lyrics" rows="12">00:00 Gioi thieu...
+00:05 Cau 1
+00:10 Cau 2
+00:15 Diep khuc
+00:20 Cau 3
+00:25 Cau 4
+00:30 Ket</textarea>
         <div class="hint" style="margin-top:6px">
-          <b>Định dạng dòng (ví dụ) – hỗ trợ:</b><br/>
-          – <code>mm:ss(.ms)</code> hoặc <code>hh:mm:ss(.ms)</code><br/>
-          – Ngăn cách bằng khoảng trắng, dấu gạch (<code>-</code>), hoặc <code>|</code><br/>
-          <b>Ví dụ hợp lệ:</b><br/>
-          00:00 Am &nbsp;&nbsp;|&nbsp;&nbsp; 00:05,250 F#m<br/>
-          00:10,500 C &nbsp;&nbsp;|&nbsp;&nbsp; 00:15 | G<br/>
-          01:00:00 – Dm
+          Hỗ trợ thời gian: <code>mm:ss(.ms)</code> hoặc <code>hh:mm:ss(.ms)</code>; ngăn cách bằng khoảng trắng / <code>-</code> / <code>|</code>.
         </div>
       </div>
     </div>
 
-    <div class="row" style="margin-top:16px">
-      <button class="ghost" onclick="loadSample()">Nạp dữ liệu mẫu</button>
+    <!-- Player + Timeline -->
+    <div class="yt" style="margin-top:16px">
+      <div id="player"></div>
+      <div>
+        <div class="row">
+          <button class="sec" onclick="checkPremium()">Kiểm tra Premium</button>
+          <input id="keyEl" placeholder="Premium key" style="width:160px">
+          <button class="sec" onclick="saveProject()">Save Project</button>
+          <button class="sec" onclick="openLast()">Open last</button>
+          <button class="sec" onclick="listProjects()">List</button>
+          <input id="delId" placeholder="ID xoá" style="width:140px">
+          <button class="ghost" onclick="deleteById()">Xoá</button>
+        </div>
 
-      <button class="sec" onclick="checkPremium()">Kiểm tra Premium</button>
-      <input id="keyEl" placeholder="Premium key" style="width:160px;margin-left:8px;vertical-align:middle">
+        <div class="row" style="margin-top:10px">
+          <button class="sec" onclick="trashList()">Thùng rác</button>
+          <input id="restoreId" placeholder="ID khôi phục" style="width:160px">
+          <button class="ghost" onclick="restoreFromTrash()">Khôi phục</button>
+          <input id="purgeId" placeholder="ID xoá vĩnh viễn" style="width:160px">
+          <button class="ghost" onclick="purgeForever()">Xoá vĩnh viễn</button>
+        </div>
 
-      <button class="sec" onclick="saveProject()">Gửi Save Project</button>
-      <button class="sec" onclick="openLast()">Open last (KV)</button>
-      <button class="sec" onclick="listProjects()">Danh sách Project</button>
+        <div class="row" style="margin-top:10px">
+          <button class="pri" onclick="exportSrt()">Export .srt</button>
+          <button class="pri" onclick="exportPdf()">Export PDF</button>
+        </div>
 
-      <input id="delId" placeholder="ID để xoá" style="width:160px">
-      <button class="ghost" onclick="deleteById()">Xoá Project</button>
+        <div class="hint" id="summary" style="margin-top:10px"></div>
+        <div id="timeline" class="timeline" style="margin-top:8px"></div>
+      </div>
     </div>
 
-    <div class="row">
-      <input id="trashId" placeholder="ID chuyển thùng rác" style="width:180px">
-      <button class="ghost" onclick="moveToTrash()">Thùng rác</button>
-
-      <button class="sec" onclick="trashList()">Danh sách thùng rác</button>
-
-      <input id="restoreId" placeholder="ID khôi phục" style="width:160px">
-      <button class="sec" onclick="restoreFromTrash()">Khôi phục</button>
-
-      <input id="purgeId" placeholder="ID xoá vĩnh viễn" style="width:180px">
-      <button class="ghost" onclick="purgeForever()">Xoá vĩnh viễn</button>
-    </div>
-
-    <div class="row">
-      <button class="pri" onclick="exportSrt()">Export .srt</button>
-      <button class="pri" onclick="exportPdf()">Export PDF</button>
-    </div>
-
-    <div class="hint" id="summary" style="margin-top:12px"></div>
     <pre id="out" class="mono" style="margin-top:12px">Sẵn sàng.</pre>
   </div>
 </div>
 
+<!-- YouTube Iframe API -->
+<script src="https://www.youtube.com/iframe_api"></script>
 <script>
-/* ===== element refs ===== */
+/* ====== DOM refs ====== */
 const out = document.getElementById('out');
 const titleEl = document.getElementById('title');
 const chartEl = document.getElementById('chart');
 const lyricsEl = document.getElementById('lyrics');
-const durEl = document.getElementById('dur');
+const durEl = document.getElementById('dur') || { value: 2 };
 const sumEl = document.getElementById('summary');
-const keyBadge = document.getElementById('keyBadge');
 const transposeSel = document.getElementById('transposeSel');
+const keyBadge = document.getElementById('keyBadge');
+const timelineEl = document.getElementById('timeline');
+const ytUrlEl = document.getElementById('ytUrl');
 
-/* ===== utils ===== */
-function hhmms(sec){
-  sec = Math.max(0, Math.floor(sec));
-  const s = sec % 60, m = Math.floor(sec/60)%60, h = Math.floor(sec/3600);
-  const pad = n => String(n).padStart(2,'0');
-  return h>0 ? `${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
+let ytPlayer = null;
+function onYouTubeIframeAPIReady(){ /* lazy init in loadYoutube() */ }
+function extractVideoId(u){ const m = String(u).match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/); return m?m[1]:null; }
+function loadYoutube(){
+  const vid = extractVideoId(ytUrlEl.value || "");
+  if(!vid){ out.textContent = "Link YouTube không hợp lệ."; return; }
+  ytPlayer = new YT.Player('player', { height:'270', width:'480', videoId:vid, events:{ onReady:onPlayerReady }});
 }
-function sanitizeAscii(name){
-  return (name || "demo").normalize("NFD").replace(/[\u0300-\u036f]/g,"")
-    .replace(/[^\w\-\. ]+/g,"").trim() || "demo";
+function onPlayerReady(e){ e.target.playVideo(); rafTick(); }
+function seekRel(ds){ if(!ytPlayer) return; const t = Math.max(0, ytPlayer.getCurrentTime() + ds); ytPlayer.seekTo(t, true); }
+
+/* ====== parse utilities ====== */
+function toSecAny(t){
+  const m = String(t).replace(',', '.').match(/^(\d+):(\d{2})(?::(\d{2}))?(?:\.(\d{1,3}))?$/);
+  if(!m) return 0;
+  const h = +(m[3]!=null ? m[1] : 0);
+  const mi = +(m[3]!=null ? m[2] : m[1]);
+  const s = +(m[3]!=null ? m[3] : m[2]);
+  const ms = +(m[4]||0);
+  return h*3600 + mi*60 + s + ms/1000;
 }
-
-/* ===== parse & transpose chords ===== */
-const CHORDS = ["C","C#","Db","D","D#","Eb","E","F","F#","Gb","G","G#","Ab","A","A#","Bb","B"];
-const NOTE_TO_SEM = {C:0,"C#":1,Db:1,D:2,"D#":3,Eb:3,E:4,F:5,"F#":6,Gb:6,G:7,"G#":8,Ab:8,A:9,"A#":10,Bb:10,B:11};
-const SEM_TO_NOTE = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
-
-function transposeChord(ch, shift){
-  // very light parser: root(+accidental) + rest
-  const m = String(ch).match(/^([A-G](?:#|b)?)(.*)$/);
-  if(!m) return ch;
-  const sem = NOTE_TO_SEM[m[1]]; if(sem==null) return ch;
-  const tgt = (sem + (shift|0) + 120) % 12;
-  return SEM_TO_NOTE[tgt] + m[2];
-}
-
-function parseLines(text, wantLyrics=false){
-  const items = [];
-  const lines = String(text||"").split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+function parseLines(text, flagLyric=false){
+  const items=[]; const lines=String(text||"").split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
   for(const line of lines){
-    const m = line.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?(?:[,\.](\d{1,3}))?\s*[-| ]\s*(.+)$/) ||
-              line.match(/^(\d{1,2}):(\d{2})(?:[,\.](\d{1,3}))?\s+(.+)$/);
-    if(m){
-      // hh:mm(:ss)(.ms) or mm:ss(.ms)
-      let h=0, mm=m[1], ss=m[2], ss3=m[3], ms=m[4], text=m[5]||m[4];
-      if(ss3!=null){ h=Number(mm); mm=ss; ss=ss3; ms=m[4]; }
-      const sec = (h*3600)+(Number(mm)||0)*60+(Number(ss)||0);
-      items.push({ sec, text: text.trim(), isLyric: wantLyrics });
-    }
+    const m = line.match(/^(\d{1,2}:\d{2}(?::\d{2})?(?:[.,]\d{1,3})?)\s*[-| ]\s*(.+)$|^(\d{1,2}:\d{2}(?::\d{2})?(?:[.,]\d{1,3})?)\s+(.+)$/)
+          || line.match(/^(\d{1,2}:\d{2}(?::\d{2})?(?:[.,]\d{1,3})?)$/);
+    if(!m) continue;
+    const tStr = m[1]||m[3]; const txt = (m[2]||m[4]||"").trim();
+    items.push({ sec: toSecAny(tStr), text: txt, isLyric: flagLyric });
   }
+  return items.sort((a,b)=>a.sec-b.sec);
+}
+function pad(n){return String(n).padStart(2,"0")}
+function hhmmss(sec){ sec=Math.max(0,Math.floor(sec)); const s=sec%60,m=Math.floor(sec/60)%60,h=Math.floor(sec/3600); return h>0?`${pad(h)}:${pad(m)}:${pad(s)}`:`${pad(m)}:${pad(s)}`; }
+
+/* ====== transpose (simple) ====== */
+const NOTE2 = {C:0,"C#":1,Db:1,D:2,"D#":3,Eb:3,E:4,F:5,"F#":6,Gb:6,G:7,"G#":8,Ab:8,A:9,"A#":10,Bb:10,B:11};
+const SEM2 = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+function transpChord(ch,shift){
+  const m=String(ch).match(/^([A-G](?:#|b)?)(.*)$/); if(!m) return ch;
+  const sem=NOTE2[m[1]]; if(sem==null) return ch;
+  return SEM2[(sem+(shift|0)+120)%12]+m[2];
+}
+transposeSel.addEventListener('change', ()=>{ keyBadge.textContent = `Transpose ${transposeSel.value}`; buildTimeline(); });
+
+/* ====== timeline render & sync ====== */
+function buildTimeline(){
+  const shift = Number(transposeSel.value||0);
+  const chords = parseLines(chartEl.value,false).map(it=>({...it,text:transpChord(it.text,shift),kind:"Chord"}));
+  const lyrics = parseLines(lyricsEl.value,true).map(it=>({...it,kind:"Lyric"}));
+  const items = [...chords,...lyrics].sort((a,b)=>a.sec-b.sec);
+  timelineEl.innerHTML = items.map((it,i)=>`
+    <div class="item" data-idx="${i}" data-sec="${it.sec}">
+      <div><span class="badge">${hhmmss(it.sec)}</span></div>
+      <div>${it.kind}</div>
+      <div class="${it.kind==='Chord'?'mono':''}">${escapeHtml(it.text)}</div>
+    </div>`).join("");
+  // click to seek
+  for(const el of timelineEl.querySelectorAll('.item')){
+    el.addEventListener('click', ()=>{ const s=+el.dataset.sec; if(ytPlayer) ytPlayer.seekTo(s,true); });
+  }
+  // summary
+  if(items.length){
+    sumEl.innerHTML = `Có <b>${items.length}</b> mục, kéo dài ~<b>${(items.at(-1).sec + Number(durEl.value||2)).toFixed(1)}s</b>.`;
+  }else sumEl.textContent="";
   return items;
 }
-
-function summarize(items, dur){
-  if(!items.length){ sumEl.textContent=""; return; }
-  const lastSec = items[items.length-1].sec;
-  sumEl.innerHTML = `Có <b>${items.length}</b> mục, tổng khoảng <b>${(lastSec + Number(dur||2)).toFixed(1)}s</b>. Dur = <b>${dur||2}s</b>`;
+function escapeHtml(s){return String(s).replace(/[&<>"]/g,m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[m]))}
+function highlightAt(t){
+  const items = Array.from(timelineEl.querySelectorAll('.item'));
+  if(!items.length) return;
+  let cur = items[0];
+  for(const el of items){
+    const s = +el.dataset.sec;
+    if(s <= t) cur = el; else break;
+  }
+  items.forEach(el=>el.classList.remove('active'));
+  cur.classList.add('active');
+  // auto-scroll
+  const top = cur.offsetTop - timelineEl.clientHeight/2 + cur.clientHeight/2;
+  timelineEl.scrollTo({ top: Math.max(0, top), behavior:'smooth' });
+}
+function rafTick(){
+  if(ytPlayer && ytPlayer.getPlayerState && ytPlayer.getPlayerState() === YT.PlayerState.PLAYING){
+    highlightAt(ytPlayer.getCurrentTime());
+  }
+  requestAnimationFrame(rafTick);
 }
 
-/* ===== live transpose preview for chords textarea ===== */
-transposeSel.addEventListener('change', ()=>{
-  const shift = Number(transposeSel.value||0);
-  keyBadge.textContent = `Key shift: ${shift>0?`+${shift}`:shift}`;
-  const items = parseLines(chartEl.value,false).map(it => ({...it, text: transposeChord(it.text, shift)}));
-  const preview = items.slice(0,6).map(it => `${hhmms(it.sec)}  ${it.text}`).join('\n');
-  out.textContent = preview || "Không có dòng hợp lệ.";
-});
-
-/* ===== sample ===== */
+/* ====== sample ====== */
 function loadSample(){
   titleEl.value = "Tinh Nong Viet Khuc Lan (sample)";
   chartEl.value = `00:00 Am
@@ -204,124 +245,104 @@ function loadSample(){
 00:20 Dm
 00:25 E
 00:30 Am`;
-  lyricsEl.value = `00:00 Giới thiệu...
-00:05 Câu 1
-00:10 Câu 2
-00:15 Điệp khúc
-00:20 Câu 3
-00:25 Câu 4
-00:30 Kết`;
-  const items = parseLines(chartEl.value,false);
-  summarize(items, Number(durEl.value||2));
-  out.textContent = "Đã nạp mẫu 7 hợp âm trong 30 giây.";
+  lyricsEl.value = `00:00 Gioi thieu...
+00:05 Cau 1
+00:10 Cau 2
+00:15 Diep khuc
+00:20 Cau 3
+00:25 Cau 4
+00:30 Ket`;
+  buildTimeline();
+  out.textContent = "Đã nạp mẫu & dựng timeline.";
 }
 
-/* ===== premium ===== */
+/* ====== API glue ====== */
 async function checkPremium(){
   const key = document.getElementById('keyEl').value || '';
-  const r = await fetch("/api/premium/status", { headers: { "X-Key": key }});
+  const r = await fetch('/api/premium/status', { headers:{ 'X-Key': key }});
   out.textContent = await r.text();
 }
-
-/* ===== save / open / list / delete ===== */
 async function saveProject(){
   const shift = Number(transposeSel.value||0);
-  const chords = parseLines(chartEl.value,false).map(it => ({...it, text: transposeChord(it.text, shift)}));
+  const chords = parseLines(chartEl.value,false).map(it=>({...it,text:transpChord(it.text,shift)}));
   const lyrics = parseLines(lyricsEl.value,true);
-  const items = [...chords, ...lyrics].sort((a,b)=>a.sec-b.sec);
+  const items = [...chords,...lyrics].sort((a,b)=>a.sec-b.sec);
   if(!items.length){ out.textContent="Không thấy dòng hợp lệ."; return; }
-  const body = { title: titleEl.value || "Demo", dur: Number(durEl.value||2), items };
-  const r = await fetch("/api/save", { method:"POST", headers:{ "content-type":"application/json" }, body: JSON.stringify(body) });
+  const body = { id: "song-"+Date.now(), title: titleEl.value || "Demo", dur: Number(durEl.value||2), items };
+  const r = await fetch('/api/save', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify(body) });
   out.textContent = await r.text();
+  buildTimeline();
 }
-async function openLast(id){
-  const raw = out.textContent || "";
-  if(!id){
-    const m = raw.match(/"id":"(song-\d+)"/); if(!m){ out.textContent="Chưa thấy ID gần nhất từ save/open."; return; }
-    id = m[1];
-  }
-  const r = await fetch("/api/open", { method:"POST", headers:{ "content-type":"application/json" }, body: JSON.stringify({ id }) });
-  const js = await r.json();
-  if(!js.ok || !js.project){ out.textContent = JSON.stringify(js); return; }
+async function openLast(){
+  // mở last theo API (server sẽ tự lấy "last")
+  const r = await fetch('/api/open', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({}) });
+  const js = await r.json().catch(()=>null);
+  if(!js || !js.ok || !js.project){ out.textContent = await r.text(); return; }
   titleEl.value = js.project.title || "Demo";
-  durEl.value = Number(js.project.dur||2);
-  const chords = js.project.items.filter(x=>!x.isLyric).map(it => `${hhmms(it.sec)} ${it.text}`).join("\n");
-  const lyrics = js.project.items.filter(x=>x.isLyric).map(it => `${hhmms(it.sec)} ${it.text}`).join("\n");
-  chartEl.value = chords; lyricsEl.value = lyrics;
-  summarize(parseLines(chartEl.value), Number(durEl.value||2));
+  durEl.value   = Number(js.project.dur || 2);
+  // tách lại thành 2 khối
+  const c = js.project.items.filter(x=>!x.isLyric).map(it=>`${hhmmss(it.sec)} ${it.text}`).join("\n");
+  const l = js.project.items.filter(x=> x.isLyric).map(it=>`${hhmmss(it.sec)} ${it.text}`).join("\n");
+  chartEl.value=c; lyricsEl.value=l;
   out.textContent = JSON.stringify(js);
+  buildTimeline();
 }
-async function listProjects(){
-  const r = await fetch("/api/list", { method:"GET" });
-  out.textContent = await r.text();
-}
+async function listProjects(){ const r = await fetch('/api/list'); out.textContent = await r.text(); buildTimeline(); }
 async function deleteById(){
-  const id = document.getElementById("delId").value || "";
-  if(!id){ out.textContent="Chưa nhập ID để xoá"; return; }
-  const r = await fetch("/api/delete", { method:"POST", headers:{ "content-type":"application/json" }, body: JSON.stringify({ id }) });
-  out.textContent = await r.text();
+  const id = document.getElementById('delId').value || '';
+  if(!id){ out.textContent = "Nhập ID để xoá"; return; }
+  const r = await fetch('/api/delete', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ id }) });
+  out.textContent = await r.text(); buildTimeline();
 }
-
-/* ===== trash flows ===== */
-async function moveToTrash(){
-  const id = document.getElementById("trashId").value || "";
-  if(!id){ out.textContent="Chưa nhập ID để chuyển thùng rác"; return; }
-  const r = await fetch("/api/trash/move", { method:"POST", headers:{ "content-type":"application/json" }, body: JSON.stringify({ id }) });
-  out.textContent = await r.text();
-}
-async function trashList(){
-  const r = await fetch("/api/trash/list");
-  out.textContent = await r.text();
-}
+/* trash */
+async function trashList(){ const r = await fetch('/api/trash-list'); out.textContent = await r.text(); }
 async function restoreFromTrash(){
-  const id = document.getElementById("restoreId").value || "";
-  if(!id){ out.textContent="Chưa nhập ID khôi phục"; return; }
-  const r = await fetch("/api/trash/restore", { method:"POST", headers:{ "content-type":"application/json" }, body: JSON.stringify({ id }) });
+  const id = document.getElementById('restoreId').value || '';
+  if(!id){ out.textContent="Nhập ID khôi phục"; return; }
+  const r = await fetch('/api/restore', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ id }) });
   out.textContent = await r.text();
 }
 async function purgeForever(){
-  const id = document.getElementById("purgeId").value || "";
-  if(!id){ out.textContent="Chưa nhập ID xoá vĩnh viễn"; return; }
-  const r = await fetch("/api/trash/purge", { method:"POST", headers:{ "content-type":"application/json" }, body: JSON.stringify({ id }) });
+  const id = document.getElementById('purgeId').value || '';
+  if(!id){ out.textContent="Nhập ID xoá vĩnh viễn"; return; }
+  const r = await fetch('/api/trash-delete', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ id }) });
   out.textContent = await r.text();
 }
-
-/* ===== export ===== */
+/* export */
+function sanitizeAscii(name){
+  return (name || "demo").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^\w\-\. ]+/g,"").trim() || "demo";
+}
 async function exportSrt(){
   const shift = Number(transposeSel.value||0);
-  const chords = parseLines(chartEl.value,false).map(it => ({...it, text: transposeChord(it.text, shift)}));
+  const chords = parseLines(chartEl.value,false).map(it=>({...it,text:transpChord(it.text,shift)}));
   const lyrics = parseLines(lyricsEl.value,true);
-  const items = [...chords, ...lyrics].sort((a,b)=>a.sec-b.sec);
+  const items = [...chords,...lyrics].sort((a,b)=>a.sec-b.sec);
   if(!items.length){ out.textContent="Không thấy dòng hợp lệ."; return; }
-  const body = { title: titleEl.value || "demo", dur: Number(durEl.value||2), items };
-  const r = await fetch("/api/export", { method:"POST", headers:{ "content-type":"application/json" }, body: JSON.stringify(body) });
+  const body = { title: sanitizeAscii(titleEl.value) + " - Loi Viet Khuc Lan", dur: Number(durEl.value||2), items };
+  const r = await fetch('/api/export', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify(body) });
   const blob = await r.blob();
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = sanitizeAscii(titleEl.value) + " - Loi Viet Khuc Lan" + ".srt";
-  a.click(); URL.revokeObjectURL(a.href);
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = sanitizeAscii(titleEl.value)+" - Loi Viet Khuc Lan.srt"; a.click(); URL.revokeObjectURL(a.href);
   out.textContent = "Đã tải .srt";
 }
 async function exportPdf(){
   const shift = Number(transposeSel.value||0);
-  const chords = parseLines(chartEl.value,false).map(it => ({...it, text: transposeChord(it.text, shift)}));
+  const chords = parseLines(chartEl.value,false).map(it=>({...it,text:transpChord(it.text,shift)}));
   const lyrics = parseLines(lyricsEl.value,true);
-  const items = [...chords, ...lyrics].sort((a,b)=>a.sec-b.sec);
+  const items = [...chords,...lyrics].sort((a,b)=>a.sec-b.sec);
   if(!items.length){ out.textContent="Không thấy dòng hợp lệ."; return; }
-  const body = { title: titleEl.value || "Chord Sheet", dur: Number(durEl.value||2), items };
-  const r = await fetch("/api/export-pdf", { method:"POST", headers:{ "content-type":"application/json" }, body: JSON.stringify(body) });
+  const body = { title: sanitizeAscii(titleEl.value) + " - Loi Viet Khuc Lan", dur: Number(durEl.value||2), items };
+  const r = await fetch('/api/export-pdf', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify(body) });
   const blob = await r.blob();
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = sanitizeAscii(titleEl.value) + " - Loi Viet Khuc Lan" + ".pdf";
-  a.click(); URL.revokeObjectURL(a.href);
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = sanitizeAscii(titleEl.value)+" - Loi Viet Khuc Lan.pdf"; a.click(); URL.revokeObjectURL(a.href);
   out.textContent = "Đã tải PDF";
 }
 
-/* ===== init summary ===== */
-(function init(){
-  summarize(parseLines(chartEl.value), Number(durEl.value||2));
-})();
+/* ====== bootstrap ====== */
+function buildAndPreview(){ buildTimeline(); }
+function rafOnce(){ requestAnimationFrame(()=>highlightAt(0)); }
+loadSample();
+buildAndPreview();
+rafOnce();
 </script>
 </body>
 </html>
