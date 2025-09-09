@@ -1,288 +1,73 @@
 <!doctype html>
 <html lang="vi">
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>PiChordify Kingdom — Premium Demo</title>
-<style>
-  :root{--pri:#6d4aff;--mut:#888}
-  body{background:#f4f2ff;font-family:system-ui,Segoe UI,Roboto,Arial;}
-  .wrap{max-width:980px;margin:28px auto;padding:0 16px}
-  .card{background:#fff;border-radius:16px;padding:24px;box-shadow:0 8px 28px rgba(20,0,120,.08)}
-  h1{margin:0 0 8px;font-size:28px;color:#3b2e7a}
-  .pill{display:inline-block;font-weight:700;color:#3b2e7a;background:#e8e2ff;padding:6px 12px;border-radius:999px;margin-bottom:12px}
-  .grid{display:grid;grid-template-columns:1fr 260px;gap:20px}
-  textarea,input[type="text"],input[type="number"]{width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid #e6e6ef;background:#fbfbff}
-  .row{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}
-  button{padding:10px 14px;border:none;border-radius:10px;cursor:pointer;font-weight:600}
-  .pri{background:var(--pri);color:#fff}
-  .sec{background:#eee;color:#333}
-  .ghost{background:#fff;border:1px solid #ddd;color:#333}
-  .hint{color:#41519b;background:#eef2ff;border:1px solid #dbe4ff;border-radius:10px;padding:12px;white-space:pre-wrap}
-  .warn{color:#b54708}
-  .small{font-size:12px;color:#666}
-</style>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>PiChordify Kingdom — Premium Demo</title>
+  <link rel="icon" href="data:,"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">BUILD NEW CHORDIFY</div>
+    <div class="grow"></div>
+    <div id="premiumBadge" class="badge hidden">Premium</div>
+    <button id="btnLogin"  type="button" class="ghost">Đăng nhập</button>
+    <button id="btnLogout" type="button" class="ghost hidden">Đăng xuất</button>
+    <button id="btnBuyPremium" type="button" class="primary">Mua Premium</button>
+  </header>
 
-<div class="wrap">
-  <div class="pill">BUILD NEW CHORDIFY</div>
-  <h1>PiChordify Kingdom — Premium Demo</h1>
-  <p>Nhập bài + hợp âm (một dòng một mốc thời gian), rồi <b>Export .srt</b>.</p>
+  <main class="wrap">
+    <h1>PiChordify Kingdom — Premium Demo</h1>
+    <p>Nhập bài + hợp âm (mỗi dòng một mốc thời gian/lyric), rồi <b>Export .srt</b> hoặc <b>PDF</b>.</p>
 
-  <div class="card">
     <div class="grid">
-      <div>
-        <label>Tiêu đề bài hát</label>
-        <input id="title" type="text" value="Tình Nồng Việt Khúc Lan (sample)">
-        <div style="margin-top:14px">
-          <textarea id="chart" rows="14">00:00 Am
-00:05 F
-00:10 C
-00:15 G
-00:20 Dm
-00:25 E
-00:30 Am</textarea>
-        </div>
+      <label>Tiêu đề bài hát
+        <input id="titleEl" type="text" placeholder="Ví dụ: Hallelujah"/>
+      </label>
+
+      <label>Duration mỗi mục (giây)
+        <input id="durEl" type="number" min="1" step="0.1" value="2"/>
+      </label>
+
+      <label>ID hiện hành
+        <input id="projIdEl" type="text" placeholder="auto-filled…"/>
+      </label>
+    </div>
+
+    <label>Lời/Chord (mỗi dòng một mục)
+      <textarea id="chartEl" rows="12" placeholder="00:00 Am
+00:02 F
+00:04 C
+..."></textarea>
+    </label>
+
+    <section class="actions">
+      <div class="group">
+        <button id="btnSaveProject" type="button">Gửi Save Project</button>
+        <button id="btnOpenLast"   type="button">Open last (KV)</button>
+        <button id="btnList"       type="button">Danh sách Project</button>
       </div>
-      <div>
-        <label>Duration mỗi mục (giây)</label>
-        <input id="dur" type="number" step="0.1" min="0.5" value="2">
-        <div class="hint" style="margin-top:14px">
-<b>Định dạng dòng (ví dụ) – hỗ trợ:</b>
-– <code>mm:ss(.ms)</code> hoặc <code>hh:mm:ss(.ms)</code>
-– Ngăn cách bằng khoảng trắng, dấu gạch (<code>-</code>), hoặc <code>|</code>
 
-<b>Ví dụ hợp lệ:</b>
-00:00 Am
-00:05,250 F#m
-00:10.500 C
-00:15 | G
-01:00:00 – Dm
-        </div>
+      <div class="group">
+        <button id="btnDelete"     type="button" disabled>Xoá Project</button>
+        <button id="btnTrash"      type="button">Thùng rác</button>
+        <button id="btnRestore"    type="button" disabled>Khôi phục</button>
+        <button id="btnPurge"      type="button" disabled>Xoá vĩnh viễn</button>
       </div>
-    </div>
 
-    <div class="row">
-      <div>
-        <label class="small">Transpose</label><br>
-        <select id="tr" style="width:90px;padding:10px;border-radius:10px;border:1px solid #e6e6ef;background:#fbfbff">
-          <option value="0" selected>0</option><option value="1">+1</option><option value="2">+2</option>
-          <option value="3">+3</option><option value="4">+4</option><option value="5">+5</option>
-          <option value="6">+6</option><option value="-1">-1</option><option value="-2">-2</option>
-          <option value="-3">-3</option><option value="-4">-4</option><option value="-5">-5</option>
-          <option value="-6">-6</option>
-        </select>
+      <div class="group">
+        <button id="btnExportSrt"  type="button">Export .srt (hiện tại)</button>
+        <button id="btnExportPdf"  type="button" class="primary" disabled>Export PDF (Premium)</button>
       </div>
-    </div>
+    </section>
 
-    <div class="row">
-      <button class="ghost" onclick="loadSample()">Nạp dữ liệu mẫu</button>
+    <small id="idTip" class="muted">💡 Hãy <b>Save</b> trước để tạo ID, rồi mới Xoá/Khôi phục/Export theo Project.</small>
 
-      <button class="sec" onclick="checkPremium()">Kiểm tra Premium</button>
-      <input id="keyEl" placeholder="Premium key" style="width:160px;margin-left:8px;vertical-align:middle">
+    <pre id="out" class="out">Sẵn sàng.</pre>
+  </main>
 
-      <button class="sec" onclick="saveProject()">Gửi Save Project</button>
-      <button class="sec" onclick="openLast()">Open last (KV)</button>
-      <button class="sec" onclick="listProjects()">Danh sách Project</button>
-
-      <input id="delId" placeholder="ID để xoá" style="width:160px">
-      <button class="ghost" onclick="deleteById()">Xoá Project</button>
-    </div>
-
-    <div class="row">
-      <input id="trashId" placeholder="ID khôi phục" style="width:160px">
-      <button class="sec" onclick="trashList()">Thùng rác</button>
-      <button class="sec" onclick="restoreById()">Khôi phục</button>
-      <input id="purgeId" placeholder="ID xoá vĩnh viễn" style="width:160px">
-      <button class="ghost" onclick="purgeById()">Xoá vĩnh viễn</button>
-
-      <button class="sec" onclick="exportSrt()">Export .srt</button>
-      <button class="pri" onclick="exportPdf()">Export PDF</button>
-    </div>
-
-    <div class="hint small" id="summary" style="margin-top:12px"></div>
-    <pre id="out" style="margin-top:12px">Sẵn sàng.</pre>
-  </div>
-</div>
-
-<script>
-  // === base URL helper (GitHub Pages gọi sang workers.dev) ===
-  const WORKER = (location.hostname.endsWith("github.io"))
-    ? "https://YOUR-WORKER-SUBDOMAIN.workers.dev"   // TODO: THAY vào domain Worker của Trẫm
-    : "";
-  const api = (path, init={}) =>
-    fetch(WORKER + path, init);
-
-  const out = document.getElementById('out');
-  const titleEl = document.getElementById('title');
-  const chartEl = document.getElementById('chart');
-  const durEl = document.getElementById('dur');
-  const trEl = document.getElementById('tr');
-  const sumEl = document.getElementById('summary');
-
-  function parseLinesToItems(text){
-    const items = [];
-    const lines = String(text||"").split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
-    for(const line of lines){
-      // lấy mốc time + phần text sau dấu cách | - |
-      const m = line.match(/^(\d{1,2}):\d{2}(?::\d{2})?(?:[.,]\d{1,3})?\s*[-| ]\s*(.+)$|^(\d{1,2}):\d{2}(?::\d{2})?(?:[.,]\d{1,3})?\s+(.+)$/);
-      let tStr = "", txt = "";
-      if(m){
-        if(m[1]) { tStr = line.slice(0, line.indexOf(m[2])).trim(); txt = m[2]; }
-        else { tStr = line.slice(0, line.indexOf(m[4])).trim(); txt = m[4]; }
-      }else{
-        const sp = line.split(/\s+/,2);
-        tStr = sp[0]; txt = sp[1]||"";
-      }
-      const sec = toSec(tStr);
-      if(!Number.isFinite(sec)) continue;
-      items.push([sec, transpose(txt, Number(trEl.value||0))]);
-    }
-    return items.sort((a,b)=>a[0]-b[0]);
-  }
-
-  function toSec(s){
-    if(!s) return NaN;
-    const m = String(s).trim().replace(",", ".");
-    const a = m.split(":").map(Number);
-    if(a.length === 1) return a[0]||0;
-    if(a.length === 2) return a[0]*60 + a[1];
-    if(a.length === 3) return a[0]*3600 + a[1]*60 + a[2];
-    return NaN;
-  }
-
-  // ==== Transpose đơn giản (A A# Bb ...), chỉ đổi hợp âm đầu token ===
-  const notes = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
-  const flatMap = { "Db":"C#", "Eb":"D#", "Gb":"F#", "Ab":"G#", "Bb":"A#" };
-  function transpose(token, shift){
-    if(!shift) return token;
-    return token.split(/\s+/).map(word=>{
-      const m = word.match(/^([A-G](?:#|b)?)(.*)$/);
-      if(!m) return word;
-      let root = m[1]; const rest = m[2]||"";
-      if(flatMap[root]) root = flatMap[root];
-      const idx = notes.indexOf(root);
-      if(idx < 0) return word;
-      const t = (idx + shift % 12 + 12) % 12;
-      return notes[t] + rest;
-    }).join(" ");
-  }
-
-  function summarize(items, dur){
-    const total = (items.length ? (items[items.length-1][0] + dur) : 0);
-    sumEl.textContent = `Có ${items.length} mục, tổng khoảng ${total.toFixed(1)}s. Dur = ${dur}s`;
-  }
-
-  function hhmmss(sec){
-    sec = Math.max(0, Math.floor(sec));
-    const s = sec % 60, m = Math.floor(sec/60)%60, h = Math.floor(sec/3600);
-    const pad = n => String(n).padStart(2,"0");
-    return h>0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
-  }
-
-  // ==== actions ====
-  function loadSample(){
-    chartEl.value =
-`00:00 Am
-00:05 F
-00:10 C
-00:15 G
-00:20 Dm
-00:25 E
-00:30 Am`;
-    const items = parseLinesToItems(chartEl.value);
-    summarize(items, Number(durEl.value||2));
-    out.textContent = "Đã nạp mẫu.";
-  }
-
-  async function checkPremium(){
-    const key = (document.getElementById('keyEl').value||"").trim();
-    const r = await api("/api/premium/status", { headers: { "X-Key": key } });
-    out.textContent = await r.text();
-  }
-
-  async function saveProject(){
-    const items = parseLinesToItems(chartEl.value);
-    if(!items.length){ out.textContent = "Không thấy dòng hợp lệ."; return; }
-    const body = { title: titleEl.value || "Demo", dur: Number(durEl.value||2), items };
-    const r = await api("/api/save", { method:"POST", headers:{ "content-type":"application/json" }, body: JSON.stringify(body) });
-    out.textContent = await r.text();
-  }
-
-  async function openLast(){
-    const r = await api("/api/open", { method:"POST", headers:{ "content-type":"application/json" }, body: "{}" });
-    const js = await r.json();
-    if(!js.ok || !js.project){ out.textContent = "Chưa thấy kết quả SAVE để mở lại."; return; }
-    titleEl.value = js.project.title || "Demo";
-    durEl.value = Number(js.project.dur||2);
-    chartEl.value = (js.project.items||[]).map(it => `${hhmmss(it[0])} ${it[1]||""}`).join("\n");
-    const items = parseLinesToItems(chartEl.value);
-    summarize(items, Number(durEl.value||2));
-    out.textContent = JSON.stringify(js);
-  }
-
-  async function listProjects(){
-    const r = await api("/api/list");
-    out.textContent = await r.text();
-  }
-
-  async function deleteById(){
-    const id = (document.getElementById('delId').value||"").trim();
-    if(!id){ out.textContent = "Chưa nhập ID để xoá"; return; }
-    const r = await api("/api/delete", {
-      method:"POST",
-      headers:{ "content-type":"application/json" },
-      body: JSON.stringify({ id })
-    });
-    out.textContent = await r.text();
-  }
-
-  async function trashList(){
-    const r = await api("/api/trash-list");
-    out.textContent = await r.text();
-  }
-  async function restoreById(){
-    const id = (document.getElementById('trashId').value||"").trim();
-    if(!id){ out.textContent = "Chưa nhập ID khôi phục"; return; }
-    const r = await api("/api/restore", {
-      method:"POST", headers:{ "content-type":"application/json" }, body: JSON.stringify({ id })
-    });
-    out.textContent = await r.text();
-  }
-  async function purgeById(){
-    const id = (document.getElementById('purgeId').value||"").trim();
-    if(!id){ out.textContent = "Chưa nhập ID xoá vĩnh viễn"; return; }
-    const r = await api("/api/purge", {
-      method:"POST", headers:{ "content-type":"application/json" }, body: JSON.stringify({ id })
-    });
-    out.textContent = await r.text();
-  }
-
-  async function exportSrt(){
-    const items = parseLinesToItems(chartEl.value);
-    if(!items.length){ out.textContent = "Không thấy dòng hợp lệ."; return; }
-    const body = { title: titleEl.value, dur: Number(durEl.value||2), items };
-    const r = await api("/api/export", { method:"POST", headers:{ "content-type":"application/json" }, body: JSON.stringify(body) });
-    const blob = await r.blob();
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = (titleEl.value || "demo") + ".srt";
-    a.click(); URL.revokeObjectURL(a.href);
-    out.textContent = "Đã tải .srt";
-  }
-
-  async function exportPdf(){
-    const items = parseLinesToItems(chartEl.value);
-    if(!items.length){ out.textContent = "Không thấy dòng hợp lệ."; return; }
-    const body = { title: titleEl.value || "Chord Sheet", dur: Number(durEl.value||2), items };
-    const r = await api("/api/export-pdf", { method:"POST", headers:{ "content-type":"application/json" }, body: JSON.stringify(body) });
-    const blob = await r.blob();
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = (titleEl.value || "Chord Sheet") + ".pdf";
-    a.click(); URL.revokeObjectURL(a.href);
-    out.textContent = "Đã tải PDF";
-  }
-
-  // khởi tạo tóm tắt
-  summarize(parseLinesToItems(chartEl.value), Number(durEl.value||2));
-</script>
+  <!-- ĐẶT Ở CUỐI BODY + defer để bắt sự kiện ổn định -->
+  <script src="index.js" defer></script>
+</body>
 </html>
