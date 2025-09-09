@@ -1,269 +1,80 @@
-<!doctype html>
-<html lang="vi">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>PiChordify Kingdom — Premium Demo</title>
-  <link rel="icon" href="data:,"/>
+<!-- 1) Nạp Pi SDK -->
+<script src="https://sdk.minepi.com/pi-sdk.js"></script>
 
-  <!-- Theme -->
-  <style>
-    :root{--pi:#7b2bf9;--ink:#261b39;--bg:#f7f3ff}
-    *{box-sizing:border-box} html,body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial;background:var(--bg);color:#111}
-    .wrap{max-width:980px;margin:auto;padding:16px}
-    h1{margin:12px 0 8px;color:#2d1b5a}
-    .topbar{display:flex;align-items:center;gap:.75rem;padding:.6rem 1rem;background:#efe7ff;border-bottom:1px solid #e5d9ff;position:sticky;top:0;z-index:10}
-    .brand{font-weight:800;color:var(--pi)} .grow{flex:1}
-    .badge{background:#10b981;color:#fff;font-weight:700;border-radius:999px;padding:.2rem .6rem} .hidden{display:none} .muted{color:#6b7280}
-    label{display:block;margin:10px 0;font-weight:600}
-    input,textarea,button{font:inherit} input,textarea{width:100%;padding:.6rem;border:1px solid #d7d7e8;border-radius:.6rem;background:#fff}
-    textarea{resize:vertical}
-    .grid{display:grid;grid-template-columns:1fr 200px 1fr;gap:12px}
-    .actions{display:flex;flex-wrap:wrap;gap:12px;margin:12px 0} .group{display:flex;gap:8px;flex-wrap:wrap}
-    button{border:1px solid #d9d9e7;background:#fff;padding:.55rem .9rem;border-radius:.7rem;cursor:pointer}
-    button.primary{background:var(--pi);color:#fff;border-color:transparent}
-    button.ghost{background:#fff;border:1px solid #e2e8f0} button[disabled]{opacity:.5;pointer-events:none}
-    .out{background:#fff;border:1px dashed #d9d9e7;border-radius:.7rem;padding:.7rem;white-space:pre-wrap}
-  </style>
+<script>
+;(function () {
+  // ==== CẤU HÌNH ====
+  const APP_ID   = "pichordifykingdom";       // App ID trên Pi Developer Portal (đổi đúng của cậu)
+  const AMOUNT_PI = 0.01;                     // số Pi thu phí (test)
+  const MEMO      = "Pichordify Premium Export";
+  const BASE_API  = "https://pichordifykingdom.workers.dev"; // đổi nếu Worker URL khác
 
-  <!-- Pi SDK (thật) -->
-  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-  <script>Pi?.init?.({ version:"2.0" });</script>
+  // Khởi tạo SDK (gọi 1 lần khi trang load)
+  window.Pi && window.Pi.init({ version: "2.0", appId: APP_ID });
 
-  <!-- jsPDF (xuất PDF thật) -->
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-</head>
-<body>
-  <header class="topbar">
-    <div class="brand">BUILD NEW CHORDIFY</div>
-    <div class="grow"></div>
-    <div id="premiumBadge" class="badge hidden">Premium</div>
-    <button id="btnLogin"  type="button" class="ghost">Đăng nhập</button>
-    <button id="btnLogout" type="button" class="ghost hidden">Đăng xuất</button>
-    <button id="btnBuyPremium" type="button" class="primary">Mua Premium</button>
-  </header>
+  // Helper
+  async function postJSON(url, data) {
+    const r = await fetch(url, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(data)
+    });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+  }
 
-  <main class="wrap">
-    <h1>PiChordify Kingdom — Premium Demo</h1>
-    <p>Nhập bài + hợp âm (mỗi dòng một mục), rồi <b>Export .srt</b> hoặc <b>PDF</b>.</p>
+  // ====== LUỒNG THANH TOÁN PI ======
+  // Gọi hàm này khi bấm nút "Export PDF (Premium)"
+  async function payAndUnlockPremium() {
+    try {
+      // 1) Tạo payment trên Pi Wallet
+      const paymentData = {
+        amount: AMOUNT_PI,
+        memo: MEMO,
+        metadata: { feature: "export-pdf" },
+      };
 
-    <div class="grid">
-      <label>Tiêu đề bài hát
-        <input id="titleEl" type="text" placeholder="Ví dụ: Hallelujah"/>
-      </label>
-      <label>Duration mỗi mục (giây)
-        <input id="durEl" type="number" min="0.1" step="0.1" value="2"/>
-      </label>
-      <label>ID hiện hành
-        <input id="projIdEl" type="text" placeholder="auto-filled…"/>
-      </label>
-    </div>
+      const payment = await window.Pi.createPayment(paymentData, {
+        // ví sẵn sàng chờ server approve
+        onReadyForServerApproval: async (paymentId) => {
+          // 2) Approve trên server (Cloudflare Worker)
+          await postJSON(`${BASE_API}/api/pi/approve`, { identifier: paymentId });
+        },
+        // ví đã broadcast xong -> server complete
+        onReadyForServerCompletion: async (paymentId, txid) => {
+          // 3) Complete trên server
+          await postJSON(`${BASE_API}/api/pi/complete`, { identifier: paymentId, txid });
+        },
+        onCancel: (paymentId) => {
+          throw new Error("Bạn đã huỷ giao dịch.");
+        },
+        onError: (err, paymentId) => {
+          throw new Error("Lỗi ví Pi: " + (err?.message || err));
+        },
+      });
 
-    <label>Lời/Chord (mỗi dòng một mục)
-      <textarea id="chartEl" rows="12" placeholder="Am
-F
-C
-G
-..."></textarea>
-    </label>
+      // Nếu tới đây là OK
+      // 👉 set cờ premium, rồi chạy export PDF như bình thường
+      window.__isPremium = true;
+      // GỌI HÀM EXPORT CÓ SẴN CỦA BẠN:
+      if (typeof window.exportPDF === "function") {
+        await window.exportPDF();          // ví dụ: hàm cậu đang dùng để xuất PDF
+      } else {
+        alert("Thanh toán thành công. Hãy gọi hàm export PDF ở đây.");
+      }
+    } catch (e) {
+      alert(e.message || e);
+    }
+  }
 
-    <section class="actions">
-      <div class="group">
-        <button id="btnSaveProject" type="button">Gửi Save Project</button>
-        <button id="btnOpenLast"   type="button">Open last (KV)</button>
-        <button id="btnList"       type="button">Danh sách Project</button>
-      </div>
-
-      <div class="group">
-        <button id="btnDelete"  type="button" disabled>Xoá Project</button>
-        <button id="btnTrash"   type="button">Thùng rác</button>
-        <button id="btnRestore" type="button" disabled>Khôi phục</button>
-        <button id="btnPurge"   type="button" disabled>Xoá vĩnh viễn</button>
-      </div>
-
-      <div class="group">
-        <button id="btnExportSrt" type="button">Export .srt (hiện tại)</button>
-        <button id="btnExportPdf" type="button" class="primary" disabled>Export PDF (Premium)</button>
-      </div>
-    </section>
-
-    <small id="idTip" class="muted">💡 Hãy <b>Save</b> trước để tạo ID, rồi mới Xoá/Khôi phục/Export theo Project.</small>
-    <pre id="out" class="out">Sẵn sàng.</pre>
-  </main>
-
-  <!-- Logic all-in-one -->
-  <script>
-  // ====== CONFIG (điền khi có backend thật) ======
-  const VERIFY_URL = ''; // ví dụ: 'https://pichordify-worker.yourname.workers.dev/verify'
-
-  // ====== Helpers / state
-  const LS_USER='pchord.user', LS_PREM='pchord.premium', PREFIX='pchord.project.', TRASH='pchord.trash.';
-  const $=(s,r=document)=>r.querySelector(s); const out=$('#out');
-  const slug=s=>(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
-  const currentId=()=>$('#projIdEl')?.value?.trim()||localStorage.getItem('pchord.currId')||''; 
-  const setCurrentId=id=>{localStorage.setItem('pchord.currId',id||''); if($('#projIdEl')) $('#projIdEl').value=id||''; uiRefresh();};
-  const toast=m=>{out.textContent=m; console.log(m);};
-
-  const getUser=()=>{try{return JSON.parse(localStorage.getItem(LS_USER)||'null')}catch{return null}};
-  const setUser=u=>localStorage.setItem(LS_USER,JSON.stringify(u));
-  const hasPrem=()=>localStorage.getItem(LS_PREM)==='1';
-  const setPrem=v=>localStorage.setItem(LS_PREM,v?'1':'0');
-
-  // ====== Init
-  document.addEventListener('DOMContentLoaded',()=>{
-    document.querySelectorAll('form').forEach(f=>f.addEventListener('submit',e=>e.preventDefault()));
-    $('#btnLogin') .addEventListener('click',onLogin);
-    $('#btnLogout').addEventListener('click',onLogout);
-    $('#btnBuyPremium').addEventListener('click',onBuyPremium);
-
-    $('#btnSaveProject').addEventListener('click',onSaveProject);
-    $('#btnOpenLast').addEventListener('click',onOpenLast);
-    $('#btnList')     .addEventListener('click',onList);
-
-    $('#btnDelete').addEventListener('click',onDelete);
-    $('#btnTrash') .addEventListener('click',onTrashList);
-    $('#btnRestore').addEventListener('click',onRestore);
-    $('#btnPurge')  .addEventListener('click',onPurge);
-
-    $('#btnExportSrt').addEventListener('click',onExportSrt);
-    $('#btnExportPdf').addEventListener('click',onExportPdf);
-
-    uiRefresh();
+  // ====== GẮN VÀO NÚT ======
+  // Nếu nút của cậu có id="btnExportPremium"
+  document.addEventListener("DOMContentLoaded", () => {
+    const btn = document.querySelector("#btnExportPremium");
+    if (btn) btn.addEventListener("click", payAndUnlockPremium);
   });
 
-  function uiRefresh(){
-    const user=getUser(), premium=hasPrem(), hasId=!!currentId();
-    $('#premiumBadge').classList.toggle('hidden',!premium);
-    $('#btnBuyPremium').toggleAttribute('disabled', premium);
-    $('#btnLogin').classList.toggle('hidden',!!user);
-    $('#btnLogout').classList.toggle('hidden',!user);
-    ['#btnDelete','#btnRestore','#btnPurge'].forEach(sel=>$(sel)?.toggleAttribute('disabled',!hasId));
-    $('#btnExportPdf').toggleAttribute('disabled',!premium);
-    $('#idTip')?.classList.toggle('hidden',hasId);
-  }
-
-  // ====== Auth (Pi SDK thật có fallback)
-  async function onLogin(){
-    try{
-      if(window.Pi && Pi.authenticate){
-        const scopes=['username','payments'];
-        const user = await Pi.authenticate(scopes, (p)=>console.log('incomplete payment',p));
-        setUser({username:user.username, uid:user.uid}); 
-        toast(`Xin chào, ${user.username}!`);
-      }else{
-        setUser({username:'Tranmarket', uid:'demo-'+Date.now()});
-        toast('Pi SDK không sẵn: dùng login demo.');
-      }
-    }catch(e){ toast('Đăng nhập lỗi: '+e.message); }
-    uiRefresh();
-  }
-  function onLogout(){ localStorage.removeItem(LS_USER); setPrem(false); toast('Đã đăng xuất.'); uiRefresh(); }
-
-  // ====== Buy Premium (Pi SDK + verify; fallback demo nếu chưa có backend)
-  async function onBuyPremium(){
-    const u=getUser(); if(!u){ toast('Hãy đăng nhập trước.'); return; }
-    try{
-      if(window.Pi && Pi.createPayment){
-        const res = await Pi.createPayment({ amount:1, memo:'PiChordify Premium', metadata:{plan:'premium-1m'} }, {
-          onReadyForServerApproval: async (paymentId)=>{
-            if(VERIFY_URL){
-              await fetch(VERIFY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({paymentId})});
-            }
-          },
-          onReadyForServerCompletion:(paymentId,txid)=>{},
-          onCancel:()=>toast('Đã huỷ thanh toán'), onError:(err)=>toast('Lỗi thanh toán: '+err)
-        });
-        if(!VERIFY_URL){
-          setPrem(true); toast('Premium DEMO bật (chưa cấu hình VERIFY_URL).');
-        }else{
-          // Ở bản thật: backend trả về token rồi mới setPrem(true).
-          setPrem(true); toast('Premium đã kích hoạt (giả lập).');
-        }
-      }else{
-        // không có Pi SDK → bật demo
-        setPrem(true); toast('Premium DEMO bật (không có Pi SDK).');
-      }
-    }catch(e){ toast('Mua Premium lỗi: '+e.message); }
-    uiRefresh();
-  }
-
-  // ====== Project (localStorage)
-  function read(id){return JSON.parse(localStorage.getItem(PREFIX+id)||'null')}
-  function write(rec){localStorage.setItem(PREFIX+rec.id,JSON.stringify(rec))}
-  function del(id){const r=read(id); if(r){localStorage.setItem(TRASH+id,JSON.stringify(r)); localStorage.removeItem(PREFIX+id);}}
-  function purge(id){localStorage.removeItem(PREFIX+id); localStorage.removeItem(TRASH+id);}
-  function onSaveProject(){
-    const title=$('#titleEl').value.trim()||'Untitled', raw=$('#chartEl').value||'';
-    let id=currentId(); if(!id) id=`${slug(title)||'untitled'}-${Date.now().toString(36)}`;
-    const rec={id,title,raw,ts:Date.now()}; write(rec); setCurrentId(id); localStorage.setItem('pchord.last',id);
-    toast(`Đã lưu: ${title}\nID: ${id}`);
-  }
-  function onOpenLast(){
-    const id=localStorage.getItem('pchord.last'); if(!id){toast('Chưa có bản lưu nào.'); return;}
-    const rec=read(id); if(!rec){toast('Không tìm thấy project.'); return;}
-    $('#titleEl').value=rec.title; $('#chartEl').value=rec.raw; setCurrentId(rec.id); toast('Đã mở bản gần nhất.');
-  }
-  function onList(){
-    const keys=Object.keys(localStorage).filter(k=>k.startsWith(PREFIX));
-    if(!keys.length){toast('Chưa có project nào.'); return;}
-    const list=keys.map(k=>JSON.parse(localStorage.getItem(k))).sort((a,b)=>b.ts-a.ts);
-    const pick=prompt('Chọn ID:\n'+list.map(x=>`${x.id} — ${x.title}`).join('\n'));
-    if(pick){const rec=read(pick); if(rec){$('#titleEl').value=rec.title; $('#chartEl').value=rec.raw; setCurrentId(rec.id); toast('Đã mở '+rec.title);}}
-  }
-  function onDelete(){const id=currentId(); if(!id){toast('Chưa có ID.'); return;} del(id); setCurrentId(''); toast('Đã đưa vào Thùng rác.');}
-  function onTrashList(){
-    const keys=Object.keys(localStorage).filter(k=>k.startsWith(TRASH));
-    if(!keys.length){toast('Thùng rác trống.'); return;}
-    const list=keys.map(k=>JSON.parse(localStorage.getItem(k)));
-    toast('Trong thùng rác:\n'+list.map(x=>`${x.id} — ${x.title}`).join('\n'));
-  }
-  function onRestore(){const id=currentId(); if(!id){toast('Chưa có ID.'); return;}
-    const rec=JSON.parse(localStorage.getItem(TRASH+id)||'null'); if(!rec){toast('Không có trong thùng rác.'); return;}
-    write(rec); localStorage.removeItem(TRASH+id); toast('Đã khôi phục.');
-  }
-  function onPurge(){const id=currentId(); if(!id){toast('Chưa có ID.'); return;} purge(id); setCurrentId(''); toast('Đã xoá vĩnh viễn.');}
-
-  // ====== Export
-  function parseLines(text,dur){ const lines=(text||'').split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
-    return lines.map((line,i)=>({i:i+1,t:i*dur,d:dur,text:line})); }
-  function fmtTs(sec){ const s=Math.max(0,Math.floor(sec)),ms=Math.round((sec-s)*1000);
-    const hh=String(Math.floor(s/3600)).padStart(2,'0'), mm=String(Math.floor((s%3600)/60)).padStart(2,'0'), ss=String(s%60).padStart(2,'0'), mss=String(ms).padStart(3,'0');
-    return `${hh}:${mm}:${ss},${mss}`;}
-  function download(name,blob){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); URL.revokeObjectURL(a.href); }
-
-  async function onExportSrt(){
-    const title=$('#titleEl').value.trim()||'Chord Sheet', dur=Number($('#durEl').value||2), raw=$('#chartEl').value||'';
-    const items=parseLines(raw,dur); if(!items.length){toast('Không thấy dòng hợp lệ.'); return;}
-    const srt=items.map((it,idx)=>`${idx+1}\n${fmtTs(it.t)} --> ${fmtTs(it.t+it.d)}\n${it.text}\n`).join('\n');
-    download(`${title}.srt`, new Blob([srt],{type:'text/plain;charset=utf-8'})); toast('Đã tải .srt');
-  }
-
-  async function onExportPdf(){
-    if(!hasPrem()){toast('Tính năng PDF dành cho Premium.'); return;}
-    const title=$('#titleEl').value.trim()||'Chord Sheet', dur=Number($('#durEl').value||2), raw=$('#chartEl').value||'';
-    const items=parseLines(raw,dur); if(!items.length){toast('Không thấy dòng hợp lệ.'); return;}
-    const {jsPDF}=window.jspdf; const doc=new jsPDF({unit:'pt',format:'a4'}); const W=595,H=842,M=42,rowH=22;
-    const col={idx:40,idxW:30,ts:80,tsW:110,txt:200,txtW:W-M-200}; let page=1,y=M+56;
-    function header(){ doc.setFont('Helvetica','bold'); doc.setFontSize(18); doc.text(title,M,M+18);
-      doc.setFont('Helvetica','normal'); doc.setFontSize(10); doc.text(`Generated by PiChordify • ${new Date().toLocaleString()}`,M,M+34);
-      doc.setDrawColor(220); doc.line(M,M+40,W-M,M+40); }
-    function footer(){ doc.setFontSize(10); doc.setTextColor(120); doc.text(`Page ${page}`,W-M-50,H-M+14); }
-    function tableHeader(){ doc.setFont('Helvetica','bold'); doc.setFontSize(12); doc.setFillColor(245,240,255); doc.setDrawColor(220);
-      doc.roundedRect(M,y,W-2*M,rowH,4,4,'FD'); doc.text('#',M+col.idx,y+15); doc.text('Timestamp',M+col.ts,y+15); doc.text('Lyric / Chord',M+col.txt,y+15); y+=rowH; }
-    function newPage(){ if(page>1){footer(); doc.addPage();} header(); tableHeader(); }
-    newPage(); doc.setFont('Courier','normal'); doc.setFontSize(11); doc.setDrawColor(230);
-    items.forEach((it,i)=>{ if(y>H-M-20){page++; y=M+56; newPage();}
-      if(i%2===1){ doc.setFillColor(252,250,255); doc.rect(M,y,W-2*M,rowH,'F'); }
-      doc.setTextColor(60); doc.text(String(it.i||i+1),M+col.idx,y+15);
-      doc.text(`${fmtTs(it.t)} → ${fmtTs(it.t+it.d)}`,M+col.ts,y+15);
-      const lines=doc.splitTextToSize(it.text||' ',col.txtW-10);
-      lines.forEach((ln,k)=>{ if(y>H-M-20){page++; y=M+56; newPage();} doc.text(ln,M+col.txt,y+15);
-        if(k<lines.length-1){ y+=rowH; if(i%2===1){doc.setFillColor(252,250,255); doc.rect(M,y,W-2*M,rowH,'F');}}
-      });
-      doc.setDrawColor(235); doc.line(M,y+rowH,W-M,y+rowH); y+=rowH;
-    });
-    footer(); doc.save(`${title}.pdf`); toast('Đã tải PDF “đẹp” ✅');
-  }
-  </script>
-</body>
-</html>
+  // (Tuỳ chọn) Hàm public để gọi ở nơi khác
+  window.payAndUnlockPremium = payAndUnlockPremium;
+})();
+</script>
