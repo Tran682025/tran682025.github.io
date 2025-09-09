@@ -1,80 +1,261 @@
-<!-- 1) Nạp Pi SDK -->
-<script src="https://sdk.minepi.com/pi-sdk.js"></script>
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pichordify Kingdom – Premium Demo</title>
+  <style>
+    :root { --pri:#6b46ff; --bg:#f6f3ff; --ok:#12b886; --err:#ef4444; }
+    *{box-sizing:border-box} body{margin:0;font:16px/1.5 system-ui,Segoe UI,Roboto}
+    header{padding:16px 20px;background:var(--bg);display:flex;align-items:center;gap:12px}
+    header h1{margin:0;font-size:20px;color:#5526ff}
+    header .badge{padding:4px 10px;border-radius:999px;background:#e9d8fd;color:#4c1d95;font-weight:600}
+    main{max-width:920px;margin:24px auto;padding:0 16px}
+    .row{display:grid;grid-template-columns:1fr 320px;gap:16px}
+    textarea{width:100%;height:280px;padding:12px;border:1px solid #ddd;border-radius:12px}
+    .panel{border:1px solid #eee;border-radius:16px;padding:14px;display:grid;gap:10px}
+    .btn{appearance:none;border:0;border-radius:12px;padding:12px 14px;font-weight:700;cursor:pointer}
+    .btn.pri{background:var(--pri);color:#fff}
+    .btn.ghost{background:#fff;border:1px solid #ddd}
+    .btn.ok{background:var(--ok);color:#fff}
+    .btn.err{background:var(--err);color:#fff}
+    .muted{color:#666;font-size:13px}
+    .status{padding:10px 12px;border-radius:10px;background:#fafafa;border:1px dashed #ddd;font-family:ui-monospace,Consolas,monospace;white-space:pre-wrap}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  </style>
+  <!-- Pi SDK -->
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Pichordify Kingdom</h1>
+    <span class="badge">Premium</span>
+  </header>
 
-<script>
-;(function () {
-  // ==== CẤU HÌNH ====
-  const APP_ID   = "pichordifykingdom";       // App ID trên Pi Developer Portal (đổi đúng của cậu)
-  const AMOUNT_PI = 0.01;                     // số Pi thu phí (test)
-  const MEMO      = "Pichordify Premium Export";
-  const BASE_API  = "https://pichordifykingdom.workers.dev"; // đổi nếu Worker URL khác
+  <main>
+    <div class="row">
+      <section>
+        <label class="muted">Tiêu đề</label>
+        <input id="title" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:12px" value="Tình Nồng Việt Khúc Lan (sample)" />
+        <div style="height:8px"></div>
+        <label class="muted">Lời + hợp âm (mỗi dòng có mốc thời gian)</label>
+        <textarea id="lyrics">00:00 Am
+00:05 F
+00:10 C
+00:15 G
+00:20 Dm
+00:25 E
+00:30 Am</textarea>
 
-  // Khởi tạo SDK (gọi 1 lần khi trang load)
-  window.Pi && window.Pi.init({ version: "2.0", appId: APP_ID });
+        <div style="height:14px"></div>
+        <div class="grid2">
+          <button class="btn ghost" id="btnExportSrt">Export .srt (hiện tại)</button>
+          <button class="btn pri"   id="btnExportPdf">Export PDF (Premium)</button>
+        </div>
+        <div style="height:10px"></div>
+        <div class="muted">Gợi ý: bấm “Export PDF (Premium)” lần đầu sẽ mở ví Pi để thanh toán 0.01&nbsp;π (demo), xong là mở khóa xuất PDF.</div>
+      </section>
 
-  // Helper
-  async function postJSON(url, data) {
-    const r = await fetch(url, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(data)
-    });
-    if (!r.ok) throw new Error(await r.text());
-    return r.json();
-  }
+      <aside class="panel">
+        <strong>Trạng thái</strong>
+        <div id="status" class="status">Đang khởi tạo…</div>
+        <div class="grid2">
+          <button id="btnCheck" class="btn ghost">Kiểm tra Premium</button>
+          <button id="btnLogin" class="btn ghost">Pi Login</button>
+        </div>
+        <div class="grid2">
+          <button id="btnPay" class="btn ok">Thanh toán Premium</button>
+          <button id="btnReset" class="btn err">Reset trạng thái</button>
+        </div>
+        <div class="muted">Nếu không chạy trong Pi Browser, vẫn có thể test flow: đăng nhập ➝ thanh toán ➝ approve/complete qua Worker.</div>
+      </aside>
+    </div>
+  </main>
 
-  // ====== LUỒNG THANH TOÁN PI ======
-  // Gọi hàm này khi bấm nút "Export PDF (Premium)"
-  async function payAndUnlockPremium() {
-    try {
-      // 1) Tạo payment trên Pi Wallet
-      const paymentData = {
-        amount: AMOUNT_PI,
-        memo: MEMO,
-        metadata: { feature: "export-pdf" },
-      };
+  <script>
+    /* ========= CẤU HÌNH BẮT BUỘC ========= */
+    // Điền App ID của cậu (Pi Dev Portal → App ID / PiNet subdomain)
+    const PI_APP_ID  = "pichordifykingdom7723"; // <-- THAY BẰNG CỦA CẬU
+    // Origin của Cloudflare Worker backend (không có slash cuối)
+    const WORKER_BASE = "https://pichordify-kingdom.workers.dev"; // <-- THAY BẰNG CỦA CẬU
 
-      const payment = await window.Pi.createPayment(paymentData, {
-        // ví sẵn sàng chờ server approve
-        onReadyForServerApproval: async (paymentId) => {
-          // 2) Approve trên server (Cloudflare Worker)
-          await postJSON(`${BASE_API}/api/pi/approve`, { identifier: paymentId });
-        },
-        // ví đã broadcast xong -> server complete
-        onReadyForServerCompletion: async (paymentId, txid) => {
-          // 3) Complete trên server
-          await postJSON(`${BASE_API}/api/pi/complete`, { identifier: paymentId, txid });
-        },
-        onCancel: (paymentId) => {
-          throw new Error("Bạn đã huỷ giao dịch.");
-        },
-        onError: (err, paymentId) => {
-          throw new Error("Lỗi ví Pi: " + (err?.message || err));
-        },
-      });
-
-      // Nếu tới đây là OK
-      // 👉 set cờ premium, rồi chạy export PDF như bình thường
-      window.__isPremium = true;
-      // GỌI HÀM EXPORT CÓ SẴN CỦA BẠN:
-      if (typeof window.exportPDF === "function") {
-        await window.exportPDF();          // ví dụ: hàm cậu đang dùng để xuất PDF
-      } else {
-        alert("Thanh toán thành công. Hãy gọi hàm export PDF ở đây.");
-      }
-    } catch (e) {
-      alert(e.message || e);
+    /* ======== TIỆN ÍCH NHỎ ======== */
+    const $ = sel => document.querySelector(sel);
+    const log = (...a)=>{ console.log(...a); appendStatus(a.map(x=>typeof x==='object'?JSON.stringify(x):x).join(' ')); }
+    function appendStatus(line){
+      const box = $('#status');
+      box.textContent = (box.textContent ? box.textContent + "\n" : "") + line;
+      box.scrollTop = box.scrollHeight;
     }
-  }
+    function setStatus(text){ $('#status').textContent = text; }
 
-  // ====== GẮN VÀO NÚT ======
-  // Nếu nút của cậu có id="btnExportPremium"
-  document.addEventListener("DOMContentLoaded", () => {
-    const btn = document.querySelector("#btnExportPremium");
-    if (btn) btn.addEventListener("click", payAndUnlockPremium);
-  });
+    /* ======== STATE ======== */
+    let accessToken = null;        // token sau khi Pi.authenticate()
+    let premiumUnlocked = false;   // đã mở khóa Premium sau khi complete
+    const AMOUNT = 0.01;           // số Pi demo
 
-  // (Tuỳ chọn) Hàm public để gọi ở nơi khác
-  window.payAndUnlockPremium = payAndUnlockPremium;
-})();
-</script>
+    /* ======== KHỞI TẠO SDK ======== */
+    try {
+      Pi.init({ version: "2.0", sandbox: false }); // nếu testnet, đổi sandbox:true
+      Pi.authenticate && log("Pi SDK sẵn sàng.");
+    } catch (e) {
+      log("Không khởi tạo được Pi SDK (có thể không chạy trong Pi Browser).", e.message||e);
+    }
+
+    /* ======== HÀM LOGIN LẤY accessToken ======== */
+    async function piLogin(){
+      try{
+        const scopes = ['username','payments'];
+        const res = await Pi.authenticate(scopes, onIncompletePaymentFound);
+        accessToken = res?.accessToken || res?.authResult?.accessToken || null;
+        log("Đăng nhập OK. Có accessToken:", !!accessToken);
+        return accessToken;
+      }catch(e){
+        log("Login lỗi:", e?.message||e);
+        throw e;
+      }
+    }
+    function onIncompletePaymentFound(payment){ 
+      log("onIncompletePaymentFound:", payment?.identifier || "");
+    }
+
+    /* ======== GỌI BACKEND ======== */
+    async function callWorker(path, payload){
+      const url = `${WORKER_BASE}${path}`;
+      const r = await fetch(url, {
+        method: "POST",
+        headers: {
+          "content-type":"application/json",
+          // Pi yêu cầu Bearer token từ Pi.authenticate để backend xác minh
+          ...(accessToken ? { "Authorization": `Bearer ${accessToken}` } : {})
+        },
+        body: JSON.stringify(payload||{})
+      });
+      if(!r.ok){
+        const txt = await r.text();
+        throw new Error(`HTTP ${r.status}: ${txt}`);
+      }
+      return r.json();
+    }
+
+    /* ======== TẠO THANH TOÁN ======== */
+    async function payPremium(){
+      if(!accessToken) await piLogin();
+
+      return new Promise((resolve,reject)=>{
+        Pi.createPayment(
+          {
+            amount: AMOUNT,
+            memo: "Pichordify Premium – Export PDF",
+            metadata: { feature: "export_pdf", ts: Date.now() }
+          },
+          {
+            onReadyForServerApproval: async (paymentId) => {
+              try{
+                log("onReadyForServerApproval:", paymentId);
+                const ok = await callWorker("/api/pi/approve", { paymentId });
+                log("approve ->", JSON.stringify(ok));
+              }catch(e){ log("approve lỗi:", e.message||e); reject(e); }
+            },
+            onReadyForServerCompletion: async (paymentId, txId) => {
+              try{
+                log("onReadyForServerCompletion:", paymentId, txId);
+                const ok = await callWorker("/api/pi/complete", { paymentId, txId });
+                log("complete ->", JSON.stringify(ok));
+                premiumUnlocked = true;
+                setStatus("✅ Thanh toán xong, Premium đã mở khóa!");
+                resolve({ paymentId, txId });
+              }catch(e){ log("complete lỗi:", e.message||e); reject(e); }
+            },
+            onCancel: (reason) => { log("⛔ Hủy thanh toán:", reason||""); reject(new Error("cancelled")); },
+            onError:  (err)    => { log("❌ Lỗi thanh toán:", err?.message||err); reject(err); },
+          }
+        );
+      });
+    }
+
+    /* ======== CHỨC NĂNG DEMO EXPORT ======== */
+    function exportSrtNow(){
+      // demo xuất .srt hiện tại (client)
+      const title = $('#title').value.trim() || "Untitled";
+      const lines = $('#lyrics').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+      const srt = lines.map((ln,i)=>{
+        // chuyển "00:05 F" -> block srt thô
+        const [t, chord] = ln.split(/\s+/,2);
+        const start = t + ",000";
+        // +2s giả lập
+        const ss = t.split(':').map(Number);
+        const endSec = (ss[0]*60 + ss[1] + 2);
+        const end = `${String(Math.floor(endSec/60)).padStart(2,'0')}:${String(endSec%60).padStart(2,'0')}:00,000`;
+        return `${i+1}\n00:${start} --> 00:${end}\n${chord||''}\n`;
+      }).join("\n");
+      download(`${title}.srt`, srt);
+      setStatus("Đã xuất .srt (demo).");
+    }
+
+    async function exportPdfPremium(){
+      if(!premiumUnlocked){
+        setStatus("Cần thanh toán Premium trước khi xuất PDF…");
+        try{
+          await payPremium();
+        }catch(e){
+          setStatus("Thanh toán chưa xong. Không thể export PDF.");
+          return;
+        }
+      }
+      // Ở đây gọi logic export PDF thật của cậu (client hoặc gọi Worker)
+      // Demo: tạo file txt giả thay cho PDF
+      const title = $('#title').value.trim() || "Untitled";
+      const txt = `Pichordify Premium PDF (demo)\nTitle: ${title}\nItems: ${$('#lyrics').value.split(/\r?\n/).length}`;
+      download(`${title}.pdf.txt`, txt);
+      setStatus("✅ Đã tải PDF (demo).");
+    }
+
+    function download(filename, content){
+      const blob = new Blob([content], {type:"text/plain;charset=utf-8"});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    /* ======== “KIỂM TRA PREMIUM” (tùy chọn) ======== 
+       Nếu cậu đã viết endpoint /api/premium/status trong Worker,
+       bật hàm dưới để kiểm tra bằng X-Key hoặc Authorization.
+    */
+    async function checkPremium(){
+      try{
+        // ví dụ: dùng Authorization (accessToken) nếu backend xác thực qua Pi
+        if(!accessToken) await piLogin();
+        const r = await fetch(`${WORKER_BASE}/api/premium/status`, {
+          headers: { "Authorization": `Bearer ${accessToken}` }
+        });
+        const j = await r.json().catch(()=>({}));
+        log("premium status:", JSON.stringify(j));
+        if(j?.ok && j?.premium) {
+          premiumUnlocked = true;
+          setStatus("🔓 Premium đã được mở sẵn theo backend.");
+        } else {
+          setStatus("🔒 Chưa có Premium. Hãy thanh toán.");
+        }
+      }catch(e){
+        log("checkPremium lỗi:", e.message||e);
+      }
+    }
+
+    /* ======== GÁN NÚT ======== */
+    $('#btnExportSrt').onclick = exportSrtNow;
+    $('#btnExportPdf').onclick = exportPdfPremium;
+    $('#btnLogin').onclick    = piLogin;
+    $('#btnPay').onclick      = payPremium;
+    $('#btnCheck').onclick    = checkPremium;
+    $('#btnReset').onclick    = ()=>{ premiumUnlocked=false; setStatus("Đã reset premiumUnlocked = false"); }
+
+    // Khởi động nhẹ
+    (async ()=>{
+      setStatus("Sẵn sàng. Điền cấu hình ở đầu script nếu chưa.");
+    })();
+  </script>
+</body>
+</html>
