@@ -1,45 +1,29 @@
-body {
-  font-family: Arial, sans-serif;
-  background: linear-gradient(to right, #6a11cb, #2575fc);
-  color: #fff;
-  text-align: center;
-  margin: 0;
-  padding: 0;
-}
-.app {
-  padding: 20px;
-}
-h1 {
-  font-size: 2.5em;
-  margin-bottom: 20px;
-}
-.buttons button {
-  background: #fff;
-  color: #2575fc;
-  border: none;
-  padding: 10px 20px;
-  margin: 5px;
-  font-size: 1em;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: 0.3s;
-}
-.buttons button:hover {
-  background: #ffeb3b;
-  color: #000;
-}
-#chord-list {
-  margin-top: 30px;
-}
-ul#chords {
-  list-style: none;
-  padding: 0;
-}
-ul#chords li {
-  background: rgba(255, 255, 255, 0.2);
-  padding: 10px;
-  margin: 5px auto;
-  border-radius: 5px;
-  width: 200px;
-  font-weight: bold;
-}
+:root{--pi:#7b2bf9;--ink:#261b39;--bg:#f7f3ff}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:#111;font-family:system-ui,Segoe UI,Roboto,Arial}
+.wrap{max-width:980px;margin:auto;padding:16px}
+h1{margin:12px 0 8px;color:#2d1b5a}
+
+.topbar{display:flex;align-items:center;gap:.75rem;padding:.6rem 1rem;
+  background:#efe7ff;border-bottom:1px solid #e5d9ff;position:sticky;top:0;z-index:10}
+.brand{font-weight:800;color:var(--pi)}
+.grow{flex:1}
+.badge{background:#10b981;color:#fff;font-weight:700;border-radius:999px;padding:.2rem .6rem}
+.hidden{display:none}
+.muted{color:#6b7280}
+
+label{display:block;margin:10px 0;font-weight:600}
+input,textarea,button{font:inherit}
+input,textarea{width:100%;padding:.6rem;border-radius:.6rem;border:1px solid #d7d7e8;background:#fff}
+textarea{resize:vertical}
+
+.grid{display:grid;grid-template-columns:1fr 200px 1fr;gap:12px}
+.actions{display:flex;flex-wrap:wrap;gap:12px;margin:12px 0}
+.group{display:flex;gap:8px;flex-wrap:wrap}
+
+button{border:1px solid #d9d9e7;background:#fff;padding:.55rem .9rem;border-radius:.7rem;cursor:pointer}
+button.primary{background:var(--pi);color:#fff;border-color:transparent}
+button.ghost{background:#fff;border:1px solid #e2e8f0}
+button[disabled]{opacity:.5;pointer-events:none}
+
+.out{background:#fff;border:1px dashed #d9d9e7;border-radius:.7rem;padding:.7rem;white-space:pre-wrap}
