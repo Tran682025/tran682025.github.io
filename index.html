@@ -1,475 +1,446 @@
 <!doctype html>
 <html lang="vi">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>PiChordify Kingdom — v0.51</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PiChordify Kingdom — v0.51</title>
 
-<!-- Pi SDK: chỉ hoạt động trong Pi Browser -->
-<script src="https://sdk.minepi.com/pi-sdk/v2.7.0/pi-sdk.min.js" defer></script>
+  <!-- Pi SDK (chỉ hoạt động trong Pi Browser). Có cũng không sao, không có thì code tự ẩn nút thanh toán -->
+  <script src="https://sdk.minepi.com/pi-sdk.js" defer></script>
 
-<style>
-:root{
-  --ink:#222; --muted:#667; --pi:#6f3cff; --bg:#f7f7fb; --ok:#12a150; --warn:#ffb020;
-}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,Segoe UI,Roboto,Arial}
-main{max-width:1100px;margin:28px auto;padding:0 16px}
-h1{font-size:42px;line-height:1.05;margin:0 0 6px}
-.badge{display:inline-block;font-size:12px;padding:4px 8px;border-radius:10px;background:#fff;border:1px solid #eee;box-shadow:0 1px 0 rgba(0,0,0,.04)}
-.pi{background:rgba(111,60,255,.09);border:1px solid rgba(111,60,255,.25);color:#3c278f}
+  <style>
+    :root{
+      --ink:#222; --bg:#fff; --muted:#737; --warm:#f0f3ff; --pi:#6b4ad0; --green:#11a36a; --red:#e34d4d;
+      --card:#ffffff; --line:#e5e7eb;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:var(--warm);color:var(--ink);font:500 16px/1.6 ui-sans-serif,system-ui,Segoe UI,Roboto}
+    h1{font-size:clamp(28px,5vw,56px); line-height:1.05; margin:.25rem 0}
+    small.badge{background:#f6f3ff;border:1px solid #e7e0ff;color:#6a4fd9;padding:.15rem .5rem;border-radius:999px}
+    .wrap{max-width:1100px;margin:0 auto;padding:20px}
+    .grid{display:grid;gap:18px;grid-template-columns:1.15fr .85fr}
+    @media (max-width:960px){ .grid{grid-template-columns:1fr} }
 
-.grid{display:grid;grid-template-columns: 340px 1fr;gap:18px;margin-top:18px}
-.card{background:#fff;border:1px solid #ececf5;border-radius:14px;padding:14px 14px 16px;box-shadow:0 1px 0 rgba(0,0,0,.03)}
-label{display:block;margin:10px 0 6px;font-weight:600;color:#444}
-input[type="text"], input[type="number"], textarea, select{
-  width:100%;padding:10px 12px;border:1px solid #d8d8e8;border-radius:10px;background:#fff;font:inherit
-}
-textarea{min-height:140px;resize:vertical}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.btn{cursor:pointer;user-select:none;display:inline-block;border-radius:12px;border:1px solid #dcdcf0;padding:10px 14px;background:#fff}
-.btn:active{transform:translateY(1px)}
-.btn.primary{background:var(--pi);border-color:var(--pi);color:#fff;font-weight:700}
-.btn.ghost{background:transparent}
-.toolbar{display:flex;flex-wrap:wrap;gap:10px;margin:8px 0 6px}
-footer{margin-top:22px;color:#777;text-align:center}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}
+    label{display:block;font:600 13px/1.2 ui-sans-serif;color:#111;margin:10px 0 6px}
+    input[type="text"], input[type="number"], textarea, select{
+      width:100%;border:1px solid #d9dbe3;background:#fff;border-radius:12px;padding:12px 14px;font:500 15px/1.45 ui-sans-serif;
+    }
+    textarea{min-height:170px; font-family:ui-monospace,Consolas,Menlo,monospace}
 
-.log{background:#0f0f14;color:#eee;border-radius:12px;padding:12px 14px;font-family:ui-monospace,Consolas,Menlo,monospace}
-.log b{color:#c5b3ff}
-.ok{color:#75e19b} .warn{color:#ffd47a} .muted{color:#9aa0b5}
+    .btn{cursor:pointer;user-select:none; border:1px solid #d9dbe3; background:#fff; padding:11px 14px; border-radius:12px; 
+         font:700 15px/1 ui-sans-serif}
+    .btn:hover{background:#f7f7fb}
+    .btn.primary{background:var(--pi); color:#fff; border-color:#5e3dd7}
+    .btn.success{background:var(--green); color:#fff; border-color:#0e8f5d}
+    .btn.danger{background:var(--red); color:#fff; border-color:#d13a3a}
+    .btn.mini{padding:8px 10px;font-weight:700}
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    .row > *{flex:1}
+    .panel{background:#0b0b10;color:#cfd2e8;border-radius:14px;padding:14px;font:600 15px/1.6 ui-monospace,Consolas}
+    .panel .muted{opacity:.75}
+    footer{color:#7b7f98;text-align:center;padding:26px 10px}
+    kbd{background:#f0f2ff;border:1px solid #e6e8ff;border-bottom-color:#d2d7ff;border-radius:8px;padding:.1rem .35rem;font:700 12px ui-monospace}
+    .pill{display:inline-flex;gap:8px;align-items:center;padding:8px 12px;border:1px dashed #e5e7ef;border-radius:999px;background:#fff}
+    .sep{height:1px;background:#eceff6;margin:8px 0}
 
-.khuong-wrap{background:#fff;border:1px dashed #e0e0f0;border-radius:12px;padding:10px}
-canvas#staff{width:100%;height:220px;display:block}
-.svg-chords{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
-svg{background:#fff}
-.small{font-size:12px;color:#666}
-
-.audio-ui{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
-audio{width:100%}
-.file-row{display:flex;gap:8px;align-items:center}
-.badge.ver{background:#f3f3ff;border-color:#e5e4ff;color:#5b47c4;margin-left:8px}
-</style>
+    .staff{width:100%;height:180px;background:#fff;border:1px solid #e4e6ee;border-radius:12px;display:flex;align-items:center;overflow:hidden}
+    .staff svg{width:100%;height:100%}
+    .mutetxt{color:#9aa0b5}
+  </style>
 </head>
 <body>
-<main>
-  <h1>PiChordify <span class="muted">Kingdom</span> <span class="badge ver">v0.51</span></h1>
+  <div class="wrap">
+    <header class="row" style="align-items:flex-end;gap:16px">
+      <div style="flex:1">
+        <h1>PiChordify<br/>Kingdom <small class="badge">v0.51</small></h1>
+      </div>
+      <div class="row" style="flex:1;justify-content:flex-end">
+        <button id="btnLogin" class="btn">Pi Login</button>
+        <button id="btnCheck" class="btn">Kiểm tra Premium</button>
+        <button id="btnPay" class="btn primary">Thanh toán Premium</button>
+      </div>
+    </header>
 
-  <div class="toolbar">
-    <button id="btnLogin" class="btn">Pi Login</button>
-    <button id="btnCheck" class="btn">Kiểm tra Premium</button>
-    <button id="btnPay" class="btn primary">Thanh toán Premium</button>
+    <div class="grid">
+      <!-- LEFT -->
+      <section class="card">
+        <h3 style="margin:6px 0 12px">Demo Core</h3>
+
+        <div class="row" style="margin: 6px 0 12px">
+          <button id="demo1" class="btn mini">Tải demo 1</button>
+          <button id="demo2" class="btn mini">Tải demo 2</button>
+          <button id="clearAll" class="btn danger mini">Xóa</button>
+        </div>
+
+        <label for="title">Tiêu đề</label>
+        <input id="title" type="text" placeholder="Tên bài..." />
+
+        <label for="lyrics">Lời + hợp âm <span class="mutetxt">(mỗi dòng có mốc thời gian — định dạng: <b>mm:ss nội dung / hợp âm</b>, ví dụ: <i>00:12 Em / D</i>)</span></label>
+        <textarea id="lyrics" placeholder="mm:ss  nội dung / hợp âm..."></textarea>
+
+        <div class="row">
+          <div class="card" style="flex:1">
+            <div class="row">
+              <div style="flex:1">
+                <label>BPM (nhịp)</label>
+                <input id="bpm" type="number" min="30" max="240" step="1" value="80" />
+              </div>
+              <div style="flex:1">
+                <label>Offset (giây, +/-)</label>
+                <input id="offset" type="number" step="0.1" value="0" />
+              </div>
+            </div>
+
+            <div class="sep"></div>
+
+            <div class="row">
+              <button id="btnMetronome" class="btn">Phát nhịp thử</button>
+              <button id="btnCompile" class="btn">Biên dịch & xem trước</button>
+              <button id="btnExportSvg" class="btn">Export .svg</button>
+            </div>
+
+            <div class="sep"></div>
+
+            <label>Audio (mp3)</label>
+            <div class="row">
+              <input id="audioUrl" type="text" placeholder="https://…/song.mp3" />
+              <label for="fileMp3" class="btn" style="flex:0 0 auto;display:inline-flex;align-items:center;gap:8px">
+                🎵 Chọn file MP3
+              </label>
+              <input id="fileMp3" type="file" accept="audio/mpeg" style="display:none" />
+            </div>
+
+            <div class="row" style="margin-top:10px">
+              <button id="btnPlay"  class="btn">Play</button>
+              <button id="btnPause" class="btn">Pause</button>
+              <button id="btnStop"  class="btn">Stop</button>
+            </div>
+
+            <audio id="player" preload="none" style="width:100%;margin-top:8px;display:block"></audio>
+            <div id="clock" style="text-align:right;opacity:.6">00:00</div>
+          </div>
+
+          <div class="card" style="flex:1;min-height:220px">
+            <div class="staff" id="staffBox">
+              <!-- SVG staff injected here -->
+              <div class="mutetxt" style="margin:0 auto">Sẵn sàng. Nhấn “Biên dịch & xem trước”.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT (LOG PANEL) -->
+      <aside class="card">
+        <div class="panel" id="logs">
+          <div>🖤 <b>Ready.</b></div>
+          <div class="muted" id="sdkLine">Đang kiểm tra Pi SDK…</div>
+        </div>
+      </aside>
+    </div>
+
+    <footer>© PiChordify Kingdom — Hackathon demo “có nhạc thật” v0.51</footer>
   </div>
 
-  <div class="grid">
-    <!-- LEFT -->
-    <section class="card">
-      <div class="row">
-        <button id="btnLoad1" class="btn">Tải demo 1</button>
-        <button id="btnLoad2" class="btn">Tải demo 2</button>
-      </div>
+  <script>
+    /** ---------- UTILS & STATE ---------- */
+    const $ = sel => document.querySelector(sel);
+    const logBox = $("#logs");
+    const log = (...args)=>{ const d=document.createElement("div"); d.textContent = "· " + args.join(" "); logBox.appendChild(d); logBox.scrollTop = logBox.scrollHeight; };
+    const setMuted = (el,txt)=>{ el.innerHTML = '<span class="muted">'+txt+'</span>'; };
 
-      <label for="title">Tiêu đề</label>
-      <input id="title" type="text" placeholder="Tên bài..." />
+    const state = {
+      pi: undefined,
+      premium: false,
+      loginUser: null,
+      demoLoaded: 0
+    };
 
-      <label for="lyrics">Lời + hợp âm <span class="small">(mỗi dòng có mốc mm:ss, vd: <b>00:12 Em / D</b>)</span></label>
-      <textarea id="lyrics" placeholder="mm:ss   nội dung / hợp âm..."></textarea>
+    // Safe Pi SDK check
+    function hasPiSDK(){
+      return typeof window.Pi !== "undefined" && window.Pi && typeof window.Pi.init === "function";
+    }
 
-      <div class="row" style="margin-top:10px">
-        <div>
-          <label for="bpm">BPM (nhịp)</label>
-          <input id="bpm" type="number" min="40" max="220" value="80" />
-        </div>
-        <div>
-          <label for="offset">Offset (giây, +/-)</label>
-          <input id="offset" type="number" step="0.01" value="0" />
-        </div>
-      </div>
+    async function initPi(){
+      if(!hasPiSDK()){
+        setMuted($("#sdkLine"), "Không có Pi SDK. Mở trong Pi Browser để test thanh toán.");
+        $("#btnPay").style.display="none";
+        return;
+      }
+      state.pi = window.Pi;
+      $("#btnPay").style.display="";
+      setMuted($("#sdkLine"), "Pi SDK đã sẵn sàng.");
+      try{
+        state.pi.init({ version: "2.6", sandbox: true });
+        log("Pi SDK init xong.");
+      }catch(err){ log("Pi SDK init lỗi:", err.message); }
+    }
 
-      <label>Nhạc cụ &amp; khuông nhạc</label>
-      <div class="row">
-        <select id="instrument">
-          <option value="guitar">Guitar</option>
-          <option value="piano">Piano</option>
-          <option value="ukulele">Ukulele</option>
-        </select>
-        <div class="toolbar">
-          <button id="btnMetronome" class="btn">Phát nhịp thử</button>
-          <button id="btnCompile" class="btn">Biên dịch &amp; xem trước</button>
-          <button id="btnExport" class="btn">Export .svg</button>
-        </div>
-      </div>
+    /** ---------- AUDIO ---------- */
+    const player = $("#player");
+    const audioUrl = $("#audioUrl");
+    let ctx, tickOsc, tickGain, metroTimer = null;
 
-      <label for="url">URL audio (mp3)</label>
-      <div class="file-row">
-        <input id="url" type="text" placeholder="https://.../song.mp3" />
-        <button id="btnPick" class="btn">🎵 Chọn file MP3</button>
-        <input id="file" type="file" accept="audio/mpeg" hidden />
-      </div>
+    function ensureAudioCtx(){
+      if(!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+      return ctx;
+    }
+    function formatClock(sec){
+      sec = Math.max(0, sec|0);
+      const m = String((sec/60)|0).padStart(2,"0");
+      const s = String(sec%60).padStart(2,"0");
+      return `${m}:${s}`;
+    }
+    setInterval(()=>{ if(!isNaN(player.currentTime)) $("#clock").textContent = formatClock(player.currentTime); }, 250);
 
-      <div class="audio-ui">
-        <audio id="player" preload="none" controls></audio>
-        <div class="toolbar">
-          <button id="btnPlay" class="btn">Play</button>
-          <button id="btnPause" class="btn">Pause</button>
-          <button id="btnStop" class="btn">Stop</button>
-        </div>
-      </div>
-    </section>
+    function useFile(file){
+      const url = URL.createObjectURL(file);
+      player.src = url;
+      audioUrl.value = "";
+      log("Đã nạp file mp3:", file.name);
+    }
+    function useUrl(url){
+      player.src = url;
+      log("Đã nạp mp3 từ URL.");
+    }
 
-    <!-- RIGHT -->
-    <section class="card">
-      <div class="khuong-wrap">
-        <canvas id="staff" width="1024" height="220" title="Khuông nhạc"></canvas>
-        <div id="svgChords" class="svg-chords"></div>
-      </div>
-      <div id="preview" class="card" style="margin-top:12px;padding:12px">
-        <b>Xem trước</b>
-        <div id="sheet" style="white-space:pre-wrap;margin-top:8px"></div>
-      </div>
-      <div class="log" id="log" style="margin-top:12px"></div>
-    </section>
-  </div>
+    /** ---------- METRONOME ---------- */
+    function startMetronome(){
+      try{
+        const bpm = Number($("#bpm").value) || 80;
+        const interval = 60 / bpm; // giây / beat
+        const c = ensureAudioCtx();
+        stopMetronome();
 
-  <footer>© PiChordify Kingdom — Hackathon demo “có nhạc thật” v0.51</footer>
-</main>
+        tickGain = c.createGain();
+        tickGain.gain.value = 0.2;
+        tickGain.connect(c.destination);
 
-<script>
-/* ====== CẤU HÌNH BACKEND (nếu dùng Pi Payments) ====== */
-const BACKEND_BASE = ""; // ví dụ: "https://pichordify-backend.onrender.com"
+        function playTick(){
+          tickOsc = c.createOscillator();
+          tickOsc.type = "square";
+          tickOsc.frequency.value = 880;
+          tickOsc.connect(tickGain);
+          tickGain.gain.setValueAtTime(0.25, c.currentTime);
+          tickGain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.08);
+          tickOsc.start();
+          tickOsc.stop(c.currentTime + 0.09);
+        }
+        playTick();
+        metroTimer = setInterval(playTick, interval*1000);
+        log(`Bật metronome ${bpm} BPM`);
+      }catch(e){ log("Metronome lỗi:", e.message); }
+    }
+    function stopMetronome(){
+      if(metroTimer) { clearInterval(metroTimer); metroTimer=null; }
+      try{ tickOsc && tickOsc.stop(); }catch(_){}
+    }
 
-/* ====== TIỆN ÍCH ====== */
-const $ = sel => document.querySelector(sel);
-function log(...args){
-  const el = $("#log");
-  const line = args.map(x=> (typeof x==="object"? JSON.stringify(x): String(x))).join(" ");
-  el.innerHTML = "🖤 <b>Ready.</b><br>" + (window.Pi ? 
-    "✅ <span class='ok'>Có Pi SDK.</span><br>":"ℹ️ <span class='muted'>Không có Pi SDK. Mở trong Pi Browser để test thanh toán.</span><br>")
-    + (el.dataset.tail || "");
-  el.dataset.tail = (el.dataset.tail||"") + `<span class="muted">·</span> ${line}<br>`;
-}
-function seconds(mmss){ // "mm:ss" -> seconds
-  const m = /^(\d+):(\d{2})(?:\.(\d+))?$/.exec(mmss.trim());
-  if(!m) return 0;
-  const ms = m[3] ? Number("0."+m[3]) : 0;
-  return Number(m[1])*60 + Number(m[2]) + ms;
-}
+    /** ---------- PARSER & PREVIEW ---------- */
+    // Input format per line: "mm:ss  text / Chord"
+    function parseLines(txt){
+      const out=[];
+      const lines = txt.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+      for(const line of lines){
+        const m = line.match(/^(\d{1,2}):(\d{2})\s+(.+?)(?:\s*\/\s*([A-G][#b]?m?(?:7|maj7|sus4|dim)?))?$/i);
+        if(!m) continue;
+        const sec = Number(m[1])*60 + Number(m[2]);
+        out.push({ t: sec, text: m[3], chord: m[4]||"" });
+      }
+      return out;
+    }
 
-/* ====== PI SDK ====== */
-let piUser=null, piPayment=null;
-async function piInit(){
-  try{
-    if(!window.Pi) { log("Không ở Pi Browser → ẩn thanh toán."); return; }
-    Pi.init({version:"2.7", sandbox:true});
-    log("Pi SDK init xong.");
-  }catch(e){ log("Lỗi Pi.init:", e.message); }
-}
-async function piLogin(){
-  if(!window.Pi) return;
-  try{
-    const scopes=['username','payments'];
-    piUser = await Pi.authenticate(scopes, onIncompletePaymentFound);
-    log("Đăng nhập:", piUser && piUser.user && piUser.user.username);
-  }catch(e){ log("Login lỗi:", e.message); }
-}
-async function onIncompletePaymentFound(p){
-  log("Có payment treo:", p && p.identifier);
-}
-async function checkPremium(){
-  // demo: luôn false nếu không có BACKEND
-  if(!BACKEND_BASE){ log("checkPremium: (demo) chưa có backend → false"); return false; }
-  try{
-    const id = (piUser && piUser.user && piUser.user.username) || "guest";
-    const r = await fetch(`${BACKEND_BASE}/check?id=${encodeURIComponent(id)}`);
-    const j = await r.json();
-    log("Premium?", j && j.premium);
-    return !!(j && j.premium);
-  }catch(e){ log("Lỗi check:", e.message); return false; }
-}
-async function payPremium(){
-  if(!window.Pi){ log("Không có Pi SDK."); return; }
-  try{
-    const amount = 1; // 1 PI demo
-    const memo = "PiChordify Premium";
-    const paymentData = { amount, memo, metadata:{tier:"premium"} };
-    piPayment = await Pi.createPayment(paymentData, {
-      onReadyForServerApproval: async (paymentId)=>{
-        if(!BACKEND_BASE){ log("Demo: thiếu BACKEND để approve."); return; }
-        await fetch(`${BACKEND_BASE}/approve`, {method:"POST",headers:{'Content-Type':'application/json'}, body:JSON.stringify({paymentId})});
-        log("Server approve xong:", paymentId);
-      },
-      onReadyForServerCompletion: async (paymentId)=>{
-        if(!BACKEND_BASE){ log("Demo: thiếu BACKEND để complete."); return; }
-        await fetch(`${BACKEND_BASE}/complete`, {method:"POST",headers:{'Content-Type':'application/json'}, body:JSON.stringify({paymentId})});
-        log("Server complete xong:", paymentId);
-      },
-      onCancel: (p)=> log("User hủy giao dịch."),
-      onError: (e)=> log("Payment lỗi:", e.message),
+    function drawStaffPreview(items){
+      const box = $("#staffBox");
+      box.innerHTML = "";
+      const w = box.clientWidth || 600, h = box.clientHeight || 180, pad=16;
+      const svgNS = "http://www.w3.org/2000/svg";
+      const svg = document.createElementNS(svgNS, "svg");
+      svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+
+      // staff lines
+      for(let i=0;i<5;i++){
+        const y = pad + i*16 + 36;
+        const ln = document.createElementNS(svgNS, "line");
+        ln.setAttribute("x1", pad);
+        ln.setAttribute("x2", w-pad);
+        ln.setAttribute("y1", y);
+        ln.setAttribute("y2", y);
+        ln.setAttribute("stroke", "#cfd4e6");
+        ln.setAttribute("stroke-width","1");
+        svg.appendChild(ln);
+      }
+
+      // timeline scale based on items range (fallback 120s)
+      const minT = items.length? Math.min(...items.map(i=>i.t)) : 0;
+      const maxT = items.length? Math.max(...items.map(i=>i.t)) : 120;
+      const span = Math.max(30, maxT-minT);
+
+      for(const it of items){
+        const x = pad + ((it.t - minT) / span) * (w-2*pad);
+        // chord flag
+        if(it.chord){
+          const t = document.createElementNS(svgNS,"text");
+          t.setAttribute("x", x);
+          t.setAttribute("y", 26);
+          t.setAttribute("text-anchor","middle");
+          t.setAttribute("font-weight","700");
+          t.setAttribute("font-size","14");
+          t.setAttribute("fill","#1f2a44");
+          t.textContent = it.chord;
+          svg.appendChild(t);
+        }
+        // tick
+        const tick = document.createElementNS(svgNS,"line");
+        tick.setAttribute("x1", x);
+        tick.setAttribute("x2", x);
+        tick.setAttribute("y1", 44);
+        tick.setAttribute("y2", h-22);
+        tick.setAttribute("stroke","#e5e7f2");
+        tick.setAttribute("stroke-dasharray","2 6");
+        svg.appendChild(tick);
+
+        // lyric near bottom
+        const ly = document.createElementNS(svgNS,"text");
+        ly.setAttribute("x", x+4);
+        ly.setAttribute("y", h-14);
+        ly.setAttribute("font-size","12");
+        ly.setAttribute("fill","#4b556b");
+        ly.textContent = it.text.slice(0,48);
+        svg.appendChild(ly);
+      }
+
+      box.appendChild(svg);
+    }
+
+    function compilePreview(){
+      const raw = $("#lyrics").value;
+      const offs = Number($("#offset").value || 0);
+      const items = parseLines(raw).map(i=>({ ...i, t: i.t + offs }));
+      drawStaffPreview(items);
+      log(`Compile xong: ${items.length} dòng.`);
+      return items;
+    }
+
+    function exportSVG(){
+      const box = $("#staffBox");
+      const svg = box.querySelector("svg");
+      if(!svg){ log("Chưa có preview để export."); return; }
+      const title = ($("#title").value || "PiChordify Sheet").trim();
+      const s = new XMLSerializer().serializeToString(svg);
+      const blob = new Blob([s], {type:"image/svg+xml"});
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `${title.replace(/\s+/g,"_")}.svg`;
+      a.click();
+      log("Đã export SVG.");
+    }
+
+    /** ---------- PI PAYMENT (DEMO) ---------- */
+    async function piLogin(){
+      if(!state.pi){ log("SDK Pi không sẵn sàng."); return; }
+      try{
+        const scopes = ['username','payments'];
+        const res = await state.pi.authenticate(scopes, onIncomplete);
+        state.loginUser = res && res.user ? res.user : null;
+        log("Đăng nhập:", state.loginUser ? state.loginUser.username : "(không rõ)");
+      }catch(e){ log("Login lỗi:", e.message); }
+    }
+    function onIncomplete(i){ log("Incomplete:", i?.identifier || "(?)"); }
+
+    async function checkPremium(){
+      // bản demo (chưa backend) luôn false
+      state.premium = false;
+      log("checkPremium: (demo) chưa có backend → false");
+      return false;
+    }
+
+    async function payPremium(){
+      if(!state.pi){ log("SDK Pi không sẵn sàng."); return; }
+      try{
+        const payment = await state.pi.createPayment({
+          amount: 1,
+          memo: "PiChordify Premium (demo)",
+          metadata: { plan: "premium_v1" }
+        }, {
+          onReadyForServerApproval: async (paymentId)=>{
+            log("onReadyForServerApproval:", paymentId);
+            // Demo: bỏ qua server approval — chỉ log
+          },
+          onReadyForServerCompletion: async (paymentId, txid)=>{
+            log("onReadyForServerCompletion:", paymentId, txid||"");
+          },
+          onCancel: (pid)=> log("❌ Hủy thanh toán:", pid),
+          onError:  (err)=> log("⚠️ Lỗi thanh toán:", err?.message || err)
+        });
+        log("Payment created (demo).");
+      }catch(e){ log("Tạo payment lỗi:", e.message); }
+    }
+
+    /** ---------- DEMO LOADERS ---------- */
+    function loadDemo(id){
+      const data = [
+`00:10 Vào điệp khúc / G
+00:20 Trái tim anh / Em
+00:30 Khúc ca xưa / C
+00:40 Ta cùng hát / D`,
+`00:05 Intro thật nhẹ / Am
+00:12 Dòng sông trôi / F
+00:24 Nắng vừa chín / C
+00:38 Em gọi tên / G`
+      ];
+      $("#title").value = id===1 ? "Demo 1" : "Demo 2";
+      $("#lyrics").value = data[id-1];
+      compilePreview();
+      log(`Tải demo ${id} xong.`);
+    }
+    function clearAll(){
+      $("#title").value = "";
+      $("#lyrics").value = "";
+      $("#audioUrl").value = "";
+      player.removeAttribute("src");
+      player.load();
+      $("#staffBox").innerHTML = '<div class="mutetxt" style="margin:0 auto">Đã xóa. Nhập lời/hợp âm rồi “Biên dịch & xem trước”.</div>';
+      log("Đã xóa nội dung.");
+    }
+
+    /** ---------- WIRING ---------- */
+    window.addEventListener("DOMContentLoaded", ()=>{
+      // Pi
+      initPi();
+      // Actions
+      $("#btnMetronome").addEventListener("click", startMetronome);
+      $("#btnCompile").addEventListener("click", compilePreview);
+      $("#btnExportSvg").addEventListener("click", exportSVG);
+
+      $("#btnPlay").addEventListener("click", ()=>{ 
+        if(audioUrl.value.trim()) useUrl(audioUrl.value.trim());
+        player.play().catch(e=>log("Play lỗi:", e.message));
+      });
+      $("#btnPause").addEventListener("click", ()=> player.pause());
+      $("#btnStop").addEventListener("click", ()=>{ player.pause(); player.currentTime=0; });
+
+      $("#fileMp3").addEventListener("change", e=>{
+        const f = e.target.files?.[0]; if(f) useFile(f);
+      });
+
+      $("#btnLogin").addEventListener("click", piLogin);
+      $("#btnCheck").addEventListener("click", checkPremium);
+      $("#btnPay").addEventListener("click", payPremium);
+
+      $("#demo1").addEventListener("click", ()=>loadDemo(1));
+      $("#demo2").addEventListener("click", ()=>loadDemo(2));
+      $("#clearAll").addEventListener("click", clearAll);
+
+      // live guards
+      $("#bpm").addEventListener("change", ()=> log("BPM =", Number($("#bpm").value)||80));
+      $("#offset").addEventListener("change", ()=> log("Offset (s) =", Number($("#offset").value)||0));
+
+      log("DOM loaded. JS đang chạy.");
     });
-  }catch(e){ log("Pay lỗi:", e.message); }
-}
 
-/* ====== AUDIO + METRONOME ====== */
-const player = $("#player");
-function loadAudioUrl(u){
-  if(!u) return;
-  player.src = u; player.load();
-  log("Đã nạp audio URL.");
-}
-function loadAudioFile(f){
-  const url = URL.createObjectURL(f);
-  $("#url").value = "";
-  loadAudioUrl(url);
-}
-$("#btnPick").onclick = ()=> $("#file").click();
-$("#file").onchange = (e)=>{ const f=e.target.files?.[0]; if(f) loadAudioFile(f); };
-$("#url").addEventListener("change", e=> loadAudioUrl(e.target.value.trim()));
-$("#btnPlay").onclick = ()=> player.play();
-$("#btnPause").onclick = ()=> player.pause();
-$("#btnStop").onclick = ()=> { player.pause(); player.currentTime = 0; };
-
-let metro=null;
-$("#btnMetronome").onclick = ()=>{
-  try{
-    const ctx = new (window.AudioContext||window.webkitAudioContext)();
-    const bpm = Number($("#bpm").value||80);
-    const interval = 60/bpm;
-    let n=0;
-    if(metro){ clearInterval(metro); metro=null; log("Tắt nhịp."); return; }
-    metro = setInterval(()=>{
-      const osc = ctx.createOscillator();
-      const g = ctx.createGain();
-      osc.frequency.value = (n%4===0)? 1200: 900;
-      g.gain.setValueAtTime(0.0001, ctx.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime+0.005);
-      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+0.08);
-      osc.connect(g).connect(ctx.destination);
-      osc.start(); osc.stop(ctx.currentTime+0.09);
-      n++;
-    }, interval*1000);
-    log("Bật metronome", bpm, "BPM");
-  }catch(e){ log("Metronome lỗi:", e.message); }
-};
-
-/* ====== PARSER LỜI & HỢP ÂM ====== */
-function parseLines(txt){
-  // mỗi dòng: "mm:ss nội_dung / hợp_âm"
-  return txt.split(/\r?\n/).map(x=>x.trim()).filter(Boolean).map(line=>{
-    const m = /^(\d+:\d{2}(?:\.\d+)?)\s+(.+?)(?:\s*\/\s*([A-G][#b]?(?:m|maj7|m7|7)?))?$/.exec(line);
-    if(!m) return null;
-    return {t: seconds(m[1]), lyric: m[2], chord: m[3]||""};
-  }).filter(Boolean);
-}
-
-/* ====== KHUÔNG NHẠC (Canvas) + CHORD SVG ====== */
-const staff = $("#staff"), ctx = staff.getContext("2d");
-function drawStaff(measures){
-  // nền
-  ctx.clearRect(0,0,staff.width,staff.height);
-  ctx.fillStyle="#fff"; ctx.fillRect(0,0,staff.width,staff.height);
-  // 5 dòng khuông
-  const top = 40, gap=12, left=40, right=20;
-  ctx.strokeStyle="#666"; ctx.lineWidth=1;
-  for(let i=0;i<5;i++){
-    const y = top + i*gap;
-    ctx.beginPath(); ctx.moveTo(left,y); ctx.lineTo(staff.width-right,y); ctx.stroke();
-  }
-  // ô nhịp
-  const w = (staff.width-left-right)/measures;
-  ctx.strokeStyle="#bbb";
-  for(let i=0;i<=measures;i++){
-    const x = left + i*w;
-    ctx.beginPath(); ctx.moveTo(x, top-6); ctx.lineTo(x, top+gap*4+6); ctx.stroke();
-  }
-  return {left,top,gap,w};
-}
-
-const CHORD_DICT = {
-  // voicing đơn giản cho Guitar (fret, string 6→1; -1 = mute, 0 = open)
-  guitar:{
-    C:  [-1,3,2,0,1,0],
-    G:  [3,2,0,0,0,3],
-    Am: [-1,0,2,2,1,0],
-    F:  [1,3,3,2,1,1],
-    D:  [-1,-1,0,2,3,2],
-    Dm: [-1,-1,0,2,3,1],
-    Em: [0,2,2,0,0,0],
-    E:  [0,2,2,1,0,0],
-    A:  [-1,0,2,2,2,0],
-    Bm: [-1,2,4,4,3,2]
-  },
-  // Ukulele (string 4→1; 0=open)
-  ukulele:{
-    C:  [0,0,0,3],  G:[0,2,3,2], Am:[2,0,0,0], F:[2,0,1,0], D:[2,2,2,0], Dm:[2,2,1,0], Em:[0,4,3,2], E:[1,4,0,2], A:[2,1,0,0], Bm:[4,2,2,2]
-  },
-  // Piano: nốt MIDI cơ bản (root triad; rất gọn để tô phím)
-  piano:{
-    C:[60,64,67], G:[55,59,62], Am:[57,60,64], F:[53,57,60], D:[50,54,57], Dm:[50,53,57], Em:[52,55,59], E:[52,56,59], A:[57,61,64], Bm:[59,62,66]
-  }
-};
-function chordSvgGuitar(shape, title){
-  // vẽ ô phím 4 ngăn (fret 1–4)… đơn giản
-  const cell=16, strings=6, frets=4, w=cell*(strings-1)+20, h=cell*frets+26;
-  const s = [`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">`];
-  s.push(`<text x="${w/2}" y="12" text-anchor="middle" font-size="12">${title}</text>`);
-  // dây dọc
-  for(let i=0;i<strings;i++){
-    const x = 10 + i*cell;
-    s.push(`<line x1="${x}" y1="18" x2="${x}" y2="${18+cell*frets}" stroke="#333" stroke-width="1"/>`);
-  }
-  // ngăn ngang
-  for(let f=0; f<=frets; f++){
-    const y = 18 + f*cell;
-    s.push(`<line x1="10" y1="${y}" x2="${10+cell*(strings-1)}" y2="${y}" stroke="#333" stroke-width="${f===0?2:1}"/>`);
-  }
-  // chấm nốt
-  for(let i=0;i<strings;i++){
-    const v = shape[i];
-    const x = 10 + i*cell;
-    if(v===-1){ s.push(`<text x="${x}" y="14" font-size="10">×</text>`); }
-    else if(v===0){ s.push(`<circle cx="${x}" cy="12" r="3" fill="#000"/>`); }
-    else{
-      const y = 18 + v*cell - cell/2;
-      s.push(`<circle cx="${x}" cy="${y}" r="5" fill="#6f3cff"/>`);
-    }
-  }
-  s.push("</svg>");
-  return s.join("");
-}
-function chordSvgUkulele(shape, title){
-  const cell=16, strings=4, frets=4, w=cell*(strings-1)+20, h=cell*frets+26;
-  const s = [`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">`];
-  s.push(`<text x="${w/2}" y="12" text-anchor="middle" font-size="12">${title}</text>`);
-  for(let i=0;i<strings;i++){
-    const x=10+i*cell;
-    s.push(`<line x1="${x}" y1="18" x2="${x}" y2="${18+cell*frets}" stroke="#333"/>`);
-  }
-  for(let f=0;f<=frets;f++){
-    const y=18+f*cell;
-    s.push(`<line x1="10" y1="${y}" x2="${10+cell*(strings-1)}" y2="${y}" stroke="#333" stroke-width="${f===0?2:1}"/>`);
-  }
-  for(let i=0;i<strings;i++){
-    const v=shape[i], x=10+i*cell;
-    if(v===0){ s.push(`<circle cx="${x}" cy="12" r="3" fill="#000"/>`); }
-    else{ const y=18+v*cell - cell/2; s.push(`<circle cx="${x}" cy="${y}" r="5" fill="#6f3cff"/>`); }
-  }
-  s.push("</svg>"); return s.join("");
-}
-function chordSvgPiano(notes, title){
-  // bàn phím 14 phím trắng (C–B x1+), tô 3 nốt
-  const white=14, w=14*12+20, h=70, blackW=8, blackH=40;
-  const base=60; // C4
-  const s=[`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">`];
-  s.push(`<text x="${w/2}" y="12" text-anchor="middle" font-size="12">${title}</text>`);
-  // trắng
-  for(let i=0;i<white;i++){
-    const x=10+i*12; s.push(`<rect x="${x}" y="18" width="12" height="${h-24}" fill="#fff" stroke="#333"/>`);
-  }
-  // map MIDI → x pos
-  const whiteOrder=[0,2,4,5,7,9,11,12,14,16,17,19,21,23]; // offsets
-  function xOf(n){
-    const d=n-base; // rough map
-    // try to place near
-    return 10 + (d+0.5)*6; // coarse; enough for highlight
-  }
-  // đen (tượng trưng)
-  for(let i=0;i<white;i++){
-    const x=10+i*12;
-    if([0,1,3,4,5,7,8,10,11].includes(i)){
-      s.push(`<rect x="${x+8}" y="18" width="${blackW}" height="${blackH}" fill="#111"/>`);
-    }
-  }
-  // highlight nốt
-  notes.forEach(n=>{
-    const x = xOf(n);
-    s.push(`<rect x="${x-5}" y="${h-24-18}" width="10" height="16" fill="#6f3cff" opacity=".9"/>`);
-  });
-  s.push("</svg>"); return s.join("");
-}
-
-function renderChords(instrument, chords){
-  const box=$("#svgChords"); box.innerHTML="";
-  chords.slice(0,12).forEach(ch=>{
-    let svg="";
-    if(instrument==="guitar" && CHORD_DICT.guitar[ch]){
-      svg = chordSvgGuitar(CHORD_DICT.guitar[ch], ch);
-    }else if(instrument==="ukulele" && CHORD_DICT.ukulele[ch]){
-      svg = chordSvgUkulele(CHORD_DICT.ukulele[ch], ch);
-    }else if(instrument==="piano" && CHORD_DICT.piano[ch]){
-      svg = chordSvgPiano(CHORD_DICT.piano[ch], ch);
-    }else{
-      svg = `<div class="badge">${ch}</div>`;
-    }
-    const wrap = document.createElement("div");
-    wrap.innerHTML = svg;
-    box.appendChild(wrap.firstChild);
-  });
-}
-
-/* ====== COMPILE (vẽ khuông + preview) ====== */
-function compilePreview(){
-  const items = parseLines($("#lyrics").value);
-  const measures = Math.max(4, Math.ceil(items.length/2));
-  const g = drawStaff(measures);
-  // ghi hợp âm trên ô nhịp
-  ctx.fillStyle="#222"; ctx.font="bold 14px ui-monospace,Consolas";
-  items.forEach((it,i)=>{
-    const m = Math.min(measures-1, Math.floor(i/2));
-    const x = g.left + m*g.w + 8 + (i%2? g.w/2 : 0);
-    const y = g.top - 10;
-    if(it.chord) ctx.fillText(it.chord, x, y);
-  });
-  // sheet preview
-  const s = items.map(it => `${String(it.t).padStart(5," ")}  | ${it.lyric}${it.chord? "  / "+it.chord:""}`).join("\n");
-  $("#sheet").textContent = s || "—";
-  const uniqChords=[...new Set(items.map(i=>i.chord).filter(Boolean))];
-  renderChords($("#instrument").value, uniqChords);
-  log("Compile xong:", items.length, "dòng.");
-}
-$("#btnCompile").onclick = compilePreview;
-
-/* ====== EXPORT SVG (chord shapes) ====== */
-function exportSVG(){
-  const svgWrap = $("#svgChords");
-  if(!svgWrap.firstChild){ log("Chưa có SVG để export."); return; }
-  // gộp tất cả SVG vào một file
-  const svgs = Array.from(svgWrap.querySelectorAll("svg")).map(x=>x.outerHTML).join("\n");
-  const blob = new Blob([`<svg xmlns="http://www.w3.org/2000/svg"><foreignObject>${svgs}</foreignObject></svg>`], {type:"image/svg+xml"});
-  const a=document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = ( ($("#title").value.trim()||"PiChordify") + "_chords.svg");
-  a.click();
-  log("Đã xuất SVG hợp âm.");
-}
-$("#btnExport").onclick = exportSVG;
-
-/* ====== DEMO DATA ====== */
-function loadDemo(which=1){
-  $("#title").value = which===1 ? "Đếm Ngược" : "Cầu Nguyện";
-  $("#lyrics").value = (which===1
-  ? `00:05  Vần thơ đầu / C
-00:15  Con đường dài / G
-00:25  Ngày mai tới / Am
-00:35  Niềm hy vọng / F`
-  : `00:06  Lạy Cha nơi chốn rất cao / D
-00:16  Xin gìn giữ chúng con / Bm
-00:26  Qua bão tố dâng tràn / G
-00:36  Tình yêu Chúa luôn còn / A`);
-  compilePreview();
-  log("Đã nạp demo", which);
-}
-$("#btnLoad1").onclick = ()=> loadDemo(1);
-$("#btnLoad2").onclick = ()=> loadDemo(2);
-
-/* ====== BOOT ====== */
-window.addEventListener("load", ()=>{
-  piInit();
-  $("#btnLogin").onclick = piLogin;
-  $("#btnCheck").onclick = checkPremium;
-  $("#btnPay").onclick = payPremium;
-  $("#instrument").addEventListener("change", compilePreview);
-  // đồng hồ nhỏ trong log
-  log("DOM loaded. JS đang chạy.");
-});
-</script>
+    // stop audio when leaving
+    window.addEventListener("beforeunload", ()=>{ stopMetronome(); try{ player.pause(); }catch(_){ } });
+  </script>
 </body>
 </html>
