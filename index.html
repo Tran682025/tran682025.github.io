@@ -2,345 +2,602 @@
 <html lang="vi">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>PiChordify Kingdom v0.52</title>
-  <!-- Pi SDK: chỉ hoạt động trong Pi Browser -->
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PiChordify Kingdom — v0.7 KING</title>
+  <!-- Pi SDK chỉ hoạt động trong Pi Browser -->
   <script src="https://sdk.minepi.com/pi-sdk.js" defer></script>
-
   <style>
     :root{
-      --ink:#0f0f1f; --bg:#f9f9ff; --card:#ffffff; --line:#e5e7eb;
-      --pi:#6f3cff; --pi2:#5b32d4; --ok:#16a34a; --warn:#ca8a04; --danger:#ef4444;
+      --bg:#0f1115; --panel:#141824; --ink:#e8f0ff;
+      --pi:#7c4dff; --pi2:#33e1cc; --line:#2a3248; --accent:#9ee;
     }
     *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0; font:500 16px/1.6 system-ui,-apple-system,Segoe UI,Roboto;
-      color:var(--ink); background:var(--bg);
-    }
-    .wrap{max-width:1120px;margin:auto;padding:20px}
-    header{display:flex;align-items:center;gap:16px;margin:8px 0 16px}
-    h1{margin:0;font:800 34px/1 system-ui}
-    small.badge{padding:4px 10px;background:#eef;margin-left:8px;border-radius:999px}
-    .flex1{flex:1}
-    .row{display:flex;gap:10px;flex-wrap:wrap}
-    .grid{display:grid;grid-template-columns:1.2fr 1fr;gap:16px}
-    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
-    input,select,textarea,button{font:600 15px/1.5 system-ui}
-    input,select,textarea{width:100%;background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px}
-    textarea{min-height:180px;font:600 15px/1.45 ui-monospace,Consolas,Menlo,monospace}
-    button{cursor:pointer;border:0;border-radius:12px;padding:11px 16px}
-    .btn{background:#111;color:#fff}
-    .btn.secondary{background:#fff;color:#111;border:1px solid var(--line)}
-    .btn.primary{background:var(--pi)}
-    .btn.danger{background:var(--danger)}
-    .panel{background:#0b0f1a;color:#cde; border:1px solid #1e2737; border-radius:14px;padding:14px;min-height:240px;white-space:pre-wrap}
-    footer{margin-top:22px;color:#667;text-align:center}
-    .pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#eef;font:700 12px/1 ui-monospace}
-    .col2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    .muted{color:#64748b}
-    audio{width:100%}
+    body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto}
+    a{color:var(--pi2);text-decoration:none}
+    .wrap{max-width:1200px;margin:0 auto;padding:18px}
+    header{display:flex;align-items:center;gap:16px;margin-bottom:12px}
+    h1{margin:0;font:800 28px/1.1 ui-sans-serif}
+    .badge{background:#ffffff14;color:#fff;padding:3px 8px;border-radius:12px;font:700 12px/1 ui-mono,monospace}
+    .row{display:flex;gap:12px}
+    .grid{display:grid;grid-template-columns: 1.05fr 0.95fr;gap:14px}
+    .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px}
+    label{display:block;margin:8px 0 6px;font-weight:700;color:#cbd5ff}
+    input,select,textarea{width:100%;background:#101522;color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+    textarea{min-height:140px;font:500 14px/1.45 ui-monospace,Consolas,Menlo,monospace;resize:vertical}
+    .btn{cursor:pointer;user-select:none;border:1px solid var(--line);background:#1b2030;color:#e5edff;border-radius:12px;padding:10px 14px;font-weight:800}
+    .btn:hover{border-color:#3a4566}
+    .btn.primary{background:linear-gradient(135deg,var(--pi) 0%, #5b7cfa 60%, var(--pi2) 100%);color:#10131c;border-color:#000}
+    .btn.ghost{background:#0e1320;border-color:#28324a}
+    .btn.warn{background:#2a0f19;border-color:#5f2138;color:#ffd9e0}
+    .pill{padding:6px 10px;border-radius:999px;background:#ffffff0f;border:1px solid #ffffff1f}
+    .mono{font-family:ui-monospace,Consolas,Menlo,monospace}
+    .log{min-height:260px;white-space:pre-wrap;overflow:auto}
+    .rightBox{display:grid;grid-template-rows:auto 260px 300px;gap:12px}
+    .kbd{font:700 12px/1 ui-mono,monospace;background:#00000033;padding:2px 6px;border-radius:6px}
+    .hint{opacity:.75}
+    .panel-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+    .split{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .tiny{font-size:12px;opacity:.8}
+    .bar{height:6px;border-radius:999px;background:#20283b;overflow:hidden}
+    .bar > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--pi),var(--pi2))}
+    .kv{display:grid;grid-template-columns:150px 1fr;gap:8px;align-items:center}
+    .muted{opacity:.6}
+    .tool{display:flex;gap:8px;flex-wrap:wrap}
+    .rowgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+    .rightScroll{overflow:auto}
+    /* keyboard & diagrams */
+    svg{max-width:100%;height:auto;display:block}
+    .center{display:flex;align-items:center;justify-content:center}
+    .ok{color:#95ffa5}
+    .err{color:#ff9aa9}
   </style>
 </head>
 <body>
   <div class="wrap">
-    <header class="row">
-      <div class="flex1">
-        <h1>PiChordify Kingdom <small class="badge">v0.52</small></h1>
+    <header class="row" style="justify-content:space-between">
+      <div class="row" style="gap:12px">
+        <h1>PiChordify Kingdom <small class="badge">v0.7 KING</small></h1>
+        <span class="pill">Theme: Pi tím–ngọc</span>
       </div>
-      <div class="row" style="margin-left:auto">
+      <div class="row">
         <button id="btnLogin" class="btn">Pi Login</button>
-        <button id="btnCheck" class="btn secondary">Kiểm tra Premium</button>
-        <button id="btnPay"   class="btn primary">Thanh toán Premium</button>
+        <button id="btnCheck" class="btn">Kiểm tra Premium</button>
+        <button id="btnPay" class="btn primary">Pi Pay (sandbox)</button>
       </div>
     </header>
 
     <div class="grid">
       <!-- LEFT -->
       <section class="card">
-        <h3 style="margin:6px 0 12px">Demo Core</h3>
+        <h3 style="margin:4px 0 10px">Demo Core</h3>
 
-        <div class="row">
-          <div class="col2">
-            <div>
-              <label>Giọng (key) & tiến trình</label>
-              <div class="row">
-                <select id="selKey" title="Key">
-                  <option>C</option><option>G</option><option>D</option><option>A</option><option>E</option>
-                  <option>B</option><option>F#</option><option>C#</option><option>F</option><option>Bb</option>
-                  <option>Eb</option><option>Ab</option><option>Db</option><option>Gb</option><option>Cb</option>
-                  <option>Am</option><option>Em</option><option>Bm</option><option>F#m</option><option>C#m</option>
-                  <option>G#m</option><option>D#m</option><option>A#m</option><option>Dm</option><option>Gm</option>
-                  <option>Cm</option><option>Fm</option><option>Bbm</option><option>Ebm</option><option>Abm</option>
-                </select>
-                <select id="selProg" title="Chord progression">
-                  <option value="I-V-vi-IV">I–V–vi–IV</option>
-                  <option value="vi-IV-I-V">vi–IV–I–V</option>
-                  <option value="I-IV-V-IV">I–IV–V–IV</option>
-                  <option value="ii-V-I-vi">ii–V–I–vi</option>
-                  <option value="I-V-IV-V">I–V–IV–V</option>
-                  <option value="I-vi-ii-V">I–vi–ii–V</option>
-                </select>
-              </div>
-              <button id="btnAutoChord" class="btn secondary" type="button">Tự gợi ý hợp âm</button>
-              <div class="muted" style="margin-top:6px"><small>App sẽ nhét hợp âm theo vòng 4/4. Trẫm chỉnh lại sau khi sẵn.</small></div>
-            </div>
+        <div class="rowgrid">
+          <div>
+            <label>Giọng (key) & tiến trình</label>
+            <select id="selKey">
+              <option>C</option><option>Db</option><option>D</option><option>Eb</option>
+              <option>E</option><option>F</option><option>Gb</option><option>G</option>
+              <option>Ab</option><option>A</option><option>Bb</option><option>B</option>
+              <option>Am</option><option>Bbm</option><option>Bm</option><option>Cm</option>
+              <option>C#m</option><option>Dm</option><option>D#m</option><option>Em</option>
+              <option>Fm</option><option>F#m</option><option>Gm</option><option>G#m</option>
+            </select>
+          </div>
+          <div>
+            <label>Tiến trình</label>
+            <select id="selProg" title="Chord progression">
+              <option value="I-V-vi-IV">I–V–vi–IV</option>
+              <option value="I-vi-IV-V">I–vi–IV–V</option>
+              <option value="ii-V-I">ii–V–I</option>
+              <option value="I-IV-V">I–IV–V</option>
+              <option value="vi-IV-I-V">vi–IV–I–V</option>
+              <option value="I-V-IV">I–V–IV</option>
+            </select>
+          </div>
+          <div class="center">
+            <button id="btnAutoChord" class="btn">Tự gợi ý hợp âm</button>
+          </div>
+        </div>
+        <small class="hint">App sẽ phát nhịp theo vòng 4/4. Có thể chỉnh lại sau khi sinh.</small>
 
-            <div>
-              <label for="title">Tiêu đề</label>
-              <input id="title" type="text" placeholder="Tên bài…" />
-            </div>
+        <div class="row" style="margin-top:10px">
+          <div class="kv"><span>Tiêu đề</span><input id="title" placeholder="Tên bài…"></div>
+        </div>
+
+        <div class="row" style="margin-top:6px">
+          <div class="kv">
+            <span>Lời + hợp âm</span>
+            <textarea id="lyrics" placeholder="mm:ss  nội dung / HợpÂm…&#10;vd: 00:12 Em / D"></textarea>
           </div>
         </div>
 
-        <label for="lyrics">Lời + hợp âm <span class="muted">(mỗi dòng có mốc thời gian → định dạng: <b>mm:ss  nội dung / hợp âm</b>, ví dụ: <b>00:12 Em / D</b>)</span></label>
-        <textarea id="lyrics" placeholder="mm:ss  nội dung / hợp âm…"></textarea>
-
-        <div class="col2" style="margin-top:12px">
-          <div class="col">
-            <div class="row">
-              <div style="flex:1">
-                <label for="bpm">BPM (nhịp)</label>
-                <input id="bpm" type="number" value="80" />
-              </div>
-              <div style="flex:1">
-                <label for="offset">Offset (giây, +/-)</label>
-                <input id="offset" type="number" value="0" step="0.1" />
-              </div>
+        <div class="row split" style="margin-top:8px">
+          <div>
+            <div class="kv"><span>BPM (nhịp)</span><input id="bpm" type="number" value="80"></div>
+            <div class="kv"><span>Offset (giây, +/-)</span><input id="offset" type="number" step="0.1" value="0"></div>
+            <div class="kv"><span>Transpose nhạc cụ (±12)</span>
+              <input id="transpose" type="range" min="-12" max="12" value="0" />
             </div>
-            <div class="row" style="margin-top:8px">
-              <button id="btnMetro" class="btn secondary">Phát nhịp thử</button>
-              <button id="btnCompile" class="btn secondary">Biên dịch & xem trước</button>
-              <button id="btnExport" class="btn secondary">Export .svg</button>
+            <div class="kv"><span>Nhạc cụ</span>
+              <select id="instrument">
+                <option value="guitar">Guitar</option>
+                <option value="ukulele">Ukulele</option>
+                <option value="piano">Piano</option>
+              </select>
+            </div>
+            <div class="tool" style="margin:10px 0">
+              <button id="btnClick" class="btn">Phát nhịp thử</button>
+              <button id="btnCompile" class="btn ghost">Biên dịch & xem trước</button>
+              <button id="btnExportSvg" class="btn ghost">Export .svg</button>
             </div>
           </div>
 
-          <div class="col">
+          <div>
             <label>Audio (mp3)</label>
-            <input id="audioUrl" type="url" placeholder="https://…/song.mp3" />
-            <div class="row" style="margin-top:8px">
-              <input id="fileMp3" type="file" accept="audio/mpeg" />
+            <input id="audioUrl" placeholder="https://…/song.mp3" />
+            <div class="tool" style="margin-top:6px">
+              <input id="filePick" type="file" accept="audio/*" />
+              <label><input id="pitchAudio" type="checkbox" /> Transpose audio (thử nghiệm)</label>
             </div>
-            <audio id="player" preload="none" controls></audio>
-            <div class="row" style="margin-top:8px">
-              <button id="btnPlay"  class="btn">Play</button>
-              <button id="btnPause" class="btn secondary">Pause</button>
-              <button id="btnStop"  class="btn secondary">Stop</button>
-              <div id="clock" class="pill">00:00</div>
+            <div class="tool" style="margin-top:6px">
+              <button id="btnPlay" class="btn">Play</button>
+              <button id="btnPause" class="btn">Pause</button>
+              <button id="btnStop" class="btn">Stop</button>
+            </div>
+            <audio id="player" preload="none" style="width:100%;margin-top:10px"></audio>
+            <div class="tiny muted" style="margin-top:6px">
+              Gợi ý: nhập lời dạng <span class="kbd">mm:ss</span> kèm hợp âm sau dấu <span class="kbd">/</span>.
+              Ví dụ: <span class="kbd">00:12 Em / D</span> • <span class="kbd">00:28 Gmaj7 / C</span>.
             </div>
           </div>
         </div>
       </section>
 
       <!-- RIGHT -->
-      <aside class="card">
-        <h3 style="margin:6px 0 12px">Log</h3>
-        <div id="log" class="panel">Ready.</div>
+      <aside class="rightBox">
+        <section class="card">
+          <div class="panel-title">
+            <strong>Xem trước</strong>
+            <span class="tiny muted">Transpose: <span id="tpView">0</span> • Nhạc cụ: <span id="instView">guitar</span></span>
+          </div>
+          <div id="preview" class="rightScroll" style="height:220px;border:1px dashed #273048;border-radius:12px;padding:8px"></div>
+          <div class="bar" style="margin-top:10px"><i id="beatProg"></i></div>
+        </section>
+
+        <section class="card log mono" id="log"></section>
+
+        <section class="card">
+          <div class="panel-title">
+            <strong>Lưu / mở dự án</strong>
+            <div class="tool">
+              <button id="btnSave" class="btn">Save</button>
+              <button id="btnLoad" class="btn">Load</button>
+              <button id="btnShare" class="btn">Share link</button>
+              <span class="tiny muted">Tự lưu: bật</span>
+            </div>
+          </div>
+          <div class="tiny muted">Lưu cục bộ bằng <span class="kbd">localStorage</span>. Khi “Share link”, cấu hình sẽ được mã hóa trong URL.</div>
+        </section>
       </aside>
     </div>
-
-    <footer>© PiChordify Kingdom — Hackathon demo “có nhạc thật” v0.52</footer>
   </div>
 
 <script>
-/* ============ UTIL & LOG ============ */
-const $ = s => document.querySelector(s);
-const logBox = $('#log');
-function log(...msg){
-  const line = "• " + msg.join(" ");
-  logBox.textContent += (logBox.textContent ? "\n" : "") + line;
-  logBox.scrollTop = logBox.scrollHeight;
-}
-function setMuted(sel, msg){ const el=$(sel); if(!el) return; el.textContent = msg; }
+/* ====== STATE & UTILS ====== */
+const state = {
+  pi: null, premium:false, payId:null,
+  chordsCompiled: [], // [{t, text, chord}]
+  key: 'C', transpose: 0, instrument:'guitar',
+  bpm: 80, offset:0, audioSemitone:0
+};
 
-/* ============ PI SDK INIT ============ */
-let state = { pi:null, isPi:false };
-function isPiBrowser(){
-  // thô sơ: Pi Browser đặt userAgent có "PiBrowser" + SDK object
-  return typeof window.Pi !== "undefined" || /PiBrowser/i.test(navigator.userAgent);
+const $ = (sel,root=document)=>root.querySelector(sel);
+const $$= (sel,root=document)=>[...root.querySelectorAll(sel)];
+const log = (m,cls='')=>{
+  const el = $('#log'); const t = new Date().toTimeString().substr(0,8);
+  el.innerHTML = `${el.innerHTML}${cls?`<span class="${cls}">`:''}• ${m}${cls?`</span>`:''}\n`;
+  el.scrollTop = el.scrollHeight;
 }
-async function initPI(){
-  if(!isPiBrowser()){
-    setMuted("#btnPay","Không ở Pi Browser → ẩn thanh toán.");
-    $('#btnPay').style.display = "none";
-    log("Không có Pi SDK. Mở trong Pi Browser để test thanh toán.");
-    return;
-  }
-  state.pi = window.Pi;
-  state.isPi = true;
-  setMuted("#btnPay","Pi Pay (sandbox)");
+const set = (id,v)=>$(id).textContent=v;
+const byId = id => document.getElementById(id);
+
+/* ====== PI SDK ====== */
+function hasPi(){ return typeof window.Pi !== 'undefined'; }
+
+async function initPi(){
+  if(!hasPi()){ log('Không có Pi SDK. Mở trong Pi Browser để test thanh toán.'); $('#btnPay').style.display='none'; return; }
   try{
-    state.pi.init({ version: "2.0", sandbox: true });
-    log("Pi SDK init xong.");
-  }catch(err){
-    log("Pi SDK init lỗi:", err?.message||err);
-  }
+    window.Pi.init({ version:"2.0", sandbox: true });
+    state.pi = window.Pi;
+    log('Pi SDK init xong.','ok');
+  }catch(err){ log('Pi SDK init lỗi: '+err.message,'err'); }
 }
 
-$('#btnLogin').addEventListener('click', async ()=>{
-  if(!state.isPi) return log("Login lỡ hẹn: Pi SDK chưa sẵn.");
+async function piLogin(){
+  if(!state.pi){ return log('Chưa init Pi SDK.','err'); }
   try{
     const scopes = ['username','payments'];
-    const res = await state.pi.authenticate(scopes, onIncomplete=>log("Incomplete:",onIncomplete?.identifier));
-    log("User:", res?.user?.username);
-  }catch(e){ log("Login lỗi:", e?.message||e); }
-});
-$('#btnCheck').addEventListener('click', async ()=>{
-  log("checkPremium (demo) chưa có backend → false");
-});
-$('#btnPay').addEventListener('click', async ()=>{
-  if(!state.isPi) return log("Tạo payment lỗi: Pi SDK chưa sẵn.");
+    const res = await window.Pi.authenticate(scopes, onIncomplete);
+    log('Đăng nhập Pi: '+JSON.stringify(res?.user?.username||res),'ok');
+  }catch(err){ log('Login lỗi: '+err.message,'err'); }
+}
+function onIncomplete(e){ log('Incomplete: '+e?.identifier) }
+
+async function piCheckPremium(){
+  // Demo: chưa có backend → giả lập false
+  state.premium = false;
+  log('Kiểm tra Premium (demo) → '+state.premium);
+}
+async function piPaySandbox(){
+  if(!state.pi){ return log('Chưa init Pi SDK.','err'); }
   try{
-    const payment = await state.pi.createPayment({
-      amount: 0.01, memo: "PiChordify Premium (demo)", metadata:{ plan:"demo" }
-    });
-    log("createPayment ok:", JSON.stringify(payment));
-    payment.on("completed", async (p)=>{ log("Payment completed:", p?.identifier); });
-    payment.on("error", (err)=>{ log("Payment error:", err?.message||err); });
-  }catch(e){ log("createPayment lỗi:", e?.message||e); }
-});
-
-/* ============ AUDIO PLAYER ============ */
-const player = $('#player');
-let rafTimer = null;
-
-function connectPlayerSrc(src){
-  if(!src) return;
-  player.src = src;
-  player.load();
-  log("Đã nạp file mp3:", src.split('/').pop());
+    const payment = await window.Pi.createPayment({
+      amount: 0.01, memo: 'PiChordify Premium (demo)', metadata: { plan:'demo' }
+    }, { onReadyForServerApproval(asyncPayment)=>{
+        log('onReadyForServerApproval: '+asyncPayment.identifier);
+      }, onReadyForServerCompletion(asyncPayment){
+        log('onReadyForServerCompletion: '+asyncPayment.identifier);
+      }, onCancel(){ log('User cancel.') }, onError(e){ log('Pay error: '+e) } });
+    log('Tạo payment id: '+payment?.identifier);
+  }catch(err){ log('Pay lỗi: '+err.message,'err'); }
 }
-$('#audioUrl').addEventListener('change', e=> connectPlayerSrc(e.target.value.trim()));
-$('#fileMp3').addEventListener('change', e=>{
-  const f = e.target.files?.[0]; if(!f) return;
-  const url = URL.createObjectURL(f);
-  connectPlayerSrc(url);
-});
 
-$('#btnPlay').addEventListener('click', async ()=>{
-  try{ await player.play(); }catch(e){}
-});
-$('#btnPause').addEventListener('click', ()=> player.pause());
-$('#btnStop').addEventListener('click', ()=>{
-  try{ player.pause(); player.currentTime = 0; }catch(e){}
-});
+/* ====== AUDIO & METRONOME ====== */
+const player = byId('player');
+let clickTimer = null;
 
-function tickClock(){
-  const t = Math.floor(player.currentTime||0);
-  const m = String(Math.floor(t/60)).padStart(2,'0');
-  const s = String(t%60).padStart(2,'0');
-  $('#clock').textContent = `${m}:${s}`;
-  rafTimer = requestAnimationFrame(tickClock);
+function loadAudio(){
+  const url = byId('audioUrl').value.trim();
+  if(url){ player.src = url; player.load(); log('Đã nạp audio URL.'); return; }
+  const f = byId('filePick').files?.[0];
+  if(f){ player.src = URL.createObjectURL(f); player.load(); log('Đã nạp file mp3: '+f.name); }
 }
-player.addEventListener('play', ()=>{ cancelAnimationFrame(rafTimer); tickClock(); });
-player.addEventListener('pause', ()=> cancelAnimationFrame(rafTimer));
-player.addEventListener('ended', ()=> cancelAnimationFrame(rafTimer));
+byId('audioUrl').addEventListener('change',loadAudio);
+byId('filePick').addEventListener('change',loadAudio);
 
-/* ============ METRONOME ============ */
-let metro = { ctx:null, osc:null, gain:null, timer:null, isOn:false };
-function metronomeStart(){
-  const bpm = Number($('#bpm').value||80);
-  const interval = 60_000/bpm; // ms
-  if(!metro.ctx) metro.ctx = new (window.AudioContext||window.webkitAudioContext)();
-  const click = ()=>{
-    const t = metro.ctx.currentTime;
-    const o = metro.ctx.createOscillator();
-    const g = metro.ctx.createGain();
-    o.frequency.value = 1000; g.gain.setValueAtTime(0.0001,t);
-    g.gain.exponentialRampToValueAtTime(0.5,t+0.001);
-    g.gain.exponentialRampToValueAtTime(0.0001,t+0.08);
-    o.connect(g).connect(metro.ctx.destination);
-    o.start(t); o.stop(t+0.09);
-  };
-  if(metro.timer) clearInterval(metro.timer);
-  click(); metro.timer = setInterval(click, interval);
-  metro.isOn = true; log(`Bật metronome ${bpm} BPM`);
+function applyAudioTranspose(){
+  // thử nghiệm: dùng playbackRate ~ 2^(n/12) (đổi pitch kèm tempo)
+  const n = state.audioSemitone;
+  player.playbackRate = Math.pow(2, n/12);
 }
-function metronomeStop(){
-  if(metro.timer) clearInterval(metro.timer);
-  metro.timer = null; metro.isOn=false; log("Tắt metronome.");
-}
-$('#btnMetro').addEventListener('click', ()=> metro.isOn ? metronomeStop() : metronomeStart());
+function play(){ applyAudioTranspose(); player.play().catch(()=>{}); }
+function pause(){ player.pause(); }
+function stop(){ player.pause(); player.currentTime = 0; }
 
-/* ============ AUTO CHORD SUGGESTION ============ */
+function clickStart(){
+  clickStop();
+  const ctx = new (window.AudioContext||window.webkitAudioContext)();
+  const bpm = state.bpm; const interval = 60/bpm;
+  let t = ctx.currentTime + 0.05;
+  clickTimer = setInterval(()=>{
+    const osc = ctx.createOscillator(); const g = ctx.createGain();
+    osc.frequency.value = 1000; g.gain.value = .12;
+    osc.connect(g).connect(ctx.destination); osc.start(t); osc.stop(t+0.05);
+    t += interval;
+  }, interval*1000);
+  log(`Bật metronome ${bpm} BPM.`);
+}
+function clickStop(){ if(clickTimer){ clearInterval(clickTimer); clickTimer=null; }}
+
+/* ====== MUSIC THEORY – roman ⇄ chord ====== */
 const MAJOR_KEYS = {
-  C:["C","D","E","F","G","A","B"],
-  G:["G","A","B","C","D","E","F#"],
-  D:["D","E","F#","G","A","B","C#"],
-  A:["A","B","C#","D","E","F#","G#"],
-  E:["E","F#","G#","A","B","C#","D#"],
-  B:["B","C#","D#","E","F#","G#","A#"],
-  "F#":["F#","G#","A#","B","C#","D#","E#"], "C#":["C#","D#","E#","F#","G#","A#","B#"],
-  F:["F","G","A","Bb","C","D","E"],
-  Bb:["Bb","C","D","Eb","F","G","A"],
-  Eb:["Eb","F","G","Ab","Bb","C","D"],
-  Ab:["Ab","Bb","C","Db","Eb","F","G"],
-  Db:["Db","Eb","F","Gb","Ab","Bb","C"],
-  Gb:["Gb","Ab","Bb","Cb","Db","Eb","F"], Cb:["Cb","Db","Eb","Fb","Gb","Ab","Bb"],
+  C:["C","D","E","F","G","A","B"], Db:["Db","Eb","F","Gb","Ab","Bb","C"], D:["D","E","F#","G","A","B","C#"],
+  Eb:["Eb","F","G","Ab","Bb","C","D"], E:["E","F#","G#","A","B","C#","D#"], F:["F","G","A","Bb","C","D","E"],
+  Gb:["Gb","Ab","Bb","Cb","Db","Eb","F"], G:["G","A","B","C","D","E","F#"], Ab:["Ab","Bb","C","Db","Eb","F","G"],
+  A:["A","B","C#","D","E","F#","G#"], Bb:["Bb","C","D","Eb","F","G","A"], B:["B","C#","D#","E","F#","G#","A#"]
 };
-const MINOR_REL = { A:"Am", E:"Em", B:"Bm", "F#":"F#m", "C#":"C#m", "G#":"G#m", "D#":"D#m", "A#":"A#m",
-  D:"Dm", G:"Gm", C:"Cm", F:"Fm", Bb:"Bbm", Eb:"Ebm", Ab:"Abm" };
+const MINOR_REL = { "Am":"C","Bbm":"Db","Bm":"D","Cm":"Eb","C#m":"E","Dm":"F","D#m":"Gb","Em":"G","Fm":"Ab","F#m":"A","Gm":"Bb","G#m":"B" };
 
 function romanToChord(key, token){
-  // token: I ii V vi etc.
+  // token: I, ii, V, vi, etc, support maj7/m7/7/sus4/dim/aug, add slash bass
   const isMinorKey = /m$/.test(key);
-  const baseKey = isMinorKey ? key.replace(/m$/,'').toUpperCase() : key.toUpperCase();
-  const scale = MAJOR_KEYS[baseKey] || MAJOR_KEYS.C;
-  const map = { "I":0,"ii":1,"II":1,"iii":2,"III":2,"IV":3,"iv":3,"V":4,"v":4,"vi":5,"VI":5,"vii":6,"VII":6 };
-  let deg = map[token] ?? 0;
-  let chordRoot = scale[deg] || scale[0];
-  // hóa/thường theo token
-  let chord = /ii|iii|iv|v|vi|vii/.test(token) ? chordRoot+"m" : chordRoot;
-  if(/°/.test(token)) chord = chord.replace(/m?$/,"dim");
-  return chord;
-}
-function parseProg(str){ return str.split(/[-–—\s]+/).map(s=>s.trim()).filter(Boolean); }
+  const majorKey = isMinorKey ? MINOR_REL[key] : key;
+  const scale = MAJOR_KEYS[majorKey] || MAJOR_KEYS.C;
 
-function wireAutoChord(){
-  $('#btnAutoChord').addEventListener('click', ()=>{
-    const key = $('#selKey').value;
-    const progTokens = parseProg($('#selProg').value);
-    const bpm = Number($('#bpm').value||80);
-    // tạo 8 ô 4/4 (tối giản): mỗi hợp âm kéo 1 ô (1 bar)
-    const bars = 8;
-    const lines = [];
-    for(let i=0;i<bars;i++){
-      const token = progTokens[i % progTokens.length];
-      const chord = romanToChord(key, token);
-      const t = i * (60/bpm)*4; // giây
-      const mm = String(Math.floor(t/60)).padStart(2,'0');
-      const ss = String(Math.floor(t%60)).padStart(2,'0');
-      lines.push(`${mm}:${ss}  … / ${chord}`);
+  let r = token.trim();
+  let add = ""; let bass = "";
+  // split slash bass
+  if(r.includes("/")){ const [a,b]=r.split("/"); r=a; bass=b; }
+  // extract extensions
+  const extMatch = r.match(/(maj7|m7|sus2|sus4|dim|aug|m|7)$/i);
+  if(extMatch){ add = extMatch[1]; r = r.replace(extMatch[1],''); }
+  // degree to index
+  const map = {I:0,II:1,III:2,IV:3,V:4,VI:5,VII:6};
+  const deg = r.replace(/[^IV]+/g,'').toUpperCase();
+  const idx = map[deg] ?? 0;
+  let chord = scale[idx] || "C";
+  // minor if lower-case roman
+  const isLower = /[iv]/.test(token);
+  if(isLower && !/m$/.test(add)) add = (add?('m'+add):'m');
+
+  // apply transpose instrument semitones
+  chord = transposeNote(chord, state.transpose);
+
+  // build chord text
+  let text = chord;
+  if(add){
+    if(/maj7/i.test(add)) text += "maj7";
+    else if(/m7/i.test(add)) text += "m7";
+    else if(/dim/i.test(add)) text += "dim";
+    else if(/aug/i.test(add)) text += "aug";
+    else if(/sus2/i.test(add)) text += "sus2";
+    else if(/sus4/i.test(add)) text += "sus4";
+    else if(/m$/.test(add)) text += "m";
+    else if(/7$/.test(add)) text += "7";
+  }
+  if(bass){ text += "/"+transposeNote(bass, state.transpose); }
+  return text;
+}
+const NOTES = ["C","C#","Db","D","D#","Eb","E","F","F#","Gb","G","G#","Ab","A","A#","Bb","B"];
+function normNote(n){
+  // prefer sharps except Bb, Eb, Ab, Db, Gb when originally flat
+  const sharpPref = {"Db":"C#","Eb":"D#","Gb":"F#","Ab":"G#","Bb":"A#"};
+  return sharpPref[n] || n;
+}
+function stepNote(n, semitone){
+  const idx = NOTES.indexOf(n); if(idx<0) return n;
+  // map enharmonics as same bucket by collapsing pairs
+  const buckets = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+  const toBucket = (x)=>({ "C":0,"C#":1,"Db":1,"D":2,"D#":3,"Eb":3,"E":4,"F":5,"F#":6,"Gb":6,"G":7,"G#":8,"Ab":8,"A":9,"A#":10,"Bb":10,"B":11 })[x];
+  const fromBucket = (i)=>buckets[(i+12)%12];
+  const b = toBucket(n); const resB = (b+semitone+12)%12; return fromBucket(resB);
+}
+function transposeNote(chordText, st){
+  // handle slash chord or simple note
+  return stepNote(chordText, st);
+}
+
+/* ====== PARSER & COMPILE ====== */
+function parseLines(txt){
+  const out = [];
+  const lines = txt.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+  for(const ln of lines){
+    // mm:ss text / chord
+    const m = ln.match(/^(\d{1,2}):(\d{2})\s+(.*?)\s*(?:\/\s*([A-G][b#]?(?:m|maj7|m7|7|sus2|sus4|dim|aug)?|[ivIV]{1,3}(?:maj7|m7|7|sus2|sus4|dim|aug)?(?:\/[A-G][b#]?)?))?$/);
+    if(!m){ out.push({t:null,text:ln,chord:null}); continue; }
+    const t = (+m[1])*60 + (+m[2]);
+    let chord = m[4]||"";
+    // roman?
+    if(/[ivIV]/.test(chord)) chord = romanToChord(state.key, chord);
+    out.push({t, text:m[3], chord});
+  }
+  return out;
+}
+
+function compile(){
+  state.key = byId('selKey').value;
+  state.transpose = +byId('transpose').value|0;
+  state.instrument = byId('instrument').value;
+  state.bpm = +byId('bpm').value||80;
+  state.offset = +byId('offset').value||0;
+  set('#tpView', state.transpose);
+  set('#instView', state.instrument);
+  state.chordsCompiled = parseLines(byId('lyrics').value);
+  renderPreview();
+  autoSave();
+  log(`Compile xong: ${state.chordsCompiled.length} dòng.`);
+}
+
+/* ====== RENDER ====== */
+function renderPreview(){
+  const box = byId('preview');
+  box.innerHTML = "";
+  const svg = renderSheet(state.chordsCompiled, state.instrument);
+  box.appendChild(svg);
+}
+
+function renderSheet(rows,instrument){
+  const W=920,H=240, P=16, LH=28;
+  const svg = svgEl('svg',{viewBox:`0 0 ${W} ${H}`,width:'100%'});
+  svg.appendChild(svgEl('rect',{x:0,y:0,width:W,height:H,rx:12,fill:'#0b1020',stroke:'#1e2b46'}));
+  svg.appendChild(svgEl('text',{x:P,y:P+4,fill:'#9ac7ff','font-size':12}, `Key ${state.key} • BPM ${state.bpm} • ${instrument}`));
+  let y = 42, i = 0;
+  for(const r of rows.slice(0,6)){ // show first 6 lines
+    const chord = r.chord || '';
+    svg.appendChild(svgEl('text',{x:P,y,fill:'#e6efff','font-size':14}, `${fmtTime(r.t)}  ${r.text}`));
+    if(chord){
+      svg.appendChild(svgEl('text',{x:W-220,y,fill:'#7c4dff','font-size':16,'font-weight':800}, chord));
+      // small diagram
+      const dX = W-140, dY = y-20;
+      if(instrument==='piano') svg.appendChild(drawPianoChord(dX,dY, chord));
+      else if(instrument==='ukulele') svg.appendChild(drawUkuleleChord(dX,dY, chord));
+      else svg.appendChild(drawGuitarChord(dX,dY, chord));
     }
-    const cur = $('#lyrics').value.trim();
-    $('#lyrics').value = (cur ? cur+"\n" : "") + lines.join("\n");
-    log("Đã sinh hợp âm theo", key, "→", progTokens.join("-"));
-  });
+    y+=LH; if(y>H-30) break;
+    i++;
+  }
+  return svg;
+}
+function fmtTime(sec){ if(sec==null) return '--:--'; const m=Math.floor(sec/60), s=Math.floor(sec%60); return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; }
+function svgEl(tag,attrs={},text){
+  const el = document.createElementNS('http://www.w3.org/2000/svg',tag);
+  for(const k in attrs) el.setAttribute(k, attrs[k]);
+  if(text!=null) el.textContent = text;
+  return el;
 }
 
-/* ============ COMPILE & EXPORT (stub) ============ */
-$('#btnCompile').addEventListener('click', ()=>{
-  // chỗ này có thể render preview SVG/Canvas; để stub log cho nhẹ.
-  const n = $('#lyrics').value.trim().split(/\n/).filter(Boolean).length;
-  log(`Compile xong: ${n} dòng.`);
+/* ====== BASIC DIAGRAMS (compact, illustrative) ====== */
+const NOTE_TO_FRET = { // extremely small set for demo (root position on 6th/5th string)
+  "C":[3,3,2,0,1,0], "D":[-1,5,7,7,7,5], "E":[0,2,2,1,0,0], "F":[1,3,3,2,1,1],
+  "G":[3,2,0,0,0,3], "A":[-1,0,2,2,2,0], "B":[-1,2,4,4,4,2],
+  "Am":[-1,0,2,2,1,0], "Em":[0,2,2,0,0,0], "Dm":[-1,-1,0,2,3,1]
+};
+function drawGrid(x,y, w=60,h=40, strings=6, frets=5){
+  const g = svgEl('g');
+  g.appendChild(svgEl('rect',{x,y,width:w,height:h,rx:6,fill:'#0e162e',stroke:'#2d3b5e'}));
+  const dx=w/(strings-1), dy=h/frets;
+  for(let i=0;i<strings;i++) g.appendChild(svgEl('line',{x1:x+i*dx,y1:y,x2:x+i*dx,y2:y+h,stroke:'#294'}));
+  for(let j=1;j<frets;j++) g.appendChild(svgEl('line',{x1:x,y1:y+j*dy,x2:x+w,y2:y+j*dy,stroke:'#284'}));
+  return g;
+}
+function drawDots(root,x,y,w=60,h=40, strings=6, frets=5, pattern){
+  const g = svgEl('g');
+  if(!pattern){ g.appendChild(svgEl('text',{x:x+w/2-8,y:y+h/2+4,fill:'#789'}, '?')); return g; }
+  const dx=w/(strings-1), dy=h/frets;
+  const rev = s=> (strings-1-s); // draw low-E on left
+  pattern.forEach((fret, sIdx)=>{
+    if(fret<0) return; // mute
+    const px = x + rev(sIdx)*dx, py = y + (fret-0.5)*dy;
+    g.appendChild(svgEl('circle',{cx:px,cy:py,r:5,fill:'#7c4dff'}));
+  });
+  return g;
+}
+function pickShape(chord){
+  // choose by root (basic triad names only)
+  const name = chord.split(/[/\s]/)[0];
+  return NOTE_TO_FRET[name] || null;
+}
+function drawGuitarChord(x,y,chord){
+  const g = svgEl('g');
+  g.appendChild(drawGrid(x,y,60,40,6,5));
+  g.appendChild(drawDots(chord,x,y,60,40,6,5,pickShape(chord)));
+  g.appendChild(svgEl('text',{x:x,y:y-4,fill:'#bfe', 'font-size':12}, chord));
+  return g;
+}
+function drawUkuleleChord(x,y,chord){
+  const g = svgEl('g');
+  g.appendChild(svgEl('rect',{x,y,width:50,height:40,rx:6,fill:'#0e162e',stroke:'#2d3b5e'}));
+  for(let i=1;i<4;i++) g.appendChild(svgEl('line',{x1:x+i*12.5,y1:y,x2:x+i*12.5,y2:y+40,stroke:'#294'}));
+  for(let j=1;j<5;j++) g.appendChild(svgEl('line',{x1:x,y1:y+j*8,x2:x+50,y2:y+j*8,stroke:'#284'}));
+  g.appendChild(svgEl('circle',{cx:x+10,cy:y+16,r:4,fill:'#7c4dff'}));
+  g.appendChild(svgEl('circle',{cx:x+22,cy:y+24,r:4,fill:'#7c4dff'}));
+  g.appendChild(svgEl('circle',{cx:x+35,cy:y+12,r:4,fill:'#7c4dff'}));
+  g.appendChild(svgEl('text',{x:x,y:y-4,fill:'#bfe', 'font-size':12}, chord));
+  return g;
+}
+function drawPianoChord(x,y,chord){
+  const g = svgEl('g');
+  const w=80,h=40; const keys=14; const kw=w/keys;
+  g.appendChild(svgEl('rect',{x,y,width:w,height:h,rx:6,fill:'#0e162e',stroke:'#2d3b5e'}));
+  for(let i=0;i<keys;i++) g.appendChild(svgEl('rect',{x:x+i*kw,y:y,width:kw-0.5,height:h,fill:'#e7efff'}));
+  // highlight notes of chord root triad (approx)
+  const root = chord.match(/^[A-G][b#]?/)[0];
+  const triad = keyboardTriad(root);
+  triad.forEach(n=>{
+    const idx = kbIndex(n);
+    if(idx>=0) g.appendChild(svgEl('rect',{x:x+idx*kw+2,y:y+2,width:kw-4,height:h-4,fill:'#7c4dff88'}))
+  });
+  g.appendChild(svgEl('text',{x:x,y:y-4,fill:'#bfe','font-size':12}, chord));
+  return g;
+}
+const KB = ["A","A#","B","C","C#","D","D#","E","F","F#","G","G#"]; // circular
+function kbIndex(note){ return KB.indexOf(normNote(note)); }
+function keyboardTriad(root){
+  const base = kbIndex(root); if(base<0) return [];
+  const pick = i=>KB[(base+i+12)%12];
+  // major triad by default
+  let third = 4, fifth = 7;
+  if(/m(?!aj)/.test(root)) third = 3;
+  return [pick(0), pick(third), pick(fifth)];
+}
+
+/* ====== EXPORT ====== */
+function exportSVG(){
+  const svg = renderSheet(state.chordsCompiled, state.instrument).cloneNode(true);
+  const blob = new Blob([svg.outerHTML], {type:"image/svg+xml"});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (byId('title').value||'PiChordify Sheet')+'.svg';
+  a.click();
+}
+
+/* ====== AUTO-CHORD SUGGESTION ====== */
+function suggestChord(){
+  const key = byId('selKey').value;
+  const prog = byId('selProg').value; // roman series
+  const romans = prog.split('-');
+  const words = ['Intro','Verse','Chorus','Bridge','Outro'];
+  const start = (player.duration||180)/ (romans.length+1);
+  const lines = [];
+  for(let i=0;i<romans.length;i++){
+    const t = Math.round((i+1)*start);
+    const chord = romans[i];
+    lines.push(`${fmtTime(t)} ${words[i]||'Sec'} / ${chord}`);
+  }
+  byId('lyrics').value = lines.join('\n');
+  compile();
+  log(`Đã sinh hợp âm theo ${key} = ${prog}.`);
+}
+
+/* ====== SAVE / LOAD / SHARE ====== */
+function takeSnapshot(){
+  return {
+    title: byId('title').value,
+    lyrics: byId('lyrics').value,
+    key: byId('selKey').value,
+    prog: byId('selProg').value,
+    bpm: byId('bpm').value, offset: byId('offset').value,
+    transpose: byId('transpose').value, instrument: byId('instrument').value,
+    audioUrl: byId('audioUrl').value
+  };
+}
+function applySnapshot(d){
+  if(!d) return;
+  byId('title').value = d.title||'';
+  byId('lyrics').value = d.lyrics||'';
+  byId('selKey').value = d.key||'C';
+  byId('selProg').value = d.prog||'I-V-vi-IV';
+  byId('bpm').value = d.bpm||80;
+  byId('offset').value = d.offset||0;
+  byId('transpose').value = d.transpose||0;
+  byId('instrument').value = d.instrument||'guitar';
+  byId('audioUrl').value = d.audioUrl||'';
+  compile();
+}
+function autoSave(){ localStorage.setItem('pic7', JSON.stringify(takeSnapshot())); }
+function loadSave(){
+  const raw = localStorage.getItem('pic7');
+  if(raw) applySnapshot(JSON.parse(raw));
+}
+function shareLink(){
+  const base = location.href.split('#')[0];
+  const data = btoa(unescape(encodeURIComponent(JSON.stringify(takeSnapshot()))));
+  const url = `${base}#${data}`;
+  navigator.clipboard.writeText(url).then(()=>log('Đã copy share link.'),()=>{});
+}
+function tryOpenShared(){
+  if(location.hash.length>1){
+    try{ const txt = decodeURIComponent(escape(atob(location.hash.slice(1))));
+      applySnapshot(JSON.parse(txt)); log('Đã mở từ share link.');
+    }catch{}
+  }
+}
+
+/* ====== WIRING ====== */
+byId('btnLogin').addEventListener('click',piLogin);
+byId('btnCheck').addEventListener('click',piCheckPremium);
+byId('btnPay').addEventListener('click',piPaySandbox);
+
+byId('btnClick').addEventListener('click',()=>clickTimer?clickStop():clickStart());
+byId('btnCompile').addEventListener('click',compile);
+byId('btnExportSvg').addEventListener('click',exportSVG);
+byId('btnAutoChord').addEventListener('click',suggestChord);
+
+byId('btnPlay').addEventListener('click',play);
+byId('btnPause').addEventListener('click',pause);
+byId('btnStop').addEventListener('click',stop);
+
+;['selKey','transpose','instrument','bpm','offset','lyrics','title'].forEach(id=>{
+  byId(id).addEventListener('input', ()=>{ if(id==='transpose') set('#tpView', byId('transpose').value); autoSave(); });
 });
-$('#btnExport').addEventListener('click', ()=>{
-  log("Export .svg (demo) — sẽ gắn sau khi hoàn thiện preview.");
+
+byId('transpose').addEventListener('input',()=>{ state.transpose=+byId('transpose').value; renderPreview(); });
+
+byId('pitchAudio').addEventListener('change',e=>{
+  state.audioSemitone = e.target.checked ? (+byId('transpose').value||0) : 0;
+  applyAudioTranspose();
 });
 
-/* ============ BOOT ============ */
-window.addEventListener('load', ()=>{
-  initPI();
-  wireAutoChord();
+byId('btnSave').addEventListener('click',()=>{ autoSave(); log('Đã lưu.','ok'); });
+byId('btnLoad').addEventListener('click',()=>{ loadSave(); log('Đã nạp bản lưu.','ok'); });
+byId('btnShare').addEventListener('click',shareLink);
 
-  // tick đồng hồ mỗi 250ms khi đang play
-  setInterval(()=>{ if(!player.paused){ const t=player.currentTime||0;
-    const m=String(Math.floor(t/60)).padStart(2,'0');
-    const s=String(Math.floor(t%60)).padStart(2,'0');
-    $('#clock').textContent = `${m}:${s}`;
-  } }, 250);
-
-  log("DOM loaded. JS đang chạy.");
+/* ====== BOOT ====== */
+window.addEventListener('load',()=>{
+  initPi();
+  tryOpenShared();
+  loadSave();
+  log('Ready.');
 });
 </script>
 </body>
