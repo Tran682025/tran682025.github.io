@@ -67,6 +67,44 @@
       <section class="card">
         <h3 style="margin:6px 0 12px">Demo Core</h3>
 
+        <div class="row" style="margin-top:12px">
+  <label>Giọng (Key) & tiến trình:</label>
+  <div class="grid" style="grid-template-columns:1fr 1fr 1fr; gap:8px">
+    <select id="selKey">
+      <option>C</option><option>G</option><option>D</option><option>A</option><option>E</option>
+      <option>F</option><option>Bb</option><option>Eb</option><option>Ab</option>
+      <option>Am</option><option>Em</option><option>Dm</option><option>Gm</option>
+    </select>
+    <select id="selProg" title="Chord progression">
+      <option value="I-V-vi-IV">I–V–vi–IV</option>
+      <option value="I-vi-IV-V">I–vi–IV–V</option>
+      <option value="ii-V-I-vi">ii–V–I–vi</option>
+      <option value="I-IV-V-IV">I–IV–V–IV</option>
+    </select>
+    <button id="btnAutoChord" type="button">Tự gợi ý hợp âm</button>
+  </div>
+  <small>App sẽ rải hợp âm theo từng ô nhịp (4/4). Trẫm có thể chỉnh lại sau khi sinh.</small>
+</div>
+
+        <div class="row" style="margin-top:12px">
+  <label>Giọng (Key) & tiến trình:</label>
+  <div class="grid" style="grid-template-columns:1fr 1fr 1fr; gap:8px">
+    <select id="selKey">
+      <option>C</option><option>G</option><option>D</option><option>A</option><option>E</option>
+      <option>F</option><option>Bb</option><option>Eb</option><option>Ab</option>
+      <option>Am</option><option>Em</option><option>Dm</option><option>Gm</option>
+    </select>
+    <select id="selProg" title="Chord progression">
+      <option value="I-V-vi-IV">I–V–vi–IV</option>
+      <option value="I-vi-IV-V">I–vi–IV–V</option>
+      <option value="ii-V-I-vi">ii–V–I–vi</option>
+      <option value="I-IV-V-IV">I–IV–V–IV</option>
+    </select>
+    <button id="btnAutoChord">Tự gợi ý hợp âm</button>
+  </div>
+  <small>App sẽ rải hợp âm theo từng ô nhịp (4/4). Trẫm có thể chỉnh lại sau khi sinh.</small>
+</div>
+
         <div class="row" style="margin: 6px 0 12px">
           <button id="demo1" class="btn mini">Tải demo 1</button>
           <button id="demo2" class="btn mini">Tải demo 2</button>
@@ -175,6 +213,92 @@
         log("Pi SDK init xong.");
       }catch(err){ log("Pi SDK init lỗi:", err.message); }
     }
+
+    // ====== AUTO CHORD SUGGESTION ======
+const MAJOR_KEYS = {
+  C: ["C","Dm","Em","F","G","Am","Bdim"],
+  G: ["G","Am","Bm","C","D","Em","F#dim"],
+  D: ["D","Em","F#m","G","A","Bm","C#dim"],
+  A: ["A","Bm","C#m","D","E","F#m","G#dim"],
+  E: ["E","F#m","G#m","A","B","C#m","D#dim"],
+  F: ["F","Gm","Am","Bb","C","Dm","Edim"],
+  Bb:["Bb","Cm","Dm","Eb","F","Gm","Adim"],
+  Eb:["Eb","Fm","Gm","Ab","Bb","Cm","Ddim"],
+  Ab:["Ab","Bbm","Cm","Db","Eb","Fm","Gdim"],
+};
+const MINOR_REL = { Am:"C", Em:"G", Dm:"F", Gm:"Bb" }; // xử lý nhanh natural minor
+
+function romanToChord(key, token){
+  // token: I, ii, V, vi ...
+  const isMinorKey = !!MINOR_REL[key];
+  const useKey = isMinorKey ? MINOR_REL[key] : key;
+  const scale = MAJOR_KEYS[useKey] || MAJOR_KEYS.C;
+  const map = { "I":0,"ii":1,"II":1,"iii":2,"III":2,"IV":3,"iv":3,"V":4,"v":4,"vi":5,"VI":5,"vii":6,"VII":6 };
+  const idx = map[token] ?? 0;
+  let chord = scale[idx];
+
+  // ép về màu theo chữ hoa/thường của token
+  const wantMinor = /ii|iii|iv|v|vi|vii/.test(token);
+  if(wantMinor && !/m|dim/.test(chord)) chord += "m";
+  if(!wantMinor && /m/.test(chord) && !/dim/.test(chord)) chord = chord.replace("m","");
+  return chord;
+}
+
+function parseProg(str){
+  return str.split("-").map(s=>s.trim());
+}
+
+function fmtTime(sec){
+  sec = Math.max(0, Math.floor(sec));
+  const m = String(Math.floor(sec/60)).padStart(2,"0");
+  const s = String(sec%60).padStart(2,"0");
+  return `${m}:${s}`;
+}
+
+async function autoSuggestChords(){
+  // lấy tham số
+  const key = document.getElementById("selKey").value;
+  const prog = parseProg(document.getElementById("selProg").value); // ví dụ ["I","V","vi","IV"]
+  const bpm = Number(document.getElementById("bpm").value || 80);   // id="bpm" là ô BPM hiện có
+  const offset = Number(document.getElementById("offset").value || 0);
+
+  // độ dài bài từ audio#player
+  const audio = document.querySelector("audio#player") || document.querySelector("audio");
+  const duration = (audio && isFinite(audio.duration)) ? audio.duration : 180; // fallback 3 phút
+
+  // mỗi ô nhịp (4/4)
+  const barLen = 60 / bpm * 4; // giây
+  const lines = [];
+  let t = 0, i = 0;
+
+  while(t < duration){
+    const tok = prog[i % prog.length];
+    const chord = romanToChord(key, tok);
+    lines.push(`${fmtTime(t + offset)}  … / ${chord}`);
+    t += barLen;
+    i++;
+  }
+
+  // ghép vào khung lời (id hiện có là "lyrics" theo bản của Trẫm)
+  const box = document.getElementById("lyrics");
+  const prev = (box.value || "").trim();
+  box.value = (prev ? prev + "\n" : "") + lines.join("\n");
+
+  // log & cho xem nhanh
+  const log = (msg)=>{ const el = document.getElementById("console"); if(el) el.textContent += `\n• ${msg}`; };
+  log(`Đã gợi ý ${lines.length} ô nhịp theo ${key} – ${prog.join("-")}.`);
+
+  // gọi lại compile preview nếu có
+  if(typeof compilePreview === "function") compilePreview();
+}
+
+// gắn handler nút
+document.addEventListener("click", (e)=>{
+  if(e.target && e.target.id === "btnAutoChord"){
+    e.preventDefault();
+    autoSuggestChords();
+  }
+});
 
     /** ---------- AUDIO ---------- */
     const player = $("#player");
