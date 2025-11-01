@@ -564,5 +564,90 @@ window.addEventListener('load',()=>{
   log('Ready.');
 });
 </script>
+  <!-- Pi SDK (bắt buộc) -->
+<script src="https://sdk.minepi.com/pi-sdk.js"></script>
+
+<script>
+/* ====== LOGGER: ghi ra màn hình + console ====== */
+const $log = document.querySelector('#log, textarea#log, .log, [data-log]');
+function log(...args){
+  const line = `[${new Date().toLocaleTimeString()}] ` +
+               args.map(x => (typeof x === 'string' ? x : JSON.stringify(x))).join(' ');
+  if ($log){
+    // hỗ trợ cả <textarea> hoặc <div>
+    if ($log.tagName === 'TEXTAREA') { $log.value += line + '\n'; $log.scrollTop = $log.scrollHeight; }
+    else { $log.innerText += line + '\n'; $log.scrollTop = $log.scrollHeight; }
+  }
+  console.log(...args);
+}
+// Bắt toàn bộ lỗi JS để không “chết lặng”
+window.onerror = (m, s, l, c, e)=>{ log('ERROR', m, s+':'+l, e?.stack||''); };
+window.addEventListener('unhandledrejection', ev => { log('PROMISE REJECTION', ev.reason?.message||ev.reason); });
+
+/* ====== PI SDK INIT ====== */
+(async () => {
+  try {
+    // Sandbox: true để test trong Hackathon (không tốn Pi thật)
+    await Pi.init({ version: '2.0', sandbox: true });
+    log('Pi SDK: inited OK (v2, sandbox)');
+  } catch (e) {
+    log('Pi SDK: init FAILED ->', e.message);
+  }
+})();
+
+/* ====== AUTH (Pi Login) ====== */
+async function piLogin(){
+  try {
+    const scopes = ['payments','username','wallet_address']; // cần thanh toán + thông tin cơ bản
+    const auth = await Pi.authenticate(scopes, onIncompletePaymentFound);
+    log('Login OK:', { user: auth.user?.username, uid: auth.user?.uid });
+    return auth;
+  } catch(e){
+    log('Login FAIL:', e.message);
+  }
+}
+
+/* ====== PAYMENT (Pi Pay – sandbox) ====== */
+async function piPaySandbox(amount = 0.01){
+  try {
+    // đảm bảo đã login
+    const auth = await piLogin();
+    if (!auth) return;
+
+    // metadata tuỳ bạn; developer_uid chỉ là chuỗi nhận diện phía server của bạn
+    const payment = await Pi.createPayment({
+      amount: String(amount),
+      memo: 'PiChordify v7.1 sandbox test',
+      metadata: { feature: 'premium_check', v: '7.1' },
+      callbacks: {
+        onReadyForServerApproval: (paymentId) => { log('onReadyForServerApproval', paymentId); },
+        onReadyForServerCompletion: (paymentId, txid) => { log('onReadyForServerCompletion', paymentId, txid); },
+        onCancel: (paymentId) => { log('onCancel', paymentId); },
+        onError: (e) => { log('onError', e?.message||e); },
+      },
+      // (tuỳ chọn) developer_uid: 'tran682025',
+    });
+    log('createPayment ->', payment);
+  } catch(e){
+    log('Payment FAIL:', e.message);
+  }
+}
+
+/* ====== HANDLE INCOMPLETE PAYMENTS ====== */
+function onIncompletePaymentFound(payment){
+  log('onIncompletePaymentFound:', payment?.identifier || payment);
+}
+
+/* ====== GÁN SỰ KIỆN NÚT ====== */
+/* Đặt id cho nút trong HTML:
+   <button id="btnPiLogin">Pi Login</button>
+   <button id="btnPiPay">Pi Pay (sandbox)</button>
+   <button id="btnCheckPremium">Kiểm tra Premium</button>
+*/
+document.getElementById('btnPiLogin')?.addEventListener('click', piLogin);
+document.getElementById('btnPiPay')?.addEventListener('click', ()=>piPaySandbox(0.01));
+document.getElementById('btnCheckPremium')?.addEventListener('click', ()=>log('Premium: demo only (sandbox)'));
+</script>
+
 </body>
 </html>
