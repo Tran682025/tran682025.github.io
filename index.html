@@ -240,34 +240,76 @@ async function initPi(){
         state.pi = window.Pi;
         log('Pi SDK init xong.','ok');
       }catch(e){ log('Pi SDK init lỗi: '+e.message,'err'); }
+  function piAvailable(){
+  return (typeof window.Pi !== 'undefined');
+}
+
+async function initPi(){
+  let tries = 0;
+  const h = setInterval(async ()=>{
+    if(piAvailable() || tries++ > 40){
+      clearInterval(h);
+      if(!piAvailable()){
+        log('⚠️ Không có Pi SDK. Mở trong Pi Browser tại subdomain *.minepi.app');
+        document.getElementById('btnPay').disabled = true;
+        return;
+      }
+      try{
+        // ✅ Khởi tạo SDK với allowedOrigins
+        await Pi.init({
+          version: "2.0",
+          sandbox: true,
+          allowedOrigins: [
+            "https://tran682025.github.io",
+            "https://tranmusickingdom1067.minepi.app"
+          ]
+        });
+        state.pi = window.Pi;
+        log('✅ Pi SDK init xong.');
+      }catch(e){
+        log('❌ Pi SDK init lỗi: '+e.message);
+      }
     }
   },100);
 }
 
 async function piLogin(){
-  if(!piAvailable()) return log('Pi SDK chưa sẵn sàng.');
+  if(!piAvailable()) return log('⚠️ Pi SDK chưa sẵn sàng.');
   try{
     const scopes = ['username','payments'];
-    const res = await window.Pi.authenticate(scopes, onIncomplete);
-    state.user = res.user;
-    log('Đăng nhập Pi: @'+res.user.username,'ok');
-  }catch(e){ log('Login lỗi: '+e.message,'err'); }
+    const onIncomplete = (paymentId)=>log('🟣 Giao dịch chưa hoàn tất: '+paymentId);
+    const auth = await Pi.authenticate(scopes,onIncomplete);
+    state.user = auth.user;
+    log('✅ Đăng nhập Pi: @'+auth.user.username);
+  }catch(e){
+    log('❌ Pi Login lỗi: '+e.message);
+  }
 }
-function onIncomplete(i){ log('Incomplete prompt: '+i?.identifier); }
 
 async function checkPremium(){
-  // demo: giả lập false (chưa có backend)
   log('checkPremium (demo) → chưa có backend → false');
 }
 
 async function piPay(){
-  if(!piAvailable()) return log('Pi SDK chưa sẵn sàng.');
+  if(!piAvailable()) return log('⚠️ Pi SDK chưa sẵn sàng.');
   try{
     const paymentData = {
-      amount: 1, // 1 π test
-      memo: 'PiChordify Premium',
-      metadata: { plan:'demo-v7.1' }
+      amount: 1,
+      memo: "🎵 PiChordify Premium",
+      metadata: {purpose:"demo"}
     };
+    const callbacks = {
+      onReadyForServerApproval:(p)=>log('⏳ Đợi duyệt: '+p.identifier),
+      onReadyForServerCompletion:(p)=>log('✅ Thanh toán xong: '+p.identifier),
+      onCancel:(p)=>log('❌ Hủy giao dịch: '+p.identifier),
+      onError:(e)=>log('💥 Lỗi thanh toán: '+e.message)
+    };
+    await Pi.createPayment(paymentData, callbacks);
+  }catch(e){
+    log('❌ Pi Pay lỗi: '+e.message);
+  }
+}
+
     const cb = {
       onReadyForServerApproval: async(p)=>{ log('onReadyForServerApproval: '+p.identifier); },
       onReadyForServerCompletion: async(p)=>{ log('onReadyForServerCompletion: '+p.identifier); },
