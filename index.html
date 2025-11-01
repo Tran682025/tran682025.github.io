@@ -648,6 +648,64 @@ document.getElementById('btnPiLogin')?.addEventListener('click', piLogin);
 document.getElementById('btnPiPay')?.addEventListener('click', ()=>piPaySandbox(0.01));
 document.getElementById('btnCheckPremium')?.addEventListener('click', ()=>log('Premium: demo only (sandbox)'));
 </script>
+<!-- ===== Pi SDK integration v2.0 sandbox ===== -->
+<script src="https://sdk.minepi.com/pi-sdk.js"></script>
+<script>
+async function initPiSDK() {
+  try {
+    await Pi.init({ version: "2.0", sandbox: true });
+    log("✅ Pi SDK initialized (sandbox mode)");
+  } catch (e) {
+    log("❌ Pi SDK init failed:", e.message);
+  }
+}
+
+async function piLogin() {
+  try {
+    const scopes = ["payments", "username", "wallet_address"];
+    const auth = await Pi.authenticate(scopes, onIncompletePaymentFound);
+    log("✅ Login OK:", auth.user?.username || "(unknown)");
+    return auth;
+  } catch (e) {
+    log("❌ Login error:", e.message);
+  }
+}
+
+async function piPaySandbox(amount = 0.01) {
+  try {
+    const auth = await piLogin();
+    if (!auth) return;
+    const payment = await Pi.createPayment({
+      amount: String(amount),
+      memo: "PiChordify v7.1 sandbox test",
+      metadata: { feature: "premium_check", version: "7.1" },
+      callbacks: {
+        onReadyForServerApproval: (pid) => log("🪙 Ready for approval:", pid),
+        onReadyForServerCompletion: (pid, txid) => log("✅ Payment completed:", pid, txid),
+        onCancel: (pid) => log("🚫 Payment canceled:", pid),
+        onError: (err) => log("⚠️ Payment error:", err),
+      },
+    });
+    log("createPayment ->", payment);
+  } catch (e) {
+    log("❌ Payment failed:", e.message);
+  }
+}
+
+function onIncompletePaymentFound(payment) {
+  log("⚠️ Incomplete payment found:", payment.identifier || payment);
+}
+
+// gán sự kiện cho các nút
+document.getElementById("btnPiLogin")?.addEventListener("click", piLogin);
+document.getElementById("btnPiPay")?.addEventListener("click", () => piPaySandbox(0.01));
+document.getElementById("btnCheckPremium")?.addEventListener("click", () =>
+  log("Premium check (sandbox demo)")
+);
+
+// khởi động Pi SDK khi trang load
+window.addEventListener("load", initPiSDK);
+</script>
 
 </body>
 </html>
