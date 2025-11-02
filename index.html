@@ -256,14 +256,31 @@ $('btnShare').addEventListener('click',()=>{
   }catch(e){ log('❌ open share', e.message); }
 })();
 
-/* ======= Pi SDK & Payments (sandbox) ======= */
+// ======== Pi SDK & Payments (sandbox) ========
 async function initPi(){
   try{
-    await Pi.init({ version:'2.0', sandbox:true });  // ← đổi sandbox:false khi sang production
+    await Pi.init({ version:'2.0', sandbox:true });
     log('✅ Pi SDK initialized (sandbox)');
-  }catch(e){ log('❌ Pi init', e.message); }
+
+    // Bật nút sau khi init (tránh trạng thái bị disable từ lần trước)
+    const L = id => document.getElementById(id);
+    L('btnPiLogin')?.removeAttribute('disabled');
+    L('btnPiPay')?.removeAttribute('disabled');
+
+    // Nhận diện Pi Browser
+    const isPi = !!window.Pi;
+    const inPiBrowser = isPi && (Pi.isPiBrowser?.() === true);
+
+    if(!inPiBrowser){
+      log('⚠️ Không nhận diện được Pi Browser — vẫn cho phép test sandbox.');
+      // Chỉ khóa Login; Pay sandbox vẫn chạy để hoàn thành Step 10
+      L('btnPiLogin')?.setAttribute('disabled','true');
+    }
+  }catch(e){
+    log('❌ Pi init:', e.message);
+  }
 }
-async function piLogin(){
+
   try{
     const scopes=['payments','username','wallet_address'];
     const auth = await Pi.authenticate(scopes, onIncompletePaymentFound);
