@@ -1,313 +1,323 @@
 <!doctype html>
 <html lang="vi">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>PiChordify Kingdom — v7.2 (fresh)</title>
-
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>PiChordify Kingdom — v7.2.2</title>
   <style>
     :root{
-      --bg:#0b1120; --card:#111827; --muted:#9ca3af; --text:#e5e7eb; --accent:#7c3aed;
-      --pill:#1f2937; --ok:#10b981; --warn:#f59e0b; --err:#ef4444; --pi:#a78bfa;
+      --bg:#0b1120; --card:#111827; --muted:#9ca3af; --pill:#8b5cf6;
+      --text:#e5e7eb; --accent:#67e8f9; --ok:#22c55e; --warn:#f59e0b; --err:#ef4444;
+      --br:12px;
     }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:linear-gradient(120deg,#0b1120,#0c122b 45%,#0b1120); color:var(--text)}
-    .wrap{max-width:1180px;margin:24px auto;padding:0 16px;display:grid;grid-template-columns:1.1fr 1fr;gap:16px}
-    h1{margin:0 0 4px 0;font-size:40px;line-height:1.1}
-    .tag{display:inline-block;background:var(--pill);padding:6px 10px;border-radius:999px;font-size:12px;color:#cbd5e1;margin-left:8px}
+    *{box-sizing:border-box} html,body{height:100%}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto; color:var(--text);
+         background:radial-gradient(1200px at 10% 0%,#1f2937 0%,#0b1120 62%,#060b16 100%)}
+    .wrap{max-width:1200px;margin:0 auto;padding:20px}
+    .title{display:flex;align-items:center;gap:6px}
+    .title .pill{background:#111827;border:1px solid #374151;color:#a78bfa;padding:4px 8px;border-radius:999px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
     .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-    .col{display:flex;flex-direction:column;gap:8px}
-    .card{background:rgba(17,24,39,.86);backdrop-filter:blur(6px);border:1px solid #23314d;border-radius:14px;padding:12px}
-    label{font-size:12px;color:#9CA3AF}
-    select,input,textarea,button{border:1px solid #334155;border-radius:10px;background:#0b1324;color:var(--text);padding:10px}
-    input[type="number"]{width:90px}
-    textarea{resize:vertical;min-height:140px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-    button{cursor:pointer}
-    .btn{padding:10px 14px}
-    .btn-primary{background:linear-gradient(135deg,#4f46e5,#06b6d4);border:none}
-    .btn-accent{background:linear-gradient(135deg,#7c3aed,#06b6d4);border:none}
-    .btn-ghost{background:#0b1324}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .card{background:var(--card);border:1px solid #374151;border-radius:var(--br);padding:12px}
+    label{color:#9ca3af;font-size:.9rem}
+    select,input,textarea,button{width:100%;padding:10px;border:1px solid #374151;border-radius:10px;background:#0f172a;color:var(--text)}
+    textarea{min-height:140px;resize:vertical;line-height:1.4}
+    button{background:#0ea5e9;cursor:pointer}
+    .btn-accent{background:linear-gradient(135deg,#635bff,#00d4ff)}
+    .btn-muted{background:#1f2937;color:#cbd5e1}
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap}
-    .small{font-size:12px;color:#9CA3AF}
-    .footer{opacity:.7;margin-top:8px}
-    .pill{background:#111827;border:1px solid #23314d;color:#cbd5e1;border-radius:999px;padding:4px 8px}
-    .badge{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:#0b1324;border:1px solid #334155}
-    .ok{color:var(--ok)} .warn{color:var(--warn)} .err{color:var(--err)} .pi{color:var(--pi)}
-    .range{width:100%}
-    @media (max-width:980px){ .wrap{grid-template-columns:1fr} }
+    .mini{font-size:.9rem;color:#a1a1aa}
+    .range{accent-color:#22d3ee}
+    .right{display:grid;grid-template-rows:auto 1fr}
+    .logbox{height:260px;overflow:auto;padding:10px;background:#0b1220;border:1px solid #334155;border-radius:10px}
+    .footer{opacity:.75;margin-top:12px;text-align:center}
+    @media (max-width:980px){ .grid{grid-template-columns:1fr} }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <!-- LEFT -->
-    <div class="col" style="gap:16px">
-      <div>
-        <h1>PiChordify Kingdom <span class="tag">v7.2</span></h1>
-        <span class="pill">Theme: tím-ngọc</span>
-      </div>
+<div class="wrap">
+  <div class="title">
+    <h1 style="margin:0">PiChordify Kingdom</h1>
+    <span class="pill">v7.2.2</span>
+    <span class="pill">theme: tím-ngọc</span>
+  </div>
 
-      <!-- Key & progression -->
-      <div class="card grid">
-        <div class="col">
-          <label>Giọng (key)</label>
+  <div class="grid">
+    <!-- LEFT -->
+    <div class="card">
+      <div class="row">
+        <div style="flex:1">
+          <label for="selKey">Giọng (key)</label>
           <select id="selKey">
             <option>C</option><option>Db</option><option>D</option><option>Eb</option>
             <option>E</option><option>F</option><option>Gb</option><option>G</option>
             <option>Ab</option><option>A</option><option>Bb</option><option>B</option>
           </select>
         </div>
-        <div class="col">
-          <label>Tiến trình</label>
+        <div style="flex:1">
+          <label for="selProg">Tiến trình</label>
           <select id="selProg">
-            <option>I-V-vi-IV</option>
-            <option>I-vi-IV-V</option>
-            <option>ii-V-I</option>
-            <option>I-IV-V-I</option>
-            <option>vi-IV-I-V</option>
+            <option>I-V-vi-IV</option><option>vi-IV-I-V</option>
+            <option>I-IV-V-I</option><option>ii-V-I</option>
           </select>
         </div>
-        <div class="col" style="grid-column:1/3">
-          <button id="btnSuggest" class="btn btn-ghost">Tự gợi ý hợp âm</button>
+        <button id="btnSuggest" style="width:auto">Tự gợi ý hợp âm</button>
+      </div>
+
+      <div class="row" style="margin-top:12px">
+        <div style="flex:1">
+          <label for="title">Tiêu đề</label>
+          <input id="title" placeholder="Tên bài"/>
         </div>
       </div>
 
-      <!-- Lyrics & suggestion -->
-      <div class="card grid">
-        <div class="col">
-          <label>Tiêu đề</label>
-          <input id="title" placeholder="Tên bài" />
-          <label>Lời + hợp âm (mỗi dòng có mốc thời gian — mm:ss  Em / D ...)</label>
-          <textarea id="lyrics" placeholder="00:12  Em / D …"></textarea>
+      <div class="row" style="margin-top:12px">
+        <div style="flex:1">
+          <label for="lyrics">Lời + hợp âm (mỗi dòng có mốc thời gian — dạng: mm:ss   Em   /  D)</label>
+          <textarea id="lyrics" placeholder="00:12   Em   /  D ..."></textarea>
         </div>
-        <div class="col">
-          <label>Gợi ý hợp âm</label>
-          <textarea id="suggest" readonly class="mono" placeholder="Nhấn 'Tự gợi ý hợp âm'..."></textarea>
+        <div style="flex:1">
+          <label for="suggest">Gợi ý hợp âm</label>
+          <textarea id="suggest" readonly placeholder="Nhấn 'Tự gợi ý hợp âm'..."></textarea>
         </div>
       </div>
 
-      <!-- Audio -->
-      <div class="card">
-        <div class="row" style="justify-content:space-between;align-items:center">
-          <div class="row">
-            <label>Audio (mp3)</label>
+      <div class="row" style="margin-top:12px">
+        <div class="card" style="flex:1">
+          <label for="audioUrl">Audio (mp3)</label>
+          <input id="audioUrl" placeholder="https://.../song.mp3"/>
+          <div class="row" style="margin-top:8px">
+            <button id="btnPlay" class="btn-muted" style="width:auto">Play</button>
+            <button id="btnPause" class="btn-muted" style="width:auto">Pause</button>
+            <button id="btnStop" class="btn-muted" style="width:auto">Stop</button>
+            <span id="timeLbl" class="mini" style="margin-left:auto">0:00 / 0:00</span>
           </div>
-          <span class="small badge"><span>🔒</span><span id="badgePremium">Premium locked</span></span>
-        </div>
-        <input id="audioUrl" placeholder="https://…/song.mp3" />
-        <div class="row" style="gap:8px;margin-top:8px">
-          <button id="btnPlay"  class="btn btn-ghost">Play</button>
-          <button id="btnPause" class="btn btn-ghost">Pause</button>
-          <button id="btnStop"  class="btn btn-ghost">Stop</button>
-          <span id="timeLbl" class="small">0:00 / 0:00</span>
-        </div>
-        <input type="range" id="progress" min="0" max="1000" value="0" class="range" />
-        <div class="row" style="margin-top:8px">
-          <label>BPM</label><input id="bpm" type="number" value="68" />
-          <label style="margin-left:12px">Offset (giây, ±)</label><input id="offset" type="number" value="0" />
+          <input type="range" min="0" max="1000" value="0" id="progress" class="range"/>
+          <div class="row">
+            <div style="flex:1"><label for="bpm">BPM</label><input id="bpm" type="number" value="68"/></div>
+            <div style="flex:1"><label for="offset">Offset (giây, ±)</label><input id="offset" type="number" value="0"/></div>
+          </div>
         </div>
       </div>
 
-      <!-- Save / Load -->
-      <div class="card grid">
-        <div class="row">
-          <button id="btnSave" class="btn">Save</button>
-          <button id="btnLoad" class="btn">Load</button>
-          <button id="btnShare" class="btn btn-primary">Share link</button>
+      <div class="row" style="margin-top:12px">
+        <div class="card" style="flex:1">
+          <div class="row" style="justify-content:space-between;align-items:center">
+            <div class="mini">Xuất/Nhập</div>
+            <span class="pill">Lưu cục bộ (localStorage)</span>
+          </div>
+          <div class="row" style="margin-top:8px">
+            <button id="btnSave" class="btn-muted" style="width:auto">Save</button>
+            <button id="btnLoad" class="btn-muted" style="width:auto">Load</button>
+            <button id="btnShare" class="btn-accent" style="width:auto">Share link</button>
+          </div>
         </div>
-        <div class="small">Lưu cục bộ (localStorage). “Share link” chỉ hiển thị dữ liệu mã hóa trong URL.</div>
       </div>
 
-      <div class="footer small">© PiChordify Kingdom — Hackathon demo “có nhạc thật”</div>
+      <div class="footer mini">© PiChordify Kingdom — Hackathon demo “có nhạc thật”</div>
     </div>
 
     <!-- RIGHT -->
-    <div class="col" style="gap:16px">
-      <!-- Auth & payments -->
+    <div class="right">
       <div class="card">
         <div class="row" style="justify-content:space-between;align-items:center">
-          <div class="lab">Đăng nhập & thanh toán</div>
+          <h3 style="margin:0">Đăng nhập & thanh toán</h3>
           <span class="pill">Sandbox</span>
         </div>
         <div class="row" style="margin-top:8px">
-          <button id="btnPiLogin"  class="btn">Pi Login</button>
-          <button id="btnPremium"  class="btn">Kiểm tra Premium</button>
-          <button id="btnPiPay"    class="btn btn-accent">Pi Pay (sandbox)</button>
+          <button id="btnPiLogin" class="btn-muted" style="width:auto">Pi Login</button>
+          <button id="btnPremium" class="btn-muted" style="width:auto">Kiểm tra Premium</button>
+          <button id="btnPiPay" class="btn-accent" style="width:auto">Pi Pay (sandbox)</button>
         </div>
       </div>
 
-      <!-- Log -->
       <div class="card">
         <div class="row" style="justify-content:space-between;align-items:center">
-          <div class="lab">Log</div>
+          <div class="mini">Log</div>
           <span class="pill small">Console mirror</span>
         </div>
-        <div id="log" class="mono" style="height:360px;overflow:auto;background:#0a1020;border:1px solid #23314d;border-radius:10px;padding:10px"></div>
+        <div id="log" class="logbox mono"></div>
       </div>
     </div>
   </div>
+</div>
 
-  <!-- Hidden audio -->
-  <audio id="audio" preload="auto"></audio>
+<!-- Hidden audio element -->
+<audio id="audio" preload="auto"></audio>
 
-  <!-- Pi SDK -->
-  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-  <script>
-  /* ===== Helpers & logger ===== */
-  const $ = (id)=>document.getElementById(id);
-  const logBox = $('log');
-  function log(...args){
-    const line = `[${new Date().toLocaleTimeString()}] ` + args.map(x=> typeof x==='string'?x:JSON.stringify(x)).join(' ');
-    logBox.textContent += (logBox.textContent? '\n':'') + line;
-    logBox.scrollTop = logBox.scrollHeight;
-    console.log(...args);
-  }
-  window.onerror=(m,s,l,c,e)=>{ log('❌', m, s+':'+l, e?.stack||''); }
-  window.addEventListener('unhandledrejection', ev=>log('❌ promise:', ev.reason?.message||ev.reason));
+<!-- Pi SDK -->
+<script src="https://sdk.minepi.com/pi-sdk.js"></script>
+<script>
+/* ========= Helpers & Logger ========= */
+const $ = (id)=>document.getElementById(id);
+const logBox = $('log');
+function log(...args){
+  const t = new Date().toLocaleTimeString();
+  const line = `[${t}] ` + args.map(x => typeof x==='string'? x : JSON.stringify(x)).join(' ');
+  logBox.textContent += line + '\n';
+  logBox.scrollTop = logBox.scrollHeight;
+  console.log(...args);
+}
+window.onerror = (m, s, l, c, e)=>{ log('❌', m, s+':'+l, e?.stack||''); };
+window.addEventListener('unhandledrejection', ev=>log('❌ promise:', ev.reason?.message||ev.reason));
 
-  /* ===== Chords engine ===== */
-  const KEYS = {
-    C:  ['C','Dm','Em','F','G','Am','Bdim'],
-    Db: ['Db','Ebm','Fm','Gb','Ab','Bbm','Cdim'],
-    D:  ['D','Em','F#m','G','A','Bm','C#dim'],
-    Eb: ['Eb','Fm','Gm','Ab','Bb','Cm','Ddim'],
-    E:  ['E','F#m','G#m','A','B','C#m','D#dim'],
-    F:  ['F','Gm','Am','Bb','C','Dm','Edim'],
-    Gb: ['Gb','Abm','Bbm','B','Db','Ebm','Fdim'],
-    G:  ['G','Am','Bm','C','D','Em','F#dim'],
-    Ab: ['Ab','Bbm','Cm','Db','Eb','Fm','Gdim'],
-    A:  ['A','Bm','C#m','D','E','F#m','G#dim'],
-    Bb: ['Bb','Cm','Dm','Eb','F','Gm','Adim'],
-    B:  ['B','C#m','D#m','E','F#','G#m','A#dim'],
+/* ========= Chords Engine ========= */
+const KEYS = {
+  C:['C','Dm','Em','F','G','Am','Bdim'],
+  Db:['Db','Ebm','Fm','Gb','Ab','Bbm','Cdim'],
+  D:['D','Em','F#m','G','A','Bm','C#dim'],
+  Eb:['Eb','Fm','Gm','Ab','Bb','Cm','Ddim'],
+  E:['E','F#m','G#m','A','B','C#m','D#dim'],
+  F:['F','Gm','Am','Bb','C','Dm','Edim'],
+  Gb:['Gb','Abm','Bbm','B','Db','Ebm','Fdim'],
+  G:['G','Am','Bm','C','D','Em','F#dim'],
+  Ab:['Ab','Bbm','Cm','Db','Eb','Fm','Gdim'],
+  A:['A','Bm','C#m','D','E','F#m','G#dim'],
+  Bb:['Bb','Cm','Dm','Eb','F','Gm','Adim'],
+  B:['B','C#m','D#m','E','F#','G#m','A#dim'],
+};
+const DEG = { 'I':0,'ii':1,'iii':2,'IV':3,'V':4,'vi':5,'VII°':6 };
+
+function suggestChords(){
+  const key = $('selKey').value;
+  const prog = $('selProg').value;           // ví dụ: I-V-vi-IV
+  const bank = KEYS[key] || KEYS.C;
+  const parts = prog.replace(/\s+/g,'').split(/[–\-]/g);
+  const out = parts.map(p=>{
+    const d = DEG[p] ?? null;
+    return d==null ? '?' : bank[d];
+  }).join(' · ');
+  $('suggest').value = `${key} major · ${prog}\n${out}`;
+  log('🎼 suggest:', out);
+}
+
+/* ========= Audio Player ========= */
+const audio = $('audio');
+const progress = $('progress');
+const timeLbl = $('timeLbl');
+
+audio.addEventListener('timeupdate', ()=>{
+  if(!isFinite(audio.duration)) return;
+  progress.value = Math.floor(1000*audio.currentTime/audio.duration);
+  timeLbl.textContent = `${fmt(audio.currentTime)} / ${fmt(audio.duration)}`;
+});
+audio.addEventListener('play', ()=>log('▶️ AUDIO play'));
+audio.addEventListener('pause', ()=>log('⏸ AUDIO pause'));
+audio.addEventListener('stalled', ()=>log('🛑 AUDIO stalled'));
+audio.addEventListener('error', e=>log('❌ AUDIO error', audio.error?.code));
+
+function fmt(n){ const m=Math.floor(n/60); const s=Math.floor(n%60).toString().padStart(2,'0'); return `${m}:${s}`; }
+function setSrc(){
+  try{
+    const url = new URL(($('audioUrl').value||'').trim());
+    audio.crossOrigin='anonymous';
+    audio.src = url.href;
+    audio.play().catch(()=>{ /* silent */ });
+  }catch(e){ log('❌ setSrc', e.message); }
+}
+
+$('btnPlay').addEventListener('click', ()=>{ setSrc(); audio.play(); });
+$('btnPause').addEventListener('click', ()=>audio.pause());
+$('btnStop').addEventListener('click', ()=>{ audio.pause(); audio.currentTime=0; });
+
+progress.addEventListener('input', ()=>{ if(isFinite(audio.duration)) audio.currentTime = (progress.value/1000)*audio.duration; });
+
+/* ========= Save/Load/Share ========= */
+const LSKEY='pichordify_state';
+function stateOf(){
+  return {
+    title:$('title').value, key:$('selKey').value, prog:$('selProg').value,
+    lyrics:$('lyrics').value, audioUrl:$('audioUrl').value,
+    bpm:$('bpm').value, offset:$('offset').value,
   };
-  const DEG = { 'I':0,'ii':1,'II':1,'iii':2,'III':2,'IV':3,'V':4,'vi':5,'VI':5,'vii°':6,'VII°':6 };
+}
+function apply(st){
+  if(!st) return;
+  $('title').value = st.title||'';
+  $('selKey').value = st.key||'C';
+  $('selProg').value = st.prog||'I-V-vi-IV';
+  $('lyrics').value = st.lyrics||'';
+  $('audioUrl').value = st.audioUrl||'';
+  $('bpm').value = st.bpm||'68';
+  $('offset').value = st.offset||'0';
+}
+$('btnSave').addEventListener('click', ()=>{ localStorage.setItem(LSKEY, JSON.stringify(stateOf())); log('💾 save ok'); });
+$('btnLoad').addEventListener('click', ()=>{ const st = JSON.parse(localStorage.getItem(LSKEY)||'null'); apply(st); log('📂 load ok'); });
+$('btnShare').addEventListener('click', ()=>{
+  const enc = encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(stateOf())))));
+  const url = location.origin+location.pathname+'#d='+enc;
+  navigator.clipboard.writeText(url);
+  log('🔗 copied share link');
+});
+(function tryOpen(){
+  const m = location.hash.match(/#d=([^#]+)/); if(!m) return;
+  try{ const st = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(m[1]))))); apply(st); log('🔓 open share ok'); }
+  catch(e){ log('❌ open share', e.message); }
+})();
 
-  function suggestChords(){
-    const key = $('selKey').value;
-    const prog = $('selProg').value;
-    const bank = KEYS[key] || KEYS.C;
-    const parts = prog.replace(/\s+/g,"").split(/[–-]/g);
-    const out = parts.map(p=>{
-      const d = DEG[p] ?? null;
-      return d==null ? '?' : bank[d];
-    }).join(' · ');
-    $('suggest').value = `${key} major • ${prog}\n→ ${out}`;
-    log('🎼 suggest:', out);
-  }
+/* ========= Pi SDK & Payments ========= */
+function isPiBrowser(){
+  // An toàn: không crash khi Pi chưa inject
+  const t = (typeof window!=='undefined' && 'Pi' in window) ? typeof window.Pi : 'undefined';
+  return (t==='object' || t==='function') && !!(window.Pi?.isPiBrowser?.() ?? false);
+}
 
-  /* ===== Audio player ===== */
-  const audio = $('audio'), progress=$('progress'), timeLbl=$('timeLbl');
-  function fmt(t){ const m=Math.floor(t/60), s=Math.floor(t%60).toString().padStart(2,'0'); return `${m}:${s}`; }
-  function setSrc(){
-    const url=$('audioUrl').value.trim(); if(!url){audio.removeAttribute('src');return;}
-    try{
-      const clean=new URL(url).toString();
-      audio.crossOrigin='anonymous'; audio.src=clean; audio.load();
-      log('🎵 setSrc', clean);
-    }catch(e){ log('❌ setSrc', e.message); }
+async function initPi(){
+  try{
+    await Pi.init({ version:'2.0', sandbox:true });
+    log('✅ Pi SDK initialized (sandbox)');
+  }catch(e){
+    log('❌ Pi init:', e.message);
   }
-  audio.addEventListener('timeupdate', ()=>{
-    if(!isFinite(audio.duration)) return;
-    progress.value=Math.floor((audio.currentTime/audio.duration)*1000);
-    timeLbl.textContent = `${fmt(audio.currentTime)} / ${fmt(audio.duration||0)}`;
-  });
-  progress.addEventListener('input', ()=>{
-    if(isFinite(audio.duration)) audio.currentTime = (progress.value/1000)*audio.duration;
-  });
+  // KHÔNG khóa nút nữa – force sandbox test
+  if(!isPiBrowser()){
+    log('⚠️ Không nhận diện được Pi Browser — vẫn cho phép test sandbox.');
+  }
+}
 
-  $('btnPlay').addEventListener('click', ()=>{ setSrc(); audio.play().catch(e=>log('❌ play', e.message)); });
-  $('btnPause').addEventListener('click', ()=>audio.pause());
-  $('btnStop').addEventListener('click', ()=>{ audio.pause(); audio.currentTime=0; });
+async function piLogin(){
+  try{
+    const scopes=['payments','username','wallet_address'];
+    const auth = await Pi.authenticate(scopes, onIncompletePaymentFound);
+    log('🔐 Login OK:', auth?.user?.username||'(unknown)');
+    return auth;
+  }catch(e){ log('❌ Login:', e.message); }
+}
 
-  /* ===== Save / Load / Share ===== */
-  const LSKEY='pichordify_state';
-  function stateGet(){
-    return {
-      title:$('title').value, key:$('selKey').value, prog:$('selProg').value,
-      lyrics:$('lyrics').value, suggest:$('suggest').value,
-      url:$('audioUrl').value, bpm:$('bpm').value, offset:$('offset').value,
-    };
-  }
-  function apply(st){
-    if(!st) return;
-    $('title').value=st.title||'';
-    $('selKey').value=st.key||'C';
-    $('selProg').value=st.prog||'I-V-vi-IV';
-    $('lyrics').value=st.lyrics||'';
-    $('suggest').value=st.suggest||'';
-    $('audioUrl').value=st.url||'';
-    $('bpm').value=st.bpm||'68';
-    $('offset').value=st.offset||'0';
-  }
-  $('btnSave').addEventListener('click', ()=>{ localStorage.setItem(LSKEY, JSON.stringify(stateGet())); log('💾 save ok'); });
-  $('btnLoad').addEventListener('click', ()=>{ const s=localStorage.getItem(LSKEY); if(s){ apply(JSON.parse(s)); log('📂 load ok'); }});
-  $('btnShare').addEventListener('click', ()=>{
-    const enc = encodeURIComponent( btoa( encodeURIComponent(JSON.stringify(stateGet())) ) );
-    const url = location.origin+location.pathname+'#d='+enc;
-    navigator.clipboard.writeText(url); log('🔗 copied share link');
-  });
-  (function tryOpen(){
-    const m = location.hash.match(/#d=(.+)$/); if(!m) return;
-    try{ const obj=JSON.parse(decodeURIComponent(atob(decodeURIComponent(m[1])))); apply(obj); log('🔓 open share link ok'); }
-    catch(e){ log('❌ open share', e.message); }
-  })();
+async function piPaySandbox(amount=0.01){
+  try{
+    const auth = await piLogin(); if(!auth) return;
+    const pay = await Pi.createPayment({
+      amount:String(amount),
+      memo:'PiChordify v7.2.2 sandbox test',
+      metadata:{feature:'premium', ver:'7.2.2'},
+      callbacks:{
+        onReadyForServerApproval:(pid)=>log('🪙 readyForApproval', pid),
+        onReadyForServerCompletion:(pid,txid)=>log('✅ completed', pid, txid),
+        onCancel:(pid)=>log('🚫 canceled', pid),
+        onError:(err)=>log('⚠️ onError', err?.message||err),
+      },
+    });
+    log('createPayment ->', pay);
+  }catch(e){ log('❌ Payment:', e.message); }
+}
+function onIncompletePaymentFound(p){ log('⚠️ incomplete payment:', p?.identifier||p); }
 
-  /* ===== Pi SDK & Payments ===== */
-  function isPiBrowser(){ return typeof window.Pi !== 'undefined' && Pi?.isPiBrowser?.(); }
-  async function initPi(){
-    try{
-      // Pi SDK global (script above) exposes window.Pi
-      await Pi.init({ version:"2.0", sandbox:true });
-      log('✅ Pi SDK initialized (sandbox)');
-      if(!isPiBrowser()){
-        log('⚠️ Hãy mở trang này trong Pi Browser để dùng Pi Login / Pi Pay.');
-        $('btnPiLogin').disabled = $('btnPiPay').disabled = true;
-      }
-    }catch(e){ log('❌ Pi init:', e.message); }
-  }
-  async function piLogin(){
-    try{
-      const scopes=['payments','username','wallet_address'];
-      const auth = await Pi.authenticate(scopes, onIncompletePaymentFound);
-      log('🔐 Login OK:', auth.user?.username||'(unknown)');
-      return auth;
-    }catch(e){ log('❌ Login:', e.message); }
-  }
-  async function piPaySandbox(amount=0.01){
-    try{
-      const auth = await piLogin(); if(!auth) return;
-      const pay = await Pi.createPayment({
-        amount:String(amount),
-        memo:'PiChordify v7.2 sandbox test',
-        metadata:{feature:'premium', ver:'7.2'},
-        callbacks:{
-          onReadyForServerApproval:(pid)=>log('🪙 readyForApproval', pid),
-          onReadyForServerCompletion:(pid,txid)=>log('✅ completed', pid, txid),
-          onCancel:(pid)=>log('🚫 canceled', pid),
-          onError:(err)=>log('⚠️ onError', err?.message||err),
-        },
-      });
-      log('createPayment ->', pay);
-    }catch(e){ log('❌ Payment', e.message); }
-  }
-  function onIncompletePaymentFound(p){ log('⚠️ incomplete payment:', p?.identifier||p); }
+/* ========= Wire UI ========= */
+$('btnSuggest').addEventListener('click', suggestChords);
+$('btnPiLogin').addEventListener('click', piLogin);
+$('btnPiPay').addEventListener('click', ()=>piPaySandbox(0.01));
+$('btnPremium').addEventListener('click', ()=>log('🔒 Premium locked (demo sandbox)'));
 
-  // Wire UI
-  $('btnSuggest').addEventListener('click', suggestChords);
-  $('btnPiLogin').addEventListener('click', piLogin);
-  $('btnPiPay').addEventListener('click', ()=>piPaySandbox(0.01));
-  $('btnPremium').addEventListener('click', ()=>log('🔒 Premium locked'));
+/* ========= Boot ========= */
+window.addEventListener('load', ()=>{
+  suggestChords();
+  initPi();
+  log('🟣 Ready (Pi SDK loaded)');
+});
+</script>
 
-  // Boot
-  window.addEventListener('load', ()=>{
-    suggestChords();
-    initPi();
-    log('🟣 Ready (Pi SDK loaded)');
-  });
-  </script>
+<!-- Ô test nhanh JS (ví dụ: typeof Pi) -->
+<input placeholder="Test JS (vd: typeof Pi)" onkeydown="if(event.key==='Enter'){try{log(eval(this.value))}catch(e){log('❌',e.message)}}" style="width:100%;background:#111;color:#fff;font-size:14px;margin:10px 0"/>
 </body>
 </html>
-<input placeholder="Test JS (vd: typeof Pi)" 
-onkeydown="if(event.key==='Enter'){try{log(eval(this.value))}catch(e){log('❌ '+e.message)}}" 
-style="width:100%;background:#111;color:#0f0;font-size:14px;border:none;padding:4px">
