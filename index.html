@@ -143,228 +143,138 @@
   <!-- Hidden audio -->
   <audio id="audio" preload="auto"></audio>
 
-<!-- ==== Pi SDK & Payments (REPLACE) ==== -->
+<!-- Pi SDK -->
+<script src="https://sdk.minepi.com/pi-sdk.js"></script>
 <script>
-async function initPi() {
-  try {
-    await Pi.init({ version: "2.0", sandbox: true });
-    log("✅ Pi SDK initialized (sandbox)");
-  } catch (err) { log(`❌ Pi init: ${err.message}`); }
+/* ======== Helpers & Logger ======== */
+const $ = (id) => document.getElementById(id);
+const logBox = $("log");
+function log(...args){
+  const line = `[${new Date().toLocaleTimeString()}] ` + args.map(x => typeof x==='string'?x:JSON.stringify(x)).join(" ");
+  logBox.textContent += line + "\n";
+  logBox.scrollTop = logBox.scrollHeight;
+  console.log(...args);
+}
+window.onerror = (e,s,l,c,e2)=>{log("❌",e,s,":",l,e2.stack||"")};
+window.addEventListener("unhandledrejection", ev => log("❌ Promise", ev.reason?.message || ev.reason));
 
-  if (!Pi.isPiBrowser()) {
+/* ======== Chords Engine ======== */
+const KEYS = {
+  C:["C","Dm","Em","F","G","Am","Bdim"],
+  Db:["Db","Ebm","Fm","Gb","Ab","Bbm","Cdim"],
+  D:["D","Em","F#m","G","A","Bm","C#dim"],
+  Eb:["Eb","Fm","Gm","Ab","Bb","Cm","Ddim"],
+  E:["E","F#m","G#m","A","B","C#m","D#dim"],
+  F:["F","Gm","Am","Bb","C","Dm","Edim"],
+  Gb:["Gb","Abm","Bbm","Cb","Db","Ebm","Fdim"],
+  G:["G","Am","Bm","C","D","Em","F#dim"],
+  Ab:["Ab","Bbm","Cm","Db","Eb","Fm","Gdim"],
+  A:["A","Bm","C#m","D","E","F#m","G#dim"],
+  Bb:["Bb","Cm","Dm","Eb","F","Gm","Adim"],
+  B:["B","C#m","D#m","E","F#","G#m","A#dim"]
+};
+const DEG = {I:0,ii:1,iii:2,IV:3,V:4,vi:5,vii:6};
+
+function suggestChords(){
+  const key = $("selKey").value;
+  const prog = $("selProg").value;
+  const bank = KEYS[key] || KEYS.C;
+  const parts = prog.replace(/\s+/g,"").split(/[-/]+/);
+  const out = parts.map(p => bank[DEG[p] ?? "?"]).join(" - ");
+  $("suggest").value = `${key} major: ${out}`;
+  log("🎵", out);
+}
+
+/* ======== Audio Player ======== */
+const audio = $("audio");
+const progress = $("progress");
+audio.addEventListener("timeupdate",()=>{
+  if(audio.duration) progress.value = (audio.currentTime/audio.duration)*100;
+});
+audio.addEventListener("play",()=>log("▶️ Play"));
+audio.addEventListener("pause",()=>log("⏸ Pause"));
+audio.addEventListener("ended",()=>log("⏹ End"));
+
+/* ======== Save / Load ======== */
+const LKEY = "pichordify_state";
+function stateOf(){
+  return {
+    title:$("title").value, key:$("selKey").value,
+    prog:$("selProg").value, lyrics:$("lyrics").value
+  };
+}
+function applyState(s){
+  $("title").value = s.title || "";
+  $("selKey").value = s.key || "C";
+  $("selProg").value = s.prog || "I–V–vi–IV";
+  $("lyrics").value = s.lyrics || "";
+}
+$("btnSave").addEventListener("click",()=>{localStorage.setItem(LKEY,JSON.stringify(stateOf()));log("💾 Saved");});
+$("btnLoad").addEventListener("click",()=>{const s=JSON.parse(localStorage.getItem(LKEY)||"{}");applyState(s);log("📂 Loaded");});
+
+/* ======== Pi SDK & Payments (Full) ======== */
+async function initPi(){
+  try{
+    await Pi.init({version:"2.0",sandbox:true});
+    log("✅ Pi SDK initialized (sandbox)");
+  }catch(e){log(`❌ Pi init: ${e.message}`);}
+  if(!Pi.isPiBrowser()){
     log("⚠️ Mở bằng Pi Browser để dùng Pi Login / Pi Pay.");
-    document.getElementById("btnPiLogin").disabled = true;
-    document.getElementById("btnPiPay").disabled = true;
+    $("btnPiLogin").disabled=true;
+    $("btnPiPay").disabled=true;
   }
 }
 
-async function piLogin() {
-  try {
-    const scopes = ["payments","username","wallet_address"];
-    const auth = await Pi.authenticate(scopes, onIncompletePaymentFound);
-    log(`👤 Đăng nhập: ${auth.user?.username || "unknown"}`);
+async function piLogin(){
+  try{
+    const scopes=["payments","username","wallet_address"];
+    const auth=await Pi.authenticate(scopes,onIncompletePaymentFound);
+    log(`👤 User: ${auth.user?.username || "unknown"}`);
     return auth;
-  } catch (err) { log(`❌ Login: ${err.message}`); }
+  }catch(e){log(`❌ Login: ${e.message}`);}
 }
 
-async function piPaySandbox(amount = 0.01) {
-  try {
-    const auth = await piLogin(); if (!auth) return;
-
-    const payment = await Pi.createPayment({
-      amount,
-      memo: "Tranmusickingdom Premium demo",
-      metadata: { feature: "premium_demo", ver: "v7.1.3" }
-    }, onIncompletePaymentFound);
-
-    await payment.approve();
-    await payment.complete();
-
+async function piPaySandbox(amount=0.01){
+  try{
+    const auth=await piLogin(); if(!auth) return;
+    const pay=await Pi.createPayment({
+      amount:String(amount),
+      memo:"Tranmusickingdom Premium demo",
+      metadata:{feature:"premium_demo",ver:"v7.1.3"}
+    },onIncompletePaymentFound);
+    await pay.approve(); await pay.complete();
     localStorage.setItem("tmk_premium","true");
     updatePremiumBadge();
     log("⭐ Premium (demo) activated!");
-  } catch (err) { log(`❌ Payment: ${err.message}`); }
+  }catch(e){log(`❌ Payment: ${e.message}`);}
 }
 
-function onIncompletePaymentFound(p) {
-  log(`⚠️ Incomplete payment: ${p.identifier || JSON.stringify(p)}`);
-}
+function onIncompletePaymentFound(p){log(`⚠️ Incomplete: ${p.identifier||""}`);}
 
-function checkPremium() {
+function checkPremium(){
   const ok = localStorage.getItem("tmk_premium")==="true";
-  log(ok ? "✅ Premium status: ACTIVE" : "🔒 Premium locked.");
+  log(ok?"✅ Premium active":"🔒 Premium locked");
   updatePremiumBadge();
 }
-
 function updatePremiumBadge(){
-  const badge = document.getElementById("badgePremium");
-  if (!badge) return;
-  const ok = localStorage.getItem("tmk_premium")==="true";
-  badge.textContent = ok ? "Premium" : "Free";
-  badge.style.background = ok ? "#7c3aed" : "var(--bg)";
-  badge.style.color = ok ? "white" : "var(--text)";
+  const b=$("badgePremium"); if(!b) return;
+  const ok=localStorage.getItem("tmk_premium")==="true";
+  b.textContent=ok?"Premium":"Free";
+  b.style.background=ok?"#7c3aed":"var(--bg)";
+  b.style.color=ok?"#fff":"var(--text)";
 }
 
-function log(msg){
-  const box = document.getElementById("log");
-  const t = new Date().toLocaleTimeString("vi-VN");
-  box.innerHTML += `[${t}] ${msg}<br>`;
-  box.scrollTop = box.scrollHeight;
-}
-
-window.addEventListener("load", () => {
+/* ======== Boot ======== */
+window.addEventListener("load",()=>{
+  suggestChords();
   initPi();
-  document.getElementById("btnPiLogin")?.addEventListener("click", piLogin);
-  document.getElementById("btnPiPay")?.addEventListener("click", () => piPaySandbox(0.01));
-  document.getElementById("btnPremium")?.addEventListener("click", checkPremium);
+  $("btnSuggest")?.addEventListener("click",suggestChords);
+  $("btnPiLogin")?.addEventListener("click",piLogin);
+  $("btnPiPay")?.addEventListener("click",()=>piPaySandbox(0.01));
+  $("btnPremium")?.addEventListener("click",checkPremium);
   updatePremiumBadge();
+  log("🟣 Ready");
 });
-</script>
-
-  /* ========= Chords Engine ========= */
-  const KEYS = {
-    C: ['C','Dm','Em','F','G','Am','Bdim'],
-    Db:['Db','Ebm','Fm','Gb','Ab','Bbm','Cdim'],
-    D: ['D','Em','F#m','G','A','Bm','C#dim'],
-    Eb:['Eb','Fm','Gm','Ab','Bb','Cm','Ddim'],
-    E: ['E','F#m','G#m','A','B','C#m','D#dim'],
-    F: ['F','Gm','Am','Bb','C','Dm','Edim'],
-    Gb:['Gb','Abm','Bbm','B','Db','Ebm','Fdim'],
-    G: ['G','Am','Bm','C','D','Em','F#dim'],
-    Ab:['Ab','Bbm','Cm','Db','Eb','Fm','Gdim'],
-    A: ['A','Bm','C#m','D','E','F#m','G#dim'],
-    Bb:['Bb','Cm','Dm','Eb','F','Gm','Adim'],
-    B: ['B','C#m','D#m','E','F#','G#m','A#dim'],
-  };
-  const DEG = { 'I':0,'ii':1,'II':1,'iii':2,'III':2,'IV':3,'V':4,'vi':5,'VI':5,'vii':6,'VII':6 };
-
-  function suggestChords(){
-    const key = $('selKey').value;
-    const prog = $('selProg').value;
-    const bank = KEYS[key] || KEYS.C;
-    const parts = prog.replace(/\s+/g,'').split(/[–-]/g);
-    const out = parts.map(p=>{
-      const d = DEG[p] ?? null;
-      return d==null ? '?' : bank[d];
-    }).join('  |  ');
-    $('suggest').value = `${key} major • ${prog}\n${out}`;
-    log('🎼 suggest:', out);
-  }
-
-  /* ========= Audio ========= */
-  const audio = $('audio'); const progress = $('progress'); const timeLbl = $('timeLbl');
-  audio.addEventListener('timeupdate', ()=>{
-    if (!isFinite(audio.duration)) return;
-    progress.value = Math.floor(1000*audio.currentTime/audio.duration);
-    timeLbl.textContent = fmt(audio.currentTime)+' / '+fmt(audio.duration);
-  });
-  audio.addEventListener('canplay', ()=>log('✅ AUDIO canplay, duration:', audio.duration.toFixed(2)));
-  audio.addEventListener('stalled', ()=>log('⚠️ AUDIO stalled'));
-  audio.addEventListener('error', ()=>log('❌ AUDIO error code:', audio.error?.code));
-
-  function fmt(s){ if (!isFinite(s)) return '0:00'; const m=Math.floor(s/60); const ss=Math.floor(s%60).toString().padStart(2,'0'); return `${m}:${ss}`; }
-  function setSrc(url){
-    try{
-      const clean = encodeURI(url.trim());
-      audio.crossOrigin = 'anonymous';
-      audio.src = clean; audio.load();
-      log('🎵 audio src =', clean);
-    }catch(e){ log('❌ setSrc', e.message); }
-  }
-  $('btnPlay').addEventListener('click', ()=>{ const u=$('audioUrl').value.trim(); if(u) setSrc(u); audio.play().catch(e=>log('❌ play', e.message)); });
-  $('btnPause').addEventListener('click', ()=>audio.pause());
-  $('btnStop').addEventListener('click', ()=>{ audio.pause(); audio.currentTime=0; });
-  progress.addEventListener('input', ()=>{
-    if (isFinite(audio.duration)) audio.currentTime = (progress.value/1000)*audio.duration;
-  });
-
-  /* ========= Save/Load/Share ========= */
-  const LSKEY='pichordify_state';
-  function state(){
-    return {
-      title:$('title').value, key:$('selKey').value, prog:$('selProg').value,
-      lyrics:$('lyrics').value, audio:$('audioUrl').value,
-      bpm:$('bpm').value, offset:$('offset').value,
-    };
-  }
-  function apply(s){
-    if(!s) return;
-    $('title').value = s.title||'';
-    $('selKey').value = s.key||'C';
-    $('selProg').value = s.prog||'I–V–vi–IV';
-    $('lyrics').value = s.lyrics||'';
-    $('audioUrl').value = s.audio||'';
-    $('bpm').value = s.bpm||60;
-    $('offset').value = s.offset||0;
-  }
-  $('btnSave').addEventListener('click', ()=>{ localStorage.setItem(LSKEY, JSON.stringify(state())); log('💾 save: ok'); });
-  $('btnLoad').addEventListener('click', ()=>{ const s=localStorage.getItem(LSKEY); if(s){ apply(JSON.parse(s)); log('📂 load: ok'); } });
-  $('btnShare').addEventListener('click', ()=>{
-    const enc = encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(state())))));
-    const url = location.origin+location.pathname+'#s='+enc;
-    navigator.clipboard?.writeText(url);
-    log('🔗 copied share link.');
-  });
-  (function tryOpen(){
-    const m = location.hash.match(/s=([^&]+)/); if(!m) return;
-    try{ const obj = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(m[1])))));
-      apply(obj); log('📥 open from share link: ok');
-    }catch(e){ log('❌ open share', e.message); }
-  })();
-
-  /* ========= Pi SDK & Payments ========= */
-  async function initPi(){
-    try{
-      await Pi.init({ version:'2.0', sandbox:true });
-      log('✅ Pi SDK initialized (v2, sandbox)');
-    }catch(e){ log('❌ Pi init', e.message); }
-    if (!Pi?.isPiBrowser?.()){
-      log('⚠️ Hãy mở trang này trong Pi Browser để dùng Pi Login / Pi Pay.');
-      $('btnPiLogin').disabled = $('btnPiPay').disabled = true;
-    }
-  }
-
-  async function piLogin(){
-    try{
-      const scopes=['payments','username','wallet_address'];
-      const auth = await Pi.authenticate(scopes, onIncompletePaymentFound);
-      log('🙋 Login OK:', auth.user?.username||'(unknown)');
-      return auth;
-    }catch(e){ log('❌ Login', e.message); }
-  }
-
-  async function piPaySandbox(amount=0.01){
-    try{
-      const auth = await piLogin(); if(!auth) return;
-      const pay = await Pi.createPayment({
-        amount:String(amount),
-        memo:'PiChordify v7.1.3 sandbox test',
-        metadata:{feature:'premium',v:'7.1.3'},
-        callbacks:{
-          onReadyForServerApproval:(pid)=>log('🪙 readyForApproval', pid),
-          onReadyForServerCompletion:(pid,txid)=>log('✅ completed', pid, txid),
-          onCancel:(pid)=>log('🚫 canceled', pid),
-          onError:(err)=>log('⚠️ onError', err?.message||err),
-        },
-      });
-      log('createPayment ->', pay);
-    }catch(e){ log('❌ Payment', e.message); }
-  }
-  function onIncompletePaymentFound(p){ log('⚠️ incomplete payment:', p?.identifier||p); }
-
-  $('btnPiLogin').addEventListener('click', piLogin);
-  $('btnPiPay').addEventListener('click', ()=>piPaySandbox(0.01));
-  $('btnPremium').addEventListener('click', ()=>log('⭐ Premium (demo sandbox): hãy thanh toán để mở khoá.'));
-
-  /* ========= Wire UI ========= */
-  $('btnSuggest').addEventListener('click', suggestChords);
-
-  /* ========= Boot ========= */
-  window.addEventListener('load', ()=>{
-    suggestChords();
-    initPi();
-    log('Ready');
-  });
   </script>
 </body>
 </html>
