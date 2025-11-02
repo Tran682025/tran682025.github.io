@@ -144,33 +144,25 @@
   <audio id="audio" preload="auto"></audio>
 
 <!-- Pi SDK -->
-<script src="https://sdk.minepi.com/pi-sdk.js"></script>
+<script src="https://sdk.minepi.com/pi-sdk.js" defer></script>
 <script>
-/* ======== Helpers & Logger ======== */
+/* ===== Helpers ===== */
 const $ = (id) => document.getElementById(id);
 const logBox = $("log");
 function log(...args){
-  const line = `[${new Date().toLocaleTimeString()}] ` + args.map(x => typeof x==='string'?x:JSON.stringify(x)).join(" ");
-  logBox.textContent += line + "\n";
-  logBox.scrollTop = logBox.scrollHeight;
+  const t = `[${new Date().toLocaleTimeString()}] ` + args.map(x=>typeof x==="string"?x:JSON.stringify(x)).join(" ");
+  if(logBox){ logBox.textContent += t + "\n"; logBox.scrollTop = logBox.scrollHeight; }
   console.log(...args);
 }
-window.onerror = (e,s,l,c,e2)=>{log("❌",e,s,":",l,e2.stack||"")};
-window.addEventListener("unhandledrejection", ev => log("❌ Promise", ev.reason?.message || ev.reason));
 
-/* ======== Chords Engine ======== */
+/* ===== Chords Engine ===== */
 const KEYS = {
   C:["C","Dm","Em","F","G","Am","Bdim"],
-  Db:["Db","Ebm","Fm","Gb","Ab","Bbm","Cdim"],
   D:["D","Em","F#m","G","A","Bm","C#dim"],
-  Eb:["Eb","Fm","Gm","Ab","Bb","Cm","Ddim"],
   E:["E","F#m","G#m","A","B","C#m","D#dim"],
   F:["F","Gm","Am","Bb","C","Dm","Edim"],
-  Gb:["Gb","Abm","Bbm","Cb","Db","Ebm","Fdim"],
   G:["G","Am","Bm","C","D","Em","F#dim"],
-  Ab:["Ab","Bbm","Cm","Db","Eb","Fm","Gdim"],
   A:["A","Bm","C#m","D","E","F#m","G#dim"],
-  Bb:["Bb","Cm","Dm","Eb","F","Gm","Adim"],
   B:["B","C#m","D#m","E","F#","G#m","A#dim"]
 };
 const DEG = {I:0,ii:1,iii:2,IV:3,V:4,vi:5,vii:6};
@@ -180,101 +172,106 @@ function suggestChords(){
   const prog = $("selProg").value;
   const bank = KEYS[key] || KEYS.C;
   const parts = prog.replace(/\s+/g,"").split(/[-/]+/);
-  const out = parts.map(p => bank[DEG[p] ?? "?"]).join(" - ");
+  const out = parts.map(p=>bank[DEG[p] ?? "?"]).join(" - ");
   $("suggest").value = `${key} major: ${out}`;
-  log("🎵", out);
+  log("🎶", out);
 }
 
-/* ======== Audio Player ======== */
+/* ===== Audio Controls ===== */
 const audio = $("audio");
 const progress = $("progress");
-audio.addEventListener("timeupdate",()=>{
-  if(audio.duration) progress.value = (audio.currentTime/audio.duration)*100;
-});
-audio.addEventListener("play",()=>log("▶️ Play"));
-audio.addEventListener("pause",()=>log("⏸ Pause"));
-audio.addEventListener("ended",()=>log("⏹ End"));
-
-/* ======== Save / Load ======== */
-const LKEY = "pichordify_state";
-function stateOf(){
-  return {
-    title:$("title").value, key:$("selKey").value,
-    prog:$("selProg").value, lyrics:$("lyrics").value
-  };
+if(audio){
+  audio.addEventListener("timeupdate",()=>{
+    if(audio.duration) progress.value = (audio.currentTime / audio.duration)*100;
+  });
+  $("btnPlay")?.addEventListener("click",()=>{ audio.play(); log("▶️ Play"); });
+  $("btnPause")?.addEventListener("click",()=>{ audio.pause(); log("⏸ Pause"); });
+  $("btnStop")?.addEventListener("click",()=>{ audio.pause(); audio.currentTime=0; log("⏹ Stop"); });
 }
-function applyState(s){
-  $("title").value = s.title || "";
-  $("selKey").value = s.key || "C";
-  $("selProg").value = s.prog || "I–V–vi–IV";
-  $("lyrics").value = s.lyrics || "";
-}
-$("btnSave").addEventListener("click",()=>{localStorage.setItem(LKEY,JSON.stringify(stateOf()));log("💾 Saved");});
-$("btnLoad").addEventListener("click",()=>{const s=JSON.parse(localStorage.getItem(LKEY)||"{}");applyState(s);log("📂 Loaded");});
 
-/* ======== Pi SDK & Payments (Full) ======== */
-async function initPi(){
-  try{
-    await Pi.init({version:"2.0",sandbox:true});
-    log("✅ Pi SDK initialized (sandbox)");
-  }catch(e){log(`❌ Pi init: ${e.message}`);}
-  if(!Pi.isPiBrowser()){
-    log("⚠️ Mở bằng Pi Browser để dùng Pi Login / Pi Pay.");
-    $("btnPiLogin").disabled=true;
-    $("btnPiPay").disabled=true;
+/* ===== Pi SDK Loader ===== */
+function waitForPi(tries=0){
+  if(window.Pi && typeof Pi.init==="function"){ startPi(); return; }
+  if(tries>60){
+    log("❌ Pi SDK chưa sẵn sàng. Mở bằng Pi Browser và đảm bảo domain đã khai báo trong Pi Dev Portal.");
+    $("#btnPiLogin")?.setAttribute("disabled", true);
+    $("#btnPiPay")?.setAttribute("disabled", true);
+    return;
   }
+  setTimeout(()=>waitForPi(tries+1),250);
 }
 
-async function piLogin(){
-  try{
-    const scopes=["payments","username","wallet_address"];
-    const auth=await Pi.authenticate(scopes,onIncompletePaymentFound);
-    log(`👤 User: ${auth.user?.username || "unknown"}`);
-    return auth;
-  }catch(e){log(`❌ Login: ${e.message}`);}
-}
+/* ===== Main after SDK loaded ===== */
+function startPi(){
+  const Pi = window.Pi;
+  if(!Pi.isPiBrowser || !Pi.isPiBrowser()){
+    log("⚠️ Trang này cần mở trong Pi Browser để dùng Login/Pay.");
+    $("#btnPiLogin")?.setAttribute("disabled", true);
+    $("#btnPiPay")?.setAttribute("disabled", true);
+  }
 
-async function piPaySandbox(amount=0.01){
-  try{
-    const auth=await piLogin(); if(!auth) return;
-    const pay=await Pi.createPayment({
-      amount:String(amount),
-      memo:"Tranmusickingdom Premium demo",
-      metadata:{feature:"premium_demo",ver:"v7.1.3"}
-    },onIncompletePaymentFound);
-    await pay.approve(); await pay.complete();
-    localStorage.setItem("tmk_premium","true");
+  async function initPi(){
+    try{
+      await Pi.init({version:"2.0", sandbox:true});
+      log("✅ Pi SDK initialized (sandbox)");
+    }catch(e){ log(`❌ Pi init: ${e.message}`); }
+  }
+
+  async function piLogin(){
+    try{
+      const scopes=["payments","username","wallet_address"];
+      const auth=await Pi.authenticate(scopes,onIncompletePaymentFound);
+      log(`👤 User: ${auth?.user?.username || "unknown"}`);
+      return auth;
+    }catch(e){ log(`❌ Login: ${e.message}`); }
+  }
+
+  async function piPaySandbox(amount=0.01){
+    try{
+      const auth=await piLogin(); if(!auth) return;
+      const pay=await Pi.createPayment({
+        amount:String(amount),
+        memo:"Tranmusickingdom Premium demo",
+        metadata:{feature:"premium_demo",ver:"v7.1.3"}
+      },onIncompletePaymentFound);
+      await pay.approve(); await pay.complete();
+      localStorage.setItem("tmk_premium","true");
+      updatePremiumBadge();
+      log("⭐ Premium (demo) activated!");
+    }catch(e){ log(`❌ Payment: ${e.message}`); }
+  }
+
+  function onIncompletePaymentFound(p){
+    log(`⚠️ incomplete: ${p?.identifier || ""}`);
+  }
+
+  function checkPremium(){
+    const ok = localStorage.getItem("tmk_premium")==="true";
+    log(ok?"✅ Premium active":"🔒 Premium locked");
     updatePremiumBadge();
-    log("⭐ Premium (demo) activated!");
-  }catch(e){log(`❌ Payment: ${e.message}`);}
-}
+  }
+  function updatePremiumBadge(){
+    const b=$("badgePremium"); if(!b) return;
+    const ok=localStorage.getItem("tmk_premium")==="true";
+    b.textContent=ok?"Premium":"Free";
+    b.style.background=ok?"#7c3aed":"var(--bg)";
+    b.style.color=ok?"#fff":"var(--text)";
+  }
 
-function onIncompletePaymentFound(p){log(`⚠️ Incomplete: ${p.identifier||""}`);}
-
-function checkPremium(){
-  const ok = localStorage.getItem("tmk_premium")==="true";
-  log(ok?"✅ Premium active":"🔒 Premium locked");
-  updatePremiumBadge();
-}
-function updatePremiumBadge(){
-  const b=$("badgePremium"); if(!b) return;
-  const ok=localStorage.getItem("tmk_premium")==="true";
-  b.textContent=ok?"Premium":"Free";
-  b.style.background=ok?"#7c3aed":"var(--bg)";
-  b.style.color=ok?"#fff":"var(--text)";
-}
-
-/* ======== Boot ======== */
-window.addEventListener("load",()=>{
-  suggestChords();
-  initPi();
-  $("btnSuggest")?.addEventListener("click",suggestChords);
+  /* ===== Wire buttons ===== */
   $("btnPiLogin")?.addEventListener("click",piLogin);
   $("btnPiPay")?.addEventListener("click",()=>piPaySandbox(0.01));
   $("btnPremium")?.addEventListener("click",checkPremium);
+  $("btnSuggest")?.addEventListener("click",suggestChords);
+
   updatePremiumBadge();
-  log("🟣 Ready");
-});
-  </script>
+  initPi();
+  log("🟣 Ready (Pi SDK loaded)");
+}
+
+/* ===== Boot ===== */
+window.addEventListener("load",()=>{ suggestChords(); waitForPi(); });
+</script>
+
 </body>
 </html>
