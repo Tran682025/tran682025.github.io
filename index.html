@@ -217,12 +217,12 @@ textarea{min-height:160px;width:100%;resize:vertical}
     <div class="card rightBox">
       <div class="row" style="justify-content:space-between;align-items:center">
         <h3>Đăng nhập & thanh toán</h3>
-        <span class="badge">Sandbox</span>
+        <span class="badge">Pi Payment (LIVE)</span>
       </div>
       <div class="row" style="margin-top:8px">
         <button id="btnPiLogin" class="btn ghost" disabled>Pi Login</button>
         <button id="btnCheck" class="btn ghost" disabled>Kiểm tra Premium</button>
-        <button id="btnPiPay" class="btn" disabled>Pi Pay (sandbox)</button>
+        <button id="btnPiPay" class="btn" disabled>Pi Pay (LIVE)</button>
       </div>
 
       <div style="margin-top:12px">
@@ -271,7 +271,6 @@ function triadName(deg,maj){
   return rootFor(deg) + (suffix||'');
 }
 function rootFor(deg){
-  // rotate chroma by current key
   const base = noteIndex(state.key);
   const deg2semi = {'I':0,'ii':2,'iii':4,'IV':5,'V':7,'vi':9,'vii°':11}[deg];
   return KEYS[(base + deg2semi + (state.transpose%12+12)%12) % 12];
@@ -379,7 +378,6 @@ $('filePick').addEventListener('change', (ev)=>{
   $('audioUrl').value = url; loadAudio(url); log('🎵 loaded file:', f.name);
 });
 $('btnLoad').onclick = ()=>{ if($('audioUrl').value){ loadAudio($('audioUrl').value); log('🎵 loaded url'); }};
-
 $('btnPlay').onclick = ()=> audio.play();
 $('btnPause').onclick = ()=> audio.pause();
 $('btnStop').onclick = ()=> { audio.pause(); audio.currentTime=0; };
@@ -409,14 +407,13 @@ $('btnPDF').addEventListener('click', async()=>{
   doc.setFont('helvetica','normal'); doc.setFontSize(11);
   let y=90;
   for(const ln of lines){ doc.text(ln, margin, y); y+=lh; if(y>780){ doc.addPage(); y=60; } }
-  // logo circle
   doc.setDrawColor(138,92,255); doc.setLineWidth(2); doc.circle(530,60,18);
   doc.setTextColor(138,92,255); doc.setFontSize(16); doc.text('π', 524, 66);
   doc.save((title||'lead-sheet')+'.pdf');
   log('📄 exported PDF');
 });
 
-/* ========== Pi SDK & Payments (sandbox) ========== */
+/* ========== Pi SDK & Payments (LIVE – mainnet) ========== */
 async function initPi(){
   if(!window.Pi){
     log('❌ Pi SDK not found. Hãy chắc chắn đang mở trong Pi Browser và script sdk.minepi.com đã được tải.');
@@ -425,19 +422,19 @@ async function initPi(){
   try{
     Pi.init({
       version:'2.0',
-      sandbox:true,
+      sandbox:false,          // LIVE (mainnet)
       onIncompletePaymentFound
     });
-    log('✅ Pi SDK initialized (sandbox)');
+    log('✅ Pi SDK initialized (LIVE, mainnet)');
     ['btnPiLogin','btnPiPay','btnCheck'].forEach(id=>{
       const el = $(id);
       if(el){ el.removeAttribute('disabled'); }
     });
     const inPiBrowser = (typeof Pi.isPiBrowser === 'function') ? (Pi.isPiBrowser() === true) : false;
     if(!inPiBrowser){
-      log('⚠️ Không nhận diện được Pi Browser — vẫn cho phép test sandbox.');
+      log('⚠️ Không nhận diện được Pi Browser — hãy test thanh toán thật trong Pi Browser.');
     } else {
-      log('🟣 Đang chạy trong Pi Browser.');
+      log('🟣 Đang chạy trong Pi Browser (OK cho live payment).');
     }
   }catch(e){
     log('❌ Pi init', e?.message || e);
@@ -460,31 +457,46 @@ async function piLogin(){
   }
 }
 
-async function piPaySandbox(amount=0.01){
+/* Lưu ý: để payment hoàn tất COMPLETED thật sự, app cần có backend gọi approve/complete.
+   Ở đây chỉ minh hoạ luồng client, nếu không có backend, Pi có thể timeout/cancel. */
+async function piPayLive(amount=0.1){
   try{
-    const auth = await piLogin(); if(!auth) return;
+    const auth = await piLogin(); 
+    if(!auth){
+      log('⚠️ Không login được nên không thể thanh toán.');
+      return;
+    }
     const paymentData = {
       amount:String(amount),
-      memo:'PiChordify v7.6 sandbox test',
-      metadata:{feature:'premium', ver:'7.6'}
+      memo:'PiChordify Kingdom – live payment test',
+      metadata:{feature:'premium', ver:'7.6', mode:'live'}
     };
     const callbacks = {
-      onReadyForServerApproval:(pid)=>log('🪙 readyForApproval', pid),
-      onReadyForServerCompletion:(pid,txid)=>{ log('✅ completed', pid, txid); premiumOn(); },
-      onCancel:(pid)=>log('🚫 canceled', pid),
-      onError:(err)=>log('⚠️ onError', err?.message||err),
+      onReadyForServerApproval:(paymentId)=>{
+        log('🪙 readyForApproval (cần backend approve):', paymentId);
+        // TODO: gửi paymentId lên backend để gọi Pi /approve
+      },
+      onReadyForServerCompletion:(paymentId, txid)=>{
+        log('✅ PAYMENT COMPLETED (từ backend):', { paymentId, txid });
+        premiumOn();
+      },
+      onCancel:(paymentId)=>log('🚫 PAYMENT CANCELED', paymentId),
+      onError:(err)=>log('⚠️ PAYMENT ERROR', err?.message || err),
     };
+    log('🟣 Bắt đầu thanh toán LIVE, amount =', paymentData.amount);
     const pay = await Pi.createPayment(paymentData, callbacks);
-    log('🧾 createPayment ->', pay);
-  }catch(e){ log('❌ Payment', e?.message || e); }
+    log('🧾 createPayment (live) ->', pay);
+  }catch(e){
+    log('❌ Payment (live)', e?.message || e);
+  }
 }
 
 function onIncompletePaymentFound(p){
-  log('⚠️ incomplete payment:', p?.identifier||p);
+  log('⚠️ incomplete payment (live):', p?.identifier || p);
 }
 function premiumOn(){
-  $('btnSave').classList.add('ok');
-  log('⭐ Premium (demo): hãy thanh toán để mở khoá.');
+  $('btnSave')?.classList.add('ok');
+  log('⭐ Premium enabled sau khi thanh toán thành công (demo).');
 }
 
 /* ========== Boot ========== */
@@ -505,8 +517,9 @@ window.addEventListener('load', ()=>{
   }
   if(btnPay){
     btnPay.addEventListener('click', ()=>{
-      log('🟣 Pi Pay (sandbox) button clicked');
-      piPaySandbox();
+      log('🟣 Pi Pay (LIVE) button clicked');
+      // số Pi muốn test: 0.1 / 0.5 / 1 / 2...
+      piPayLive(0.1);
     });
   }
   if(btnCheck){
@@ -520,7 +533,7 @@ window.addEventListener('load', ()=>{
   }
 
   initPi();
-  log('🟣 Ready (UI wired, chờ Pi SDK)');
+  log('🟣 Ready (UI wired, Pi SDK LIVE)');
 });
 </script>
 
