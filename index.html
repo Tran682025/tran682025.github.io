@@ -54,9 +54,87 @@ textarea{min-height:160px;width:100%;resize:vertical}
 .hidden{display:none}
 .small{font-size:13px;color:#9fb0d1}
 </style>
+/* === MK HERO (Musickingdom header) =================== */
+
+.mk-hero {
+  position: relative;
+  padding: 2.5rem 1.5rem 2rem;
+  background-image:
+    linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(76, 29, 149, 0.96)),
+    url("assets/musickingdom-christmas-bg.jpg");
+  background-size: cover;
+  background-position: center;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.4);
+}
+
+.mk-hero-inner {
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 1.75rem;
+}
+
+.mk-hero-art {
+  flex-shrink: 0;
+}
+
+.mk-hero-img {
+  display: block;
+  width: 110px;
+  height: auto;
+  border-radius: 20px;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.9);
+}
+
+@media (min-width: 768px) {
+  .mk-hero-img {
+    width: 150px;
+  }
+}
+
+.mk-hero-text h1 {
+  margin: 0 0 0.35rem;
+  font-size: clamp(1.9rem, 2.6vw, 2.4rem);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #f9fafb;
+}
+
+.mk-hero-text p {
+  margin: 0;
+  color: #e5e7eb;
+  font-size: 0.98rem;
+  max-width: 30rem;
+  line-height: 1.55;
+}
+  
 </head>
 
 <body>
+<!-- ĐẶT NGAY DƯỚI <body> TRONG index.html CỦA Musickingdom -->
+
+<header class="mk-hero">
+  <div class="mk-hero-inner">
+    <div class="mk-hero-art">
+      <img
+        src="assets/musickingdom-golden-turtle.jpg"
+        alt="Musickingdom Golden Turtle"
+        class="mk-hero-img"
+      />
+    </div>
+
+    <div class="mk-hero-text">
+      <h1>Musickingdom</h1>
+      <p>
+        Công cụ gợi ý hợp âm &amp; luyện hát trong hệ sinh thái Pi – 
+        không gian thờ phượng và sáng tạo dành cho Pioneers.
+      </p>
+    </div>
+  </div>
+</header>
+  
 <div id="logoPi" title="Pi • tím-ngọc">
   <!-- Logo Pi tím-ngọc (SVG chuẩn tông Pi + glow) -->
   <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
@@ -409,5 +487,7 @@ window.addEventListener('load', ()=>{
   suggest(); initPi(); log('🟣 Ready (Pi SDK loaded)');
 });
 </script>
+
+ 
 </body>
 </html>
