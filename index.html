@@ -1,4 +1,4 @@
-<!doctype html> 
+<!doctype html>  
 <html lang="vi">
 <head>
 <meta charset="utf-8"/>
@@ -414,6 +414,8 @@ $('btnPDF').addEventListener('click', async()=>{
 });
 
 /* ========== Pi SDK & Payments (LIVE – mainnet) ========== */
+const BACKEND_URL = 'https://YOUR-BACKEND-URL_HERE'; // TODO: thay bằng URL backend thật (không có dấu / ở cuối)
+
 async function initPi(){
   if(!window.Pi){
     log('❌ Pi SDK not found. Hãy chắc chắn đang mở trong Pi Browser và script sdk.minepi.com đã được tải.');
@@ -422,7 +424,7 @@ async function initPi(){
   try{
     Pi.init({
       version:'2.0',
-      sandbox:false,          // LIVE (mainnet)
+      sandbox:false,
       onIncompletePaymentFound
     });
     log('✅ Pi SDK initialized (LIVE, mainnet)');
@@ -435,6 +437,9 @@ async function initPi(){
       log('⚠️ Không nhận diện được Pi Browser — hãy test thanh toán thật trong Pi Browser.');
     } else {
       log('🟣 Đang chạy trong Pi Browser (OK cho live payment).');
+    }
+    if(!BACKEND_URL || BACKEND_URL.includes('YOUR-BACKEND-URL_HERE')){
+      log('⚠️ BACKEND_URL chưa được cấu hình. Payment sẽ không được approve/complete cho tới khi cập nhật URL backend.');
     }
   }catch(e){
     log('❌ Pi init', e?.message || e);
@@ -457,8 +462,6 @@ async function piLogin(){
   }
 }
 
-/* Lưu ý: để payment hoàn tất COMPLETED thật sự, app cần có backend gọi approve/complete.
-   Ở đây chỉ minh hoạ luồng client, nếu không có backend, Pi có thể timeout/cancel. */
 async function piPayLive(amount=0.1){
   try{
     const auth = await piLogin(); 
@@ -472,12 +475,32 @@ async function piPayLive(amount=0.1){
       metadata:{feature:'premium', ver:'7.6', mode:'live'}
     };
     const callbacks = {
-      onReadyForServerApproval:(paymentId)=>{
-        log('🪙 readyForApproval (cần backend approve):', paymentId);
-        // TODO: gửi paymentId lên backend để gọi Pi /approve
+      onReadyForServerApproval: async (paymentId)=>{
+        log('🪙 readyForApproval:', paymentId);
+        if(!BACKEND_URL || BACKEND_URL.includes('YOUR-BACKEND-URL_HERE')){
+          log('⚠️ BACKEND_URL chưa cấu hình, bỏ qua bước approve/complete trên backend.');
+          return;
+        }
+        try{
+          const cleanBase = BACKEND_URL.replace(/\/+$/,'');
+          const resp = await fetch(`${cleanBase}/pay/approve-complete`, {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({ paymentId })
+          });
+          let data = null;
+          try{ data = await resp.json(); }catch(_){}
+          if(!resp.ok){
+            log('❌ Backend approve-complete error:', (data && data.error) || resp.status);
+          }else{
+            log('✔ Backend approve-complete OK:', JSON.stringify(data));
+          }
+        }catch(err){
+          log('❌ Lỗi gọi backend:', err.message || err);
+        }
       },
       onReadyForServerCompletion:(paymentId, txid)=>{
-        log('✅ PAYMENT COMPLETED (từ backend):', { paymentId, txid });
+        log('✅ PAYMENT COMPLETED (từ Pi SDK):', { paymentId, txid });
         premiumOn();
       },
       onCancel:(paymentId)=>log('🚫 PAYMENT CANCELED', paymentId),
@@ -495,7 +518,8 @@ function onIncompletePaymentFound(p){
   log('⚠️ incomplete payment (live):', p?.identifier || p);
 }
 function premiumOn(){
-  $('btnSave')?.classList.add('ok');
+  const saveBtn = $('btnSave');
+  if(saveBtn) saveBtn.classList.add('ok');
   log('⭐ Premium enabled sau khi thanh toán thành công (demo).');
 }
 
@@ -533,7 +557,7 @@ window.addEventListener('load', ()=>{
   }
 
   initPi();
-  log('🟣 Ready (UI wired, Pi SDK LIVE)');
+  log('🟣 Ready (UI wired, Pi SDK LIVE + backend hook)');
 });
 </script>
 
