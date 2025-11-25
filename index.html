@@ -38,7 +38,6 @@ button{cursor:pointer}
 h1.title{font-weight:800;letter-spacing:.5px;font-size:42px;line-height:1.05}
 .ver{margin-left:10px;border-radius:999px;padding:6px 10px;background:#1a2033;border:1px solid #2a365d;color:#bfc7de;font-weight:600}
 
-#logoPi svg{filter:drop-shadow(0 6px 12px rgba(138,92,255,.35))}
 .mono{font-family:var(--mono);white-space:pre-wrap}
 textarea{min-height:160px;width:100%;resize:vertical}
 #suggest{min-height:112px}
@@ -53,7 +52,6 @@ textarea{min-height:160px;width:100%;resize:vertical}
 .hidden{display:none}
 .small{font-size:13px;color:#9fb0d1}
 
-  
 /* === MK HERO (Musickingdom header) =================== */
 
 .mk-hero {
@@ -75,22 +73,10 @@ textarea{min-height:160px;width:100%;resize:vertical}
   gap: 1.75rem;
 }
 
-.mk-hero-art {
-  flex-shrink: 0;
-}
-
-.mk-hero-img {
-  display: block;
-  width: 38px;          /* ↓ từ 110px → 42px */
-  height: auto;
-  border-radius: 15px;
-  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.9);
-}
-
-@media (min-width: 768px) {
-  .mk-hero-img {
-    width: 55px;        /* ↓ từ 150px → 55px */
-  }
+.mk-title-gradient{
+  background:linear-gradient(90deg,#ff7bd5 0%,#6ea8ff 100%);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
 }
 
 .mk-hero-text h1 {
@@ -99,7 +85,6 @@ textarea{min-height:160px;width:100%;resize:vertical}
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #f9fafb;
 }
 
 .mk-hero-text p {
@@ -110,50 +95,42 @@ textarea{min-height:160px;width:100%;resize:vertical}
   line-height: 1.55;
 }
 
+/* Icon Rùa cạnh version */
+.mk-version-icon{
+  width:32px;
+  height:auto;
+  margin-left:8px;
+  border-radius:10px;
+  box-shadow:0 8px 24px rgba(0,0,0,0.35);
+  vertical-align:middle;
+}
+@media(min-width:768px){
+  .mk-version-icon{width:40px;}
+}
 </style>
 </head>
 
 <body>
-<!-- ĐẶT NGAY DƯỚI <body> TRONG index.html CỦA Musickingdom -->
 
 <header class="mk-hero">
   <div class="mk-hero-inner">
-    <div class="mk-hero-art">
-      <img
-        src="assets/musickingdom-golden-turtle.jpg"
-        alt="Musickingdom Golden Turtle"
-        class="mk-hero-img"
-      />
-    </div>
-
     <div class="mk-hero-text">
-      <h1>Musickingdom</h1>
+      <h1 class="mk-title-gradient">MUSICKINGDOM</h1>
       <p>
-        Công cụ gợi ý hợp âm &amp; luyện hát trong hệ sinh thái Pi – 
+        Công cụ gợi ý hợp âm &amp; luyện hát trong hệ sinh thái Pi –
         không gian thờ phượng và sáng tạo dành cho Pioneers.
       </p>
     </div>
   </div>
 </header>
-  
-
-  <!-- Logo Pi tím-ngọc (SVG chuẩn tông Pi + glow) -->
-  <svg viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="g" x1="0" x2="1">
-        <stop offset="0" stop-color="#8a5cff"/>
-        <stop offset="1" stop-color="#49c6ff"/>
-      </linearGradient>
-    </defs>
-    <circle cx="32" cy="32" r="30" fill="#20163a" stroke="#8a5cff" stroke-width="2"/>
-    <path fill="url(#g)" d="M42 19v20.5a6.5 6.5 0 1 1-4 0V26h-4.5v13.5a6.5 6.5 0 1 1-4 0V26H25v-7h17zM19 26h7v7h-7z"/>
-  </svg>
-</div>
 
 <div class="wrap">
   <div class="row" style="justify-content:space-between;align-items:flex-end;margin-bottom:10px">
     <h1 class="title">PiChordify Kingdom</h1>
-    <span class="ver">v7.6</span>
+    <div class="row">
+      <span class="ver">v7.6</span>
+      <img src="assets/musickingdom-golden-turtle.jpg" alt="Musickingdom Icon" class="mk-version-icon"/>
+    </div>
   </div>
 
   <div class="grid">
@@ -433,7 +410,7 @@ $('btnPDF').addEventListener('click', async()=>{
   let y=90;
   for(const ln of lines){ doc.text(ln, margin, y); y+=lh; if(y>780){ doc.addPage(); y=60; } }
   // logo circle
-  doc.setDrawColor(138,92,255); doc.setLineWidth(2); doc.circle(530,60,18); 
+  doc.setDrawColor(138,92,255); doc.setLineWidth(2); doc.circle(530,60,18);
   doc.setTextColor(138,92,255); doc.setFontSize(16); doc.text('π', 524, 66);
   doc.save((title||'lead-sheet')+'.pdf');
   log('📄 exported PDF');
@@ -444,9 +421,7 @@ async function initPi(){
   try{
     await Pi.init({ version:'2.0', sandbox:true });
     log('✅ Pi SDK initialized (sandbox)');
-    // enable buttons (in case previous session disabled)
     ['btnPiLogin','btnPiPay','btnCheck'].forEach(id=>$(id).removeAttribute('disabled'));
-    // detect Pi Browser
     const isPi = !!window.Pi;
     const inPiBrowser = isPi && Pi.isPiBrowser?.()===true;
     if(!inPiBrowser){ log('⚠️ Không nhận diện được Pi Browser — vẫn cho phép test sandbox.'); }
@@ -478,7 +453,6 @@ async function piPaySandbox(amount=0.01){
   }catch(e){ log('❌ Payment', e.message); }
 }
 function onIncompletePaymentFound(p){ log('⚠️ incomplete payment:', p?.identifier||p); }
-// Premium flag (demo client only)
 function premiumOn(){ $('btnSave').classList.add('ok'); log('⭐ Premium (demo): hãy thanh toán để mở khoá.'); }
 
 /* ========== Boot ========== */
@@ -489,6 +463,5 @@ window.addEventListener('load', ()=>{
 });
 </script>
 
- 
 </body>
 </html>
