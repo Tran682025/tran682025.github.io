@@ -256,18 +256,32 @@ textarea{min-height:160px;width:100%;resize:vertical}
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
 <script>
-/* ========== Helpers ========== */
-const $ = (id)=>document.getElementById(id);
-const logBox = $('log');
-function log(...args){
-  const t = new Date().toLocaleTimeString();
-  const line = `[${t}] ` + args.map(x=>typeof x==='string'?x:JSON.stringify(x)).join(' ');
-  logBox.value = (logBox.value? logBox.value+'\n':'') + line;
-  logBox.scrollTop = logBox.scrollHeight;
-  console.log(...args);
+// ===== Helpers =========
+const $ = (id) => document.getElementById(id);
+const logBox = $("log");
+function log(...args) {
+  try {
+    const now = new Date().toLocaleTimeString();
+    const line =
+      `[${now}] ` +
+      args
+        .map((x) => (typeof x === "string" ? x : JSON.stringify(x)))
+        .join(" ");
+    if (logBox) {
+      logBox.value = (logBox.value ? logBox.value + "\n" : "") + line;
+      logBox.scrollTop = logBox.scrollHeight;
+    }
+    console.log(...args);
+  } catch (e) {
+    console.error("log error", e);
+  }
 }
-window.onerror=(m,s,l,c,e)=>{ log('❌', m, s+':'+l, e?.stack||''); };
-window.addEventListener('unhandledrejection',ev=>log('❌ promise', ev.reason?.message||ev.reason));
+window.onerror = (m, s, l, c, e) => {
+  log("❌ JS error:", m, "@", s, ":", l, c, e && e.stack);
+};
+window.addEventListener("unhandledrejection", (ev) => {
+  log("❌ Promise error:", ev.reason && ev.reason.message || ev.reason);
+});
 
 /* ========== Chords & Transpose ========== */
 const KEYS = ["C","Db","D","Eb","E","F","Gb","G","Ab","A","Bb","B"];
