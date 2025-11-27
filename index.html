@@ -248,453 +248,298 @@ textarea{min-height:160px;width:100%;resize:vertical}
   </div>
 
   <div class="small" style="margin-top:10px">© PiChordify Kingdom — Hackathon demo “có nhạc thật”</div>
-</div>
 
-<script>
-  const $ = (id) => document.getElementById(id);
-  const logBox = $("log");
-  function log(...args) { ... }
-  window.onerror = ...
-  window.addEventListener("unhandledrejection", ...)
-</script>
-<script>
-document.getElementById('btnExportPdf').addEventListener('click', async () => {
-...
-});
-<script>
-</script>
-const BACKEND_URL = ...
-const API_BASE = ...
-async function initPi() { ... }
-async function piLogin() { ... }
-async function backendCreatePayment() { ... }
-async function backendCompletePayment() { ... }
-async function piPayLive() { ... }
-window.addEventListener('load', () => {
-...
-});
-</script>
-<!-- Pi SDK -->
-<script src="https://sdk.minepi.com/pi-sdk.js"></script>
-<!-- jsPDF for PDF export -->
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <!-- Pi SDK -->
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+  <!-- jsPDF for PDF export -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
-<script>
-// ===== Helpers =========
   <script>
-log("🔥 Script loaded – test log");
-const $ = (id) => document.getElementById(id);
-const logBox = $("log");
-function log(...args) {
-  try {
-    const now = new Date().toLocaleTimeString();
-    const line =
-      `[${now}] ` +
-      args
-        .map((x) => (typeof x === "string" ? x : JSON.stringify(x)))
-        .join(" ");
-    if (logBox) {
-      logBox.value = (logBox.value ? logBox.value + "\n" : "") + line;
-      logBox.scrollTop = logBox.scrollHeight;
-    }
-    console.log(...args);
-  } catch (e) {
-    console.error("log error", e);
-  }
-}
-window.onerror = (m, s, l, c, e) => {
-  log("❌ JS error:", m, "@", s, ":", l, c, e && e.stack);
-};
-window.addEventListener("unhandledrejection", (ev) => {
-  log("❌ Promise error:", ev.reason && ev.reason.message || ev.reason);
-});
+    // ===== Helpers (log + error mirror) =====
+    const $ = (id) => document.getElementById(id);
 
-/* ========== Chords & Transpose ========== */
-const KEYS = ["C","Db","D","Eb","E","F","Gb","G","Ab","A","Bb","B"];
-const DEG  = { 'I':0,'ii':2,'iii':4,'IV':5,'V':7,'vi':9,'vii°':11 };
-const BANK = {
-  Piano:{ triad:(deg,maj=true)=> triadName(deg,maj) },
-  Guitar:{ triad:(deg,maj=true)=> triadName(deg,maj)+' (open)' },
-  Ukulele:{ triad:(deg,maj=true)=> triadName(deg,maj)+' (C6)' }
-};
-let state = { key:"C", prog:"I–V–vi–IV", inst:"Piano", transpose:0 };
+    function log(...args) {
+      try {
+        const now = new Date().toLocaleTimeString();
+        const line =
+          `[${now}] ` +
+          args
+            .map((x) => (typeof x === "string" ? x : JSON.stringify(x)))
+            .join(" ");
 
-function triadName(deg,maj){
-  const map = {'I':'','ii':'m','iii':'m','IV':'','V':'','vi':'m','vii°':'dim'};
-  const suffix = maj? map[deg] : (map[deg]==='m'?'':'m'); // quick toggle
-  return rootFor(deg) + (suffix||'');
-}
-function rootFor(deg){
-  const base = noteIndex(state.key);
-  const deg2semi = {'I':0,'ii':2,'iii':4,'IV':5,'V':7,'vi':9,'vii°':11}[deg];
-  return KEYS[(base + deg2semi + (state.transpose%12+12)%12) % 12];
-}
-function noteIndex(k){ return KEYS.indexOf(k); }
-
-function suggest(){
-  const p = state.prog.replace(/–/g,'-');
-  let seq;
-  if(p==='12-bar'){ seq = ['I','I','I','I','IV','IV','I','I','V','IV','I','V']; }
-  else { seq = p.split('-'); }
-  const mk = BANK[state.inst].triad;
-  const lines = [];
-  lines.push(`${state.key} major  ·  ${state.prog}`);
-  lines.push(seq.map(d=>mk(d,true)).join('  ·  '));
-  $('suggest').value = lines.join('\n');
-  log('🎼 suggest:', seq.map(d=>rootFor(d)).join(' · '));
-}
-
-/* transpose controls */
-function applyTranspose(delta){
-  state.transpose = Math.max(-12, Math.min(12, state.transpose + delta));
-  $('transposeView').textContent = state.transpose;
-  suggest();
-}
-
-/* ========== Audio player ========== */
-const audio = $('audio');
-const bar = $('bar');
-function loadAudio(url){
-  audio.src = url; audio.load();
-}
-audio.addEventListener('timeupdate', ()=>{
-  if(isFinite(audio.duration)){
-    const p = audio.currentTime / audio.duration;
-    bar.style.width = (p*100)+'%';
-    $('time').textContent = fmt(audio.currentTime)+' / '+fmt(audio.duration);
-  }
-});
-function fmt(s){ if(!isFinite(s)) return '0:00';
-  const m = Math.floor(s/60), ss=Math.floor(s%60).toString().padStart(2,'0');
-  return `${m}:${ss}`;
-}
-
-/* ========== Local Save / Share ========== */
-const LKEY='pichordify_v76';
-function stateObj(){
-  return {
-    title:$('title').value, key:$('selKey').value, prog:$('selProg').value, inst:state.inst, tr:state.transpose,
-    lyrics:$('lyrics').value, suggest:$('suggest').value, url:$('audioUrl').value
-  };
-}
-function apply(o){
-  if(!o) return;
-  $('title').value=o.title||'';
-  $('selKey').value=o.key||'C';
-  $('selProg').value=o.prog||'I–V–vi–IV';
-  $('lyrics').value=o.lyrics||'';
-  $('suggest').value=o.suggest||'';
-  $('audioUrl').value=o.url||'';
-  state.key=$('selKey').value; state.prog=$('selProg').value; state.inst=o.inst||'Piano'; state.transpose=o.tr||0;
-  $('transposeView').textContent = state.transpose;
-  pickInstrument(state.inst);
-  if(o.url) loadAudio(o.url);
-}
-$('btnSave').addEventListener('click',()=>{ localStorage.setItem(LKEY, JSON.stringify(stateObj())); log('💾 saved'); });
-$('btnLoadLocal').addEventListener('click',()=>{ const o=JSON.parse(localStorage.getItem(LKEY)||'null'); apply(o); log('📂 loaded'); });
-
-$('btnShare').addEventListener('click',()=>{
-  const enc = encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(stateObj())))));
-  const url = location.origin + location.pathname + '#d=' + enc;
-  navigator.clipboard.writeText(url);
-  log('🔗 copied share link');
-});
-(function tryOpen(){
-  const m = location.hash.match(/d=([^&]+)/); if(!m) return;
-  try{ const o = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(m[1]))))); apply(o); log('🔗 opened from share'); }
-  catch(e){ log('❌ open share', e.message); }
-})();
-
-/* ========== UI wires ========== */
-function pickInstrument(name){
-  state.inst = name;
-  ['tabPiano','tabGuitar','tabUke'].forEach(id=>$(id).classList.remove('active'));
-  if(name==='Piano') $('tabPiano').classList.add('active');
-  if(name==='Guitar') $('tabGuitar').classList.add('active');
-  if(name==='Ukulele') $('tabUke').classList.add('active');
-  $('title').placeholder = name;
-  suggest();
-}
-$('tabPiano').onclick=()=>pickInstrument('Piano');
-$('tabGuitar').onclick=()=>pickInstrument('Guitar');
-$('tabUke').onclick=()=>pickInstrument('Ukulele');
-
-$('selKey').addEventListener('change',e=>{ state.key=e.target.value; suggest(); });
-$('selProg').addEventListener('change',e=>{ state.prog=e.target.value; suggest(); });
-$('btnSuggest').addEventListener('click', suggest);
-$('btnUp').onclick = ()=>applyTranspose(+1);
-$('btnDown').onclick = ()=>applyTranspose(-1);
-
-$('btnPick').onclick = ()=> $('filePick').click();
-$('filePick').addEventListener('change', (ev)=>{
-  const f = ev.target.files?.[0]; if(!f) return;
-  const url = URL.createObjectURL(f);
-  $('audioUrl').value = url; loadAudio(url); log('🎵 loaded file:', f.name);
-});
-$('btnLoad').onclick = ()=>{ if($('audioUrl').value){ loadAudio($('audioUrl').value); log('🎵 loaded url'); }};
-$('btnPlay').onclick = ()=> audio.play();
-$('btnPause').onclick = ()=> audio.pause();
-$('btnStop').onclick = ()=> { audio.pause(); audio.currentTime=0; };
-
-/* Build key options */
-(function fillKeys(){ $('selKey').innerHTML = KEYS.map(k=>`<option>${k}</option>`).join(''); })();
-
-/* ========== Export PDF (Lead Sheet) ========== */
-$('btnPDF').addEventListener('click', async()=>{
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({unit:'pt', format:'a4'});
-  const margin = 36, lh=20;
-  const title = $('title').value||'Untitled';
-  const lines = [
-    `PiChordify Kingdom — Lead Sheet`,
-    `Title: ${title}`,
-    `Instrument: ${state.inst}    Key: ${state.key}    Progression: ${state.prog}    Transpose: ${state.transpose}`,
-    ``,
-    `Suggestion:`,
-    ...$('suggest').value.split('\n'),
-    ``,
-    `Lyrics & Chords:`,
-    ...$('lyrics').value.split('\n')
-  ];
-  doc.setFont('helvetica','bold'); doc.setFontSize(18);
-  doc.text(title, margin, 60);
-  doc.setFont('helvetica','normal'); doc.setFontSize(11);
-  let y=90;
-  for(const ln of lines){ doc.text(ln, margin, y); y+=lh; if(y>780){ doc.addPage(); y=60; } }
-  doc.setDrawColor(138,92,255); doc.setLineWidth(2); doc.circle(530,60,18);
-  doc.setTextColor(138,92,255); doc.setFontSize(16); doc.text('π', 524, 66);
-  doc.save((title||'lead-sheet')+'.pdf');
-  log('📄 exported PDF');
-});
-
-<!-- ======= Export PDF (Lead Sheet) ======= -->
-    <button id="btnExportPdf">Export PDF</button>
-    <script>
-      document.getElementById('btnExportPdf').addEventListener('click', async () => {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        const title = document.getElementById('title').value || 'Untitled';
-        const lines = [
-          'Key: ' + document.getElementById('selKey').value,
-          'Progression: ' + document.getElementById('selProg').value,
-          '',
-          'Suggestion:',
-          ...document.getElementById('suggest').value.split('\n'),
-          '',
-          'Lyrics & Chords:',
-          ...document.getElementById('lyrics').value.split('\n')
-        ];
-        let y = 30;
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(18);
-        doc.text(title, 20, 20);
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(11);
-        for (const line of lines) {
-          doc.text(line, 20, y);
-          y += 7;
-          if (y > 280) {
-            doc.addPage();
-            y = 20;
-          }
+        const logBox = $("log");
+        if (logBox) {
+          logBox.value = (logBox.value ? logBox.value + "\n" : "") + line;
+          logBox.scrollTop = logBox.scrollHeight;
         }
-        doc.save((title || 'lead-sheet') + '.pdf');
-        log('✅ exported PDF');
+        console.log(...args);
+      } catch (e) {
+        console.error("log error", e);
+      }
+    }
+
+    window.onerror = (m, s, l, c, e) => {
+      log("❌ JS error:", m, "@", s + ":", l, c, e && e.stack);
+    };
+
+    window.addEventListener("unhandledrejection", (ev) => {
+      log("❌ Promise error:", ev.reason && ev.reason.message || ev.reason);
+    });
+
+    // ===== Export PDF (Lead Sheet) =====
+    document.getElementById("btnExportPdf").addEventListener("click", async () => {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const title = document.getElementById("title").value || "Untitled";
+      const lines = [
+        "Key: " + document.getElementById("selKey").value,
+        "Progression: " + document.getElementById("selProg").value,
+        "",
+        "Suggestion:",
+        ...document.getElementById("suggest").value.split("\n"),
+        "",
+        "Lyrics & Chords:",
+        ...document.getElementById("lyrics").value.split("\n")
+      ];
+
+      let y = 30;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(18);
+      doc.text(title, 20, 20);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(11);
+
+      for (const line of lines) {
+        doc.text(line, 20, y);
+        y += 7;
+        if (y > 280) {
+          doc.addPage();
+          y = 20;
+        }
+      }
+
+      doc.save((title || "lead-sheet") + ".pdf");
+      log("✅ exported PDF");
+    });
+
+    // ========= PI SDK & Payments (LIVE - mainnet) =========
+    const BACKEND_URL = (localStorage.getItem("backend") || "").replace(/\/$/, "");
+    const API_BASE = BACKEND_URL ? BACKEND_URL + "/api" : "";
+
+    // Login: onIncompletePaymentFound
+    function onIncompletePaymentFound(payment) {
+      log("⚠️ onIncompletePaymentFound (front-end):", payment && payment.identifier);
+    }
+
+    // ===== Pi init =====
+    async function initPi() {
+      if (!window.Pi) {
+        log("❌ Pi SDK not found. Hãy mở trong Pi Browser và chắc script sdk.minepi.com đã load.");
+        return;
+      }
+
+      try {
+        Pi.init({
+          version: "2.0",
+          sandbox: false,
+          onIncompletePaymentFound(payment) {
+            log("⚠️ Incomplete payment (LIVE):", payment && payment.identifier);
+          }
+        });
+        log("✅ Pi SDK initialized (LIVE).");
+
+        const isPiBrowser =
+          typeof Pi.isPiBrowser === "function" ? Pi.isPiBrowser() === true : false;
+
+        if (!isPiBrowser) {
+          log("⚠️ Không nhận diện được Pi Browser – chỉ nên test thanh toán thật trong Pi Browser.");
+        } else {
+          log("🟣 Đang chạy trong Pi Browser (OK cho live payment).");
+        }
+
+        if (!BACKEND_URL) {
+          log("⚠️ Backend URL chưa cấu hình. Vào tab \"Pi Pay (LIVE)\" nhập ngrok và bấm \"Save backend\".");
+        } else {
+          log("✅ BACKEND_URL:", BACKEND_URL);
+        }
+      } catch (e) {
+        log("❌ Pi init lỗi:", e && e.message ? e.message : e);
+      }
+    }
+
+    // ===== Login =====
+    async function piLogin() {
+      if (!window.Pi) {
+        log("❌ Pi SDK chưa sẵn sàng (window.Pi không tồn tại).");
+        return null;
+      }
+
+      try {
+        const scopes = ["payments", "username", "wallet_address"];
+        const auth = await Pi.authenticate(scopes, onIncompletePaymentFound);
+        log("✅ Pi Login OK – user:", (auth.user && auth.user.username) || "(unknown)");
+        return auth;
+      } catch (e) {
+        log("❌ Pi Login lỗi:", e && e.message ? e.message : e);
+        return null;
+      }
+    }
+
+    // ===== Backend /create-payment =====
+    async function backendCreatePayment(amount, username) {
+      if (!API_BASE) {
+        throw new Error("API_BASE empty (chưa cấu hình backend URL)");
+      }
+
+      const payload = { amount, username };
+      const resp = await fetch(API_BASE + "/create-payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
       });
-    </script>
-    <!-- ========== PI SDK & Payments (LIVE - mainnet) ========== -->
-    <script>
-      // URL backend lấy từ localStorage (đã được lưu qua ô "Backend URL")
-      const BACKEND_URL = (localStorage.getItem('backend') || '').replace(/\/$/, '');
-      const API_BASE = BACKEND_URL ? BACKEND_URL + '/api' : '';
-      // ===== Pi init =====
-      async function initPi() {
-        if (!window.Pi) {
-          log('❌ Pi SDK not found. Hãy mở trong Pi Browser và chắc script sdk.minepi.com đã load.');
+
+      let data;
+      try {
+        data = await resp.json();
+      } catch (e) {
+        throw new Error("Không parse được JSON từ backend");
+      }
+
+      if (!resp.ok) {
+        throw new Error((data && data.error) || "HTTP " + resp.status);
+      }
+      if (!data || !data.payment) {
+        throw new Error("Missing payment in backend response");
+      }
+
+      log("✅ Backend /create-payment OK:", data.payment.identifier);
+      return data.payment;
+    }
+
+    // ===== Backend /complete-payment =====
+    async function backendCompletePayment(paymentId) {
+      if (!API_BASE) {
+        throw new Error("API_BASE empty (chưa cấu hình backend URL)");
+      }
+
+      const resp = await fetch(API_BASE + "/complete-payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paymentId })
+      });
+
+      let data;
+      try {
+        data = await resp.json();
+      } catch (e) {
+        throw new Error("Không parse được JSON từ backend");
+      }
+
+      if (!resp.ok) {
+        throw new Error((data && data.error) || "HTTP " + resp.status);
+      }
+
+      log("✅ Backend /complete-payment OK:", data);
+      return data;
+    }
+
+    // ===== Flow Pi Pay LIVE =====
+    async function piPayLive(amount = 0.1) {
+      try {
+        const auth = await piLogin();
+        if (!auth) {
+          log("❌ Không login được nên không thể thanh toán.");
           return;
         }
-        try {
-          Pi.init({
-            version: '2.0',
-            sandbox: false,
-            onIncompletePaymentFound(payment) {
-              log('⚠️ Incomplete payment (LIVE):', payment && payment.identifier);
+        const username = (auth.user && auth.user.username) || "unknown";
+
+        const serverPayment = await backendCreatePayment(amount, username);
+
+        const paymentDTO = {
+          amount: serverPayment.amount,
+          memo: serverPayment.memo,
+          metadata: serverPayment.metadata,
+          paymentId: serverPayment.identifier
+        };
+
+        const callbacks = {
+          onReadyForServerApproval: async (paymentId) => {
+            log("ℹ️ readyForServerApproval:", paymentId);
+            try {
+              const res = await backendCompletePayment(paymentId);
+              log("✅ backend approve-complete OK:", res);
+            } catch (e) {
+              log("❌ backend approve-complete lỗi:", e && e.message ? e.message : e);
             }
-          });
-          log('✅ Pi SDK initialized (LIVE).');
-          const isPiBrowser =
-            typeof Pi.isPiBrowser === 'function' ? Pi.isPiBrowser() === true : false;
-          if (!isPiBrowser) {
-            log('⚠️ Không nhận diện được Pi Browser – chỉ nên test thanh toán thật trong Pi Browser.');
-          } else {
-            log('🟣 Đang chạy trong Pi Browser (OK cho live payment).');
+          },
+          onCancel: (paymentId) => {
+            log("ℹ️ PAYMENT CANCELED:", paymentId);
+          },
+          onError: (err) => {
+            log("❌ PAYMENT ERROR:", err && err.message ? err.message : err);
           }
-          if (!BACKEND_URL) {
-            log('⚠️ Backend URL chưa cấu hình. Vào tab "Pi Pay (LIVE)" nhập ngrok và bấm "Save backend".');
-          } else {
-            log('✅ BACKEND_URL:', BACKEND_URL);
-          }
-        } catch (e) {
-          log('❌ Pi init lỗi:', e && e.message ? e.message : e);
-        }
+        };
+
+        log("▶️ Bắt đầu thanh toán LIVE, amount = " + String(amount) + " Pi...");
+        const payment = await Pi.createPayment(paymentDTO, callbacks);
+        log("✅ createPayment (live) ->", payment);
+      } catch (e) {
+        log("❌ Payment (live) lỗi:", e && e.message ? e.message : e);
       }
-      // ===== Login =====
-      function onIncompletePaymentFound(payment) {
-        log('⚠️ onIncompletePaymentFound (front-end):', payment && payment.identifier);
+    }
+
+    // ===== Premium UI demo =====
+    function premiumOn() {
+      const savbtn = document.getElementById("btnSave");
+      if (savbtn && !savbtn.classList.contains("ok")) {
+        savbtn.classList.add("ok");
+        log("🌟 Premium enabled sau khi thanh toán thành công (demo).");
       }
-      async function piLogin() {
-        if (!window.Pi) {
-          log('❌ Pi SDK chưa sẵn sàng (window.Pi không tồn tại).');
-          return null;
-        }
-        try {
-          const scopes = ['payments', 'username', 'wallet_address'];
-          const auth = await Pi.authenticate(scopes, onIncompletePaymentFound);
-          log('✅ Pi Login OK – user:', (auth.user && auth.user.username) || '(unknown)');
-          return auth;
-        } catch (e) {
-          log('❌ Pi Login lỗi:', e && e.message ? e.message : e);
-          return null;
-        }
+    }
+
+    // ===== Boot =====
+    window.addEventListener("load", () => {
+      log("🌐 window.load fired (LIVE section).");
+
+      const span = document.getElementById("backendNow");
+      if (span) {
+        span.textContent = localStorage.getItem("backend") || "(none)";
       }
-      // ===== Gọi backend /create-payment =====
-      async function backendCreatePayment(amount, username) {
-        if (!API_BASE) {
-          throw new Error('API_BASE empty (chưa cấu hình backend URL)');
-        }
-        const payload = { amount, username };
-        const resp = await fetch(API_BASE + '/create-payment', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+
+      const btnLogin = document.getElementById("btnPiLogin");
+      const btnPay = document.getElementById("btnPiPay");
+      const btnCheck = document.getElementById("btnCheck");
+
+      if (btnLogin) {
+        btnLogin.addEventListener("click", () => {
+          log("🟣 Pi Login button clicked");
+          piLogin();
         });
-        let data;
-        try {
-          data = await resp.json();
-        } catch (e) {
-          throw new Error('Không parse được JSON từ backend');
-        }
-        if (!resp.ok) {
-          throw new Error((data && data.error) || 'HTTP ' + resp.status);
-        }
-        if (!data || !data.payment) {
-          throw new Error('Missing payment in backend response');
-        }
-        log('✅ Backend /create-payment OK:', data.payment.identifier);
-        return data.payment;
       }
-      // ===== Gọi backend /complete-payment =====
-      async function backendCompletePayment(paymentId) {
-        if (!API_BASE) {
-          throw new Error('API_BASE empty (chưa cấu hình backend URL)');
-        }
-        const resp = await fetch(API_BASE + '/complete-payment', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ paymentId })
+
+      if (btnPay) {
+        btnPay.addEventListener("click", () => {
+          log("🟣 Pi Pay (LIVE) button clicked");
+          piPayLive(0.1);
         });
-        let data;
-        try {
-          data = await resp.json();
-        } catch (e) {
-          throw new Error('Không parse được JSON từ backend');
-        }
-        if (!resp.ok) {
-          throw new Error((data && data.error) || 'HTTP ' + resp.status);
-        }
-        log('✅ Backend /complete-payment OK:', data);
-        return data;
       }
-      // ===== Flow Pi Pay LIVE =====
-      async function piPayLive(amount = 0.1) {
-        try {
-          // 1) Login để lấy username
+
+      if (btnCheck) {
+        btnCheck.addEventListener("click", async () => {
+          log("🔍 Check Premium: giả lập kiểm tra trạng thái.");
           const auth = await piLogin();
-          if (!auth) {
-            log('❌ Không login được nên không thể thanh toán.');
-            return;
+          if (auth) {
+            log(
+              "✅ Premium check demo cho user",
+              (auth.user && auth.user.username) || "(unknown)"
+            );
           }
-          const username = (auth.user && auth.user.username) || 'unknown';
-          // 2) Nhờ backend tạo payment trên Pi server
-          const serverPayment = await backendCreatePayment(amount, username);
-          // 3) Chuẩn hóa object đưa vào Pi.createPayment
-          const paymentDTO = {
-            amount: serverPayment.amount,
-            memo: serverPayment.memo,
-            metadata: serverPayment.metadata,
-            paymentId: serverPayment.identifier
-          };
-          // 4) Gọi Pi.createPayment với callback cho backend approve
-          const callbacks = {
-            onReadyForServerApproval: async (paymentId) => {
-              log('ℹ️ readyForServerApproval:', paymentId);
-              try {
-                const res = await backendCompletePayment(paymentId);
-                log('✅ backend approve-complete OK:', res);
-              } catch (e) {
-                log('❌ backend approve-complete lỗi:', e && e.message ? e.message : e);
-              }
-            },
-            onCancel: (paymentId) => {
-              log('ℹ️ PAYMENT CANCELED:', paymentId);
-            },
-            onError: (err) => {
-              log('❌ PAYMENT ERROR:', err && err.message ? err.message : err);
-            }
-          };
-          log('▶️ Bắt đầu thanh toán LIVE, amount = ' + String(amount) + ' Pi...');
-          const payment = await Pi.createPayment(paymentDTO, callbacks);
-          log('✅ createPayment (live) ->', payment);
-        } catch (e) {
-          log('❌ Payment (live) lỗi:', e && e.message ? e.message : e);
-        }
+        });
       }
-      // ===== Premium UI demo =====
-      function premiumOn() {
-        const savbtn = document.getElementById('btnSave');
-        if (savbtn && !savbtn.classList.contains('ok')) {
-          savbtn.classList.add('ok');
-          log('🌟 Premium enabled sau khi thanh toán thành công (demo).');
-        }
-      }
-      // ===== Boot =====
-      window.addEventListener('load', () => {
-        log('🌐 window.load fired (LIVE section).');
-        // hiển thị backend hiện tại
-        const span = document.getElementById('backendNow');
-        if (span) {
-          span.textContent = localStorage.getItem('backend') || '(none)';
-        }
-        // gắn event cho nút Pi
-        const btnLogin = document.getElementById('btnPiLogin');
-        const btnPay   = document.getElementById('btnPiPay');
-        const btnCheck = document.getElementById('btnCheck');
-        if (btnLogin) {
-          btnLogin.addEventListener('click', () => {
-            log('🟣 Pi Login button clicked');
-            piLogin();
-          });
-        }
-        if (btnPay) {
-          btnPay.addEventListener('click', () => {
-            log('🟣 Pi Pay (LIVE) button clicked');
-            // số Pi muốn test: 0.1 / 0.5 / 1 / 2...
-            piPayLive(0.1);
-          });
-        }
-        if (btnCheck) {
-          btnCheck.addEventListener('click', async () => {
-            log('🔍 Check Premium: giả lập kiểm tra trạng thái.');
-            const auth = await piLogin();
-            if (auth) {
-              log('✅ Premium check demo cho user', (auth.user && auth.user.username) || '(unknown)');
-            }
-          });
-        } 
-        // Khởi động Pi SDK
-        initPi();
-        log('✅ Ready (Pi SDK LIVE + backend hook)');
-      });
-    </script>
-  </body>
+
+      initPi();
+      log("✅ Ready (Pi SDK LIVE + backend hook)");
+    });
+  </script>
+</body>
 </html>
