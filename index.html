@@ -588,33 +588,57 @@ alert("Boot script start");
     if (savbtn) savbtn.classList.add("ok");
     log("⭐ Premium enabled sau khi thanh toán thành công (demo).");
   }
-  window.addEventListener("load", () => {
-    // gán event cho nút
-    const btnLogin = $("btnPiLogin");
-    const btnPay   = $("btnPiPay");
-    const btnCheck = $("btnCheck");
-    if (btnLogin) {
-      btnLogin.addEventListener("click", () => {
-        log("🟣 Pi Login button clicked");
-        piLogin();
-      });
-    }
-    if (btnPay) {
-      btnPay.addEventListener("click", () => {
-        log("🟣 Pi Pay (LIVE) button clicked");
-        piPayLive(0.1);
-      });
-    }
-    if (btnCheck) {
-      btnCheck.addEventListener("click", async () => {
-        log("🟣 Check Premium: giả lập kiểm tra trạng thái.");
-        const auth = await piLogin();
-        log("⭐ Premium check demo cho user", auth?.user?.username || "(unknown)");
-      });
-    }
-    initPi();
-    log("🟣 Ready (UI wired, Pi SDK LIVE + backend hook)");
-  });
+function premiumOn() {
+  const savetbn = $("btnSave");
+  const savbtn = $("btnSave");
+  if (savtbn) savtbn.classList.add("ok");
+  log("✨ Premium enabled sau khi thanh toán thành công (demo).");
+}
+window.addEventListener("load", () => {
+  // cập nhật backend hiện tại ra UI
+  const span = document.getElementById("backendNow");
+  if (span) {
+    span.textContent = localStorage.getItem("backend") || "(none)";
+  }
+  log("🚀 window.load fired");
+  // khởi tạo state cũ (như bản chạy ngon trước đây)
+  state.key = "C";
+  state.prog = $("selProg").value;
+  state.inst = "Piano";
+  state.transpose = 0;
+  $("selKey").value = "C";
+  $("transposeView").textContent = "0";
+  suggest();
+  // gán event cho nút
+  const btnLogin = $("btnPiLogin");
+  const btnPay   = $("btnPiPay");
+  const btnCheck = $("btnCheck");
+  if (btnLogin) {
+    btnLogin.addEventListener("click", () => {
+      log("🟣 Pi Login button clicked");
+      pILogin();
+    });
+  }
+  if (btnPay) {
+    btnPay.addEventListener("click", () => {
+      log("🟣 Pi Pay (LIVE) button clicked");
+      // số Pi muốn test: 0.1 / 0.5 / 1 / 2...
+      piPayLive(0.1);
+    });
+  }
+  if (btnCheck) {
+    btnCheck.addEventListener("click", async () => {
+      log("🟣 Check Premium: giả lập kiểm tra trạng thái.");
+      const auth = await pILogin();
+      if (auth) {
+        log("🟣 Premium check demo cho user", auth.user?.username || "(unknown)");
+      }
+    });
+  }
+  // khởi động Pi SDK
+  initPi();
+  log("🟣 Ready (UI wired, Pi SDK LIVE + backend hook)");
+});
 </script>
 
 </body>
