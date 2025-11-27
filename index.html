@@ -413,217 +413,159 @@ $('btnPDF').addEventListener('click', async()=>{
   log('📄 exported PDF');
 });
 
-<!-- Pi SDK -->
-<script src="https://sdk.minepi.com/pi-sdk.js"></script>
-<!-- jsPDF for PDF export -->
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-
-<script>
-/* (phần phía trên giữ nguyên như Trẫm đã gửi: Helpers, Chords, Audio, PDF, v.v.) */
-/* ... tới hết hàm export PDF ... */
-
 /* ========== Pi SDK & Payments (LIVE – mainnet) ========== */
-
-/** URL backend của Trẫm qua ngrok – KHÔNG có dấu / ở cuối */
-const BACKEND_URL = "https://2c6dfe281a1b.ngrok-free.app";
-const API_BASE    = BACKEND_URL.replace(/\/+$/, "") + "/api";
+  const BACKEND_URL = 'https://pi-guitar-backend.onrender.com';
+ // TODO: thay bằng URL backend thật (không có dấu / ở cuối)
 
 async function initPi(){
-  if (!window.Pi) {
+  if(!window.Pi){
     log('❌ Pi SDK not found. Hãy chắc chắn đang mở trong Pi Browser và script sdk.minepi.com đã được tải.');
     return;
   }
   try{
     Pi.init({
-      version: "2.0",
-      sandbox: false,                 // LIVE (mainnet)
+      version:'2.0',
+      sandbox:false,
       onIncompletePaymentFound
     });
-    log("✅ Pi SDK initialized (LIVE, mainnet)");
-
-    ["btnPiLogin","btnPiPay","btnCheck"].forEach(id=>{
+    log('✅ Pi SDK initialized (LIVE, mainnet)');
+    ['btnPiLogin','btnPiPay','btnCheck'].forEach(id=>{
       const el = $(id);
-      if (el) el.removeAttribute("disabled");
+      if(el){ el.removeAttribute('disabled'); }
     });
-
-    const inPiBrowser = (typeof Pi.isPiBrowser === "function") ? (Pi.isPiBrowser() === true) : false;
-    if (!inPiBrowser) {
-      log("⚠️ Không nhận diện được Pi Browser — hãy test thanh toán thật trong Pi Browser.");
+    const inPiBrowser = (typeof Pi.isPiBrowser === 'function') ? (Pi.isPiBrowser() === true) : false;
+    if(!inPiBrowser){
+      log('⚠️ Không nhận diện được Pi Browser — hãy test thanh toán thật trong Pi Browser.');
     } else {
-      log("🟣 Đang chạy trong Pi Browser (OK cho live payment).");
+      log('🟣 Đang chạy trong Pi Browser (OK cho live payment).');
     }
-
-    if (!BACKEND_URL) {
-      log("⚠️ BACKEND_URL chưa được cấu hình. Payment sẽ không được approve/complete.");
-    } else {
-      log("🔗 BACKEND_URL:", BACKEND_URL);
+    if(!BACKEND_URL || BACKEND_URL.includes('YOUR-BACKEND-URL_HERE')){
+      log('⚠️ BACKEND_URL chưa được cấu hình. Payment sẽ không được approve/complete cho tới khi cập nhật URL backend.');
     }
   }catch(e){
-    log("❌ Pi init", e?.message || e);
+    log('❌ Pi init', e?.message || e);
   }
 }
 
-/** Đăng nhập Pi (LIVE) */
 async function piLogin(){
-  if (!window.Pi) {
-    log("❌ Pi SDK chưa sẵn sàng (window.Pi không tồn tại).");
+  if(!window.Pi){
+    log('❌ Pi SDK chưa sẵn sàng (window.Pi không tồn tại).');
     return null;
   }
   try{
-    const scopes = ["payments","username","wallet_address"];
+    const scopes=['payments','username','wallet_address'];
     const auth = await Pi.authenticate(scopes, onIncompletePaymentFound);
-    log("🔐 Login OK:", auth?.user?.username || "(unknown)");
+    log('🔐 Login OK:', auth?.user?.username||'(unknown)');
     return auth;
   }catch(e){
-    log("❌ Login:", e?.message || e);
+    log('❌ Login:', e?.message || e);
     return null;
   }
 }
 
-/** Gọi backend tạo payment trên server (Phase 10) */
-async function backendCreatePayment(amount, username){
-  const clean = API_BASE;
-  const payload = { amount, username };
-  log("📡 Gửi create-payment lên backend:", payload);
-  const resp = await fetch(clean + "/create-payment", {
-    method: "POST",
-    headers: { "Content-Type":"application/json" },
-    body: JSON.stringify(payload),
-  });
-
-  let data = null;
-  try { data = await resp.json(); } catch(_){}
-
-  if (!resp.ok) {
-    throw new Error((data && data.error) || ("HTTP " + resp.status));
-  }
-  if (!data || !data.payment) {
-    throw new Error("Missing payment in backend response");
-  }
-  log("✅ Backend /create-payment OK:", JSON.stringify(data.payment));
-  return data.payment;
-}
-
-/** Gọi backend approve + complete payment sau khi ví báo readyForApproval */
-async function backendCompletePayment(paymentId){
-  const clean = API_BASE;
-  const payload = { paymentId };
-  log("📡 Gửi complete-payment lên backend:", payload);
-
-  const resp = await fetch(clean + "/complete-payment", {
-    method: "POST",
-    headers: { "Content-Type":"application/json" },
-    body: JSON.stringify(payload),
-  });
-
-  let data = null;
-  try { data = await resp.json(); } catch(_){}
-
-  if (!resp.ok) {
-    throw new Error((data && data.error) || ("HTTP " + resp.status));
-  }
-  log("✔ Backend /complete-payment OK:", JSON.stringify(data));
-  return data;
-}
-
-/** Thanh toán LIVE (mainnet) dùng backend Phase 10 */
-async function piPayLive(amount = 0.1){
+async function piPayLive(amount=0.1){
   try{
-    // 1) Login để lấy username
-    const auth = await piLogin();
-    if (!auth) {
-      log("⚠️ Không login được nên không thể thanh toán.");
+    const auth = await piLogin(); 
+    if(!auth){
+      log('⚠️ Không login được nên không thể thanh toán.');
       return;
     }
-    const username = auth.user?.username || "unknown";
-
-    // 2) Nhờ backend tạo payment trên Pi server
-    const serverPayment = await backendCreatePayment(amount, username);
-
-    // Chuẩn hoá object đưa vào Pi.createPayment
-    const paymentDTO = {
-      amount: serverPayment.amount,
-      memo:   serverPayment.memo,
-      metadata: serverPayment.metadata,
-      paymentId: serverPayment.identifier,
+    const paymentData = {
+      amount:String(amount),
+      memo:'PiChordify Kingdom – live payment test',
+      metadata:{feature:'premium', ver:'7.6', mode:'live'}
     };
-
-    // 3) Định nghĩa callback cho Pi SDK
     const callbacks = {
       onReadyForServerApproval: async (paymentId)=>{
-        log("🪙 readyForApproval:", paymentId);
+        log('🪙 readyForApproval:', paymentId);
+        if(!BACKEND_URL || BACKEND_URL.includes('YOUR-BACKEND-URL_HERE')){
+          log('⚠️ BACKEND_URL chưa cấu hình, bỏ qua bước approve/complete trên backend.');
+          return;
+        }
         try{
-          const res = await backendCompletePayment(paymentId);
-          log("✔ Backend approve/complete OK:", JSON.stringify(res));
+          const cleanBase = BACKEND_URL.replace(/\/+$/,'');
+          const resp = await fetch(`${cleanBase}/pay/approve-complete`, {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({ paymentId })
+          });
+          let data = null;
+          try{ data = await resp.json(); }catch(_){}
+          if(!resp.ok){
+            log('❌ Backend approve-complete error:', (data && data.error) || resp.status);
+          }else{
+            log('✔ Backend approve-complete OK:', JSON.stringify(data));
+          }
         }catch(err){
-          log("❌ Lỗi gọi backend /complete-payment:", err.message || err);
+          log('❌ Lỗi gọi backend:', err.message || err);
         }
       },
-      onReadyForServerCompletion: (paymentId, txid)=>{
-        log("✅ PAYMENT COMPLETED (từ Pi SDK):", { paymentId, txid });
+      onReadyForServerCompletion:(paymentId, txid)=>{
+        log('✅ PAYMENT COMPLETED (từ Pi SDK):', { paymentId, txid });
         premiumOn();
       },
-      onCancel: (paymentId)=> log("🚫 PAYMENT CANCELED", paymentId),
-      onError:  (err)=> log("⚠️ PAYMENT ERROR", err?.message || err),
+      onCancel:(paymentId)=>log('🚫 PAYMENT CANCELED', paymentId),
+      onError:(err)=>log('⚠️ PAYMENT ERROR', err?.message || err),
     };
-
-    // 4) Gọi Pi.createPayment với payment do backend tạo
-    log("🟣 Bắt đầu thanh toán LIVE, amount =", String(amount));
-    const pay = await Pi.createPayment(paymentDTO, callbacks);
-    log("🧾 createPayment (live) ->", pay);
+    log('🟣 Bắt đầu thanh toán LIVE, amount =', paymentData.amount);
+    const pay = await Pi.createPayment(paymentData, callbacks);
+    log('🧾 createPayment (live) ->', pay);
   }catch(e){
-    log("❌ Payment (live)", e?.message || e);
+    log('❌ Payment (live)', e?.message || e);
   }
 }
 
-/** Xử lý payment chưa hoàn tất nếu Pi SDK phát hiện */
 function onIncompletePaymentFound(p){
-  log("⚠️ incomplete payment (live):", p?.identifier || p);
+  log('⚠️ incomplete payment (live):', p?.identifier || p);
 }
-
-/** Đánh dấu Premium sau khi thanh toán OK */
 function premiumOn(){
-  const saveBtn = $("btnSave");
-  if (saveBtn) saveBtn.classList.add("ok");
-  log("⭐ Premium enabled sau khi thanh toán thành công (demo).");
+  const saveBtn = $('btnSave');
+  if(saveBtn) saveBtn.classList.add('ok');
+  log('⭐ Premium enabled sau khi thanh toán thành công (demo).');
 }
 
 /* ========== Boot ========== */
-window.addEventListener("load", ()=>{
-  state.key = "C"; state.prog = $("selProg").value; state.inst = "Piano"; state.transpose = 0;
-  $("selKey").value = "C"; $("transposeView").textContent = "0";
+window.addEventListener('load', ()=>{
+  state.key='C'; state.prog=$('selProg').value; state.inst='Piano'; state.transpose=0;
+  $('selKey').value='C'; $('transposeView').textContent='0';
   suggest();
 
-  const btnLogin = $("btnPiLogin");
-  const btnPay   = $("btnPiPay");
-  const btnCheck = $("btnCheck");
+  const btnLogin = $('btnPiLogin');
+  const btnPay = $('btnPiPay');
+  const btnCheck = $('btnCheck');
 
-  if (btnLogin) {
-    btnLogin.addEventListener("click", ()=>{
-      log("🟣 Pi Login button clicked");
+  if(btnLogin){
+    btnLogin.addEventListener('click', ()=>{
+      log('🟣 Pi Login button clicked');
       piLogin();
     });
   }
-  if (btnPay) {
-    btnPay.addEventListener("click", ()=>{
-      log("🟣 Pi Pay (LIVE) button clicked");
+  if(btnPay){
+    btnPay.addEventListener('click', ()=>{
+      log('🟣 Pi Pay (LIVE) button clicked');
       // số Pi muốn test: 0.1 / 0.5 / 1 / 2...
       piPayLive(0.1);
     });
   }
-  if (btnCheck) {
-    btnCheck.addEventListener("click", async ()=>{
-      log("🔎 Check Premium: giả lập kiểm tra trạng thái.");
+  if(btnCheck){
+    btnCheck.addEventListener('click', async ()=>{
+      log('🔎 Check Premium: giả lập kiểm tra trạng thái.');
       const auth = await piLogin();
-      if (auth) {
-        log("⭐ Premium check demo cho user", auth.user?.username || "(unknown)");
+      if(auth){
+        log('⭐ Premium check demo cho user', auth.user?.username || '(unknown)');
       }
     });
   }
 
   initPi();
-  log("🟣 Ready (UI wired, Pi SDK LIVE + backend hook)");
+  log('🟣 Ready (UI wired, Pi SDK LIVE + backend hook)');
 });
+  
+  // ===== Pi Pay LIVE – dùng backend Ngrok =====
+const BACKEND_URL = "https://2c6dfe281a1b.ngrok-free.app";
+const API_BASE = BACKEND_URL.replace(/\/$/, "") + "/api";
+// ... initPi(), piLogin(), backendCreatePayment(), backendCompletePayment(), pi 
 </script>
+
 </body>
 </html>
