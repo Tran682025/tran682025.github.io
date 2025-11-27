@@ -75,11 +75,45 @@ function onLogout(){
   uiRefresh();
 }
 async function onBuyPremium(){
-  const u = getUser(); if(!u){ toast('Hãy đăng nhập trước.'); return; }
-  // TODO: Pi.createPayment(...)
-  setPrem(true);
-  toast('Kích hoạt Premium (demo) thành công ✅');
-  uiRefresh();
+  const u = getUser();
+  if (!u) { toast('Hãy đăng nhập trước.'); return; }
+
+  try {
+    // Bước 1 — gửi request tạo payment tới backend → PiPay popup
+    const res1 = await fetch(`${BACKEND_URL}/api/create-payment`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ amount: 1, username: u.username })
+    }).then(r => r.json());
+
+    if (!res1 || !res1.payment) {
+      toast('Lỗi tạo thanh toán ❌');
+      return;
+    }
+
+    const paymentId = res1.payment.identifier;
+
+    toast('Đang chờ Pi xác nhận thanh toán 🟣...');
+
+    // Bước 2 — liên tục hỏi backend xem đã xác nhận chưa
+    const interval = setInterval(async () => {
+      const res2 = await fetch(`${BACKEND_URL}/api/complete-payment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paymentId })
+      }).then(r => r.json());
+
+      if (res2.ok) {
+        clearInterval(interval);
+        setPrem(true);
+        toast('Thanh toán Premium thành công 🟣');
+        uiRefresh();
+      }
+    }, 2500);
+  } catch(err) {
+    console.error(err);
+    toast('Lỗi thanh toán ❌');
+  }
 }
 
 // ===== Projects (localStorage demo)
