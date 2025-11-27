@@ -417,7 +417,8 @@ $('btnPDF').addEventListener('click', async()=>{
 /* ========== Pi SDK & Payments (LIVE – mainnet) ========== */
 const BACKEND_URL = "https://2c6dfe281a1b.ngrok-free.app";
  // TODO: thay bằng URL backend thật (không có dấu / ở cuối)
-
+// Tạo base URL dùng cho các API của backend
+const API_BASE = BACKEND_URL.replace(/\/$/, "") + "/api";
 async function initPi(){
   if(!window.Pi){
     log('❌ Pi SDK not found. Hãy chắc chắn đang mở trong Pi Browser và script sdk.minepi.com đã được tải.');
