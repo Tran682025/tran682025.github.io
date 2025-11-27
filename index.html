@@ -412,136 +412,93 @@ textarea{min-height:160px;width:100%;resize:vertical}
       return data.payment;
     }
 
-    async function backendCompletePayment(paymentId) {
-      if (!API_BASE) {
-        throw new Error("API_BASE empty (chưa cấu hình backend URL)");
-      }
+// ===== Gọi backend /create-payment =====
+async function backendCreatePayment(amount, username, user_uid) {
+  if (!API_BASE) {
+    throw new Error('API_BASE empty (chưa cấu hình backend URL)');
+  }
 
-      const resp = await fetch(API_BASE + "/complete-payment", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paymentId })
-      });
+  const payload = { amount, username, user_uid };   // 👈 THÊM user_uid vào payload
 
-      let data;
-      try {
-        data = await resp.json();
-      } catch (e) {
-        throw new Error("Không parse được JSON từ backend");
-      }
+  const resp = await fetch(API_BASE + '/create-payment', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
 
-      if (!resp.ok) {
-        throw new Error((data && data.error) || "HTTP " + resp.status);
-      }
+  let data;
+  try {
+    data = await resp.json();
+  } catch (e) {
+    throw new Error('Không parse được JSON từ backend');
+  }
 
-      log("✅ Backend /complete-payment OK:", data);
-      return data;
+  if (!resp.ok) {
+    throw new Error((data && data.error) || 'HTTP ' + resp.status);
+  }
+  if (!data || !data.payment) {
+    throw new Error('Missing payment in backend response');
+  }
+
+  log('✅ Backend /create-payment OK:', data.payment.identifier);
+  return data.payment;
+}
+
+
+ // ===== Flow Pi Pay LIVE =====
+async function piPayLive(amount = 0.1) {
+  try {
+    // 1) Login để lấy username + uid
+    const auth = await piLogin();
+    if (!auth) {
+      log('❌ Không login được nên không thể thanh toán.');
+      return;
     }
 
-    async function piPayLive(amount = 0.1, username, user_uid) {
+    const username = (auth.user && auth.user.username) || 'unknown';
+    const user_uid = auth.user && auth.user.uid;          // 👈 LẤY UID THẬT TỪ Pi
 
-        const auth = await piLogin();
-        if (!auth) {
-          log("❌ Không login được nên không thể thanh toán.");
-          return;
+    log('ℹ️ User info:', { username, user_uid });
+
+    // 2) Nhờ backend tạo payment trên Pi server
+    const serverPayment = await backendCreatePayment(amount, username, user_uid);
+    //                                           👆👆👆  TRUYỀN THÊM user_uid
+
+    // 3) Chuẩn hóa object đưa vào Pi.createPayment
+    const paymentDTO = {
+      amount: serverPayment.amount,
+      memo: serverPayment.memo,
+      metadata: serverPayment.metadata,
+      paymentId: serverPayment.identifier
+    };
+
+    // 4) ... (phần callbacks giữ nguyên)
+    const callbacks = {
+      onReadyForServerApproval: async (paymentId) => {
+        log('ℹ️ readyForServerApproval:', paymentId);
+        try {
+          const res = await backendCompletePayment(paymentId);
+          log('✅ backend approve-complete OK:', res);
+        } catch (e) {
+          log('❌ backend approve-complete lỗi:', e && e.message ? e.message : e);
         }
-        const username = (auth.user && auth.user.username) || "unknown";
-
-   const serverPayment = await backendCreatePayment(amount, username, user_uid);
-
-
-        const paymentDTO = {
-          amount: serverPayment.amount,
-          memo: serverPayment.memo,
-          metadata: serverPayment.metadata,
-          paymentId: serverPayment.identifier
-        };
-
-        const callbacks = {
-          onReadyForServerApproval: async (paymentId) => {
-            log("ℹ️ readyForServerApproval:", paymentId);
-            try {
-              const res = await backendCompletePayment(paymentId);
-              log("✅ backend approve-complete OK:", res);
-            } catch (e) {
-              log("❌ backend approve-complete lỗi:", e && e.message ? e.message : e);
-            }
-          },
-          onCancel: (paymentId) => {
-            log("ℹ️ PAYMENT CANCELED:", paymentId);
-          },
-          onError: (err) => {
-            log("❌ PAYMENT ERROR:", err && err.message ? err.message : err);
-          }
-        };
-
-        log("▶️ Bắt đầu thanh toán LIVE, amount = " + String(amount) + " Pi...");
-        const payment = await Pi.createPayment(paymentDTO, callbacks);
-        log("✅ createPayment (live) ->", payment);
-      } catch (e) {
-        log("❌ Payment (live) lỗi:", e && e.message ? e.message : e);
+      },
+      onCancel: (paymentId) => {
+        log('ℹ️ PAYMENT CANCELED:', paymentId);
+      },
+      onError: (err) => {
+        log('❌ PAYMENT ERROR:', err && err.message ? err.message : err);
       }
-    }
+    };
 
-    function premiumOn() {
-      const savbtn = document.getElementById("btnSave");
-      if (savbtn && !savbtn.classList.contains("ok")) {
-        savbtn.classList.add("ok");
-        log("🌟 Premium enabled sau khi thanh toán thành công (demo).");
-      }
-    }
+    log('▶️ Bắt đầu thanh toán LIVE, amount = ' + String(amount) + ' Pi...');
+    const payment = await Pi.createPayment(paymentDTO, callbacks);
+    log('✅ createPayment (live) ->', payment);
+  } catch (e) {
+    log('❌ Payment (live) lỗi:', e && e.message ? e.message : e);
+  }
+}
 
-    window.addEventListener("load", () => {
-      log("🌐 window.load fired (LIVE section).");
-
-      const btnExport = document.getElementById("btnExportPdf");
-      if (btnExport) {
-        btnExport.addEventListener("click", handleExportPdfClick);
-      }
-
-      const span = document.getElementById("backendNow");
-      if (span) {
-        span.textContent = localStorage.getItem("backend") || "(none)";
-      }
-
-      const btnLogin = document.getElementById("btnPiLogin");
-      const btnPay = document.getElementById("btnPiPay");
-      const btnCheck = document.getElementById("btnCheck");
-
-      if (btnLogin) {
-        btnLogin.addEventListener("click", () => {
-          log("🟣 Pi Login button clicked");
-          piLogin();
-        });
-      }
-
- btnPay.addEventListener('click', async () => {
-  log('🟣 Pi Pay (LIVE) button clicked');
-  const auth = await piLogin();
-  if (!auth) return;
-
-  const username = auth.user?.username;
-  const user_uid = auth.user?.uid;
-
-  piPayLive(0.1, username, user_uid);
-});
-
-      if (btnCheck) {
-        btnCheck.addEventListener("click", async () => {
-          log("🔍 Check Premium: giả lập kiểm tra trạng thái.");
-          const auth = await piLogin();
-          if (auth) {
-            log(
-              "✅ Premium check demo cho user",
-              (auth.user && auth.user.username) || "(unknown)"
-            );
-          }
-        });
-      }
-
-      initPi();
-      log("✅ Ready (Pi SDK LIVE + backend hook)");
-    });
   </script>
 </body>
 </html>
