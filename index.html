@@ -286,36 +286,50 @@ textarea{min-height:160px;width:100%;resize:vertical}
       log("❌ Promise error:", ev.reason && ev.reason.message || ev.reason);
     });
 
- window.addEventListener("load", () => {
-  log("🌐 window.load fired (LIVE section).");
+    // ===== Export PDF (Lead Sheet) =====
+    function handleExportPdfClick() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const title = document.getElementById("title").value || "Untitled";
+      const lines = [
+        "Key: " + document.getElementById("selKey").value,
+        "Progression: " + document.getElementById("selProg").value,
+        "",
+        "Suggestion:",
+        ...document.getElementById("suggest").value.split("\n"),
+        "",
+        "Lyrics & Chords:",
+        ...document.getElementById("lyrics").value.split("\n")
+      ];
 
-  // Gắn click cho nút Export PDF sau khi DOM đã sẵn sàng
-  const btnExport = document.getElementById("btnExportPdf");
-  if (btnExport) {
-    btnExport.addEventListener("click", handleExportPdfClick);
-  } else {
-    log("❌ Không tìm thấy nút Export PDF");
-  }
+      let y = 30;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(18);
+      doc.text(title, 20, 20);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(11);
 
-  const span = document.getElementById("backendNow");
-  ...
-
+      for (const line of lines) {
+        doc.text(line, 20, y);
+        y += 7;
+        if (y > 280) {
+          doc.addPage();
+          y = 20;
+        }
       }
 
       doc.save((title || "lead-sheet") + ".pdf");
       log("✅ exported PDF");
-    });
+    }
 
     // ========= PI SDK & Payments (LIVE - mainnet) =========
     const BACKEND_URL = (localStorage.getItem("backend") || "").replace(/\/$/, "");
     const API_BASE = BACKEND_URL ? BACKEND_URL + "/api" : "";
 
-    // Login: onIncompletePaymentFound
     function onIncompletePaymentFound(payment) {
       log("⚠️ onIncompletePaymentFound (front-end):", payment && payment.identifier);
     }
 
-    // ===== Pi init =====
     async function initPi() {
       if (!window.Pi) {
         log("❌ Pi SDK not found. Hãy mở trong Pi Browser và chắc script sdk.minepi.com đã load.");
@@ -351,7 +365,6 @@ textarea{min-height:160px;width:100%;resize:vertical}
       }
     }
 
-    // ===== Login =====
     async function piLogin() {
       if (!window.Pi) {
         log("❌ Pi SDK chưa sẵn sàng (window.Pi không tồn tại).");
@@ -369,7 +382,6 @@ textarea{min-height:160px;width:100%;resize:vertical}
       }
     }
 
-    // ===== Backend /create-payment =====
     async function backendCreatePayment(amount, username) {
       if (!API_BASE) {
         throw new Error("API_BASE empty (chưa cấu hình backend URL)");
@@ -400,7 +412,6 @@ textarea{min-height:160px;width:100%;resize:vertical}
       return data.payment;
     }
 
-    // ===== Backend /complete-payment =====
     async function backendCompletePayment(paymentId) {
       if (!API_BASE) {
         throw new Error("API_BASE empty (chưa cấu hình backend URL)");
@@ -427,7 +438,6 @@ textarea{min-height:160px;width:100%;resize:vertical}
       return data;
     }
 
-    // ===== Flow Pi Pay LIVE =====
     async function piPayLive(amount = 0.1) {
       try {
         const auth = await piLogin();
@@ -472,7 +482,6 @@ textarea{min-height:160px;width:100%;resize:vertical}
       }
     }
 
-    // ===== Premium UI demo =====
     function premiumOn() {
       const savbtn = document.getElementById("btnSave");
       if (savbtn && !savbtn.classList.contains("ok")) {
@@ -481,9 +490,13 @@ textarea{min-height:160px;width:100%;resize:vertical}
       }
     }
 
-    // ===== Boot =====
     window.addEventListener("load", () => {
       log("🌐 window.load fired (LIVE section).");
+
+      const btnExport = document.getElementById("btnExportPdf");
+      if (btnExport) {
+        btnExport.addEventListener("click", handleExportPdfClick);
+      }
 
       const span = document.getElementById("backendNow");
       if (span) {
