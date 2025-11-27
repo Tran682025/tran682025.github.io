@@ -438,8 +438,8 @@ textarea{min-height:160px;width:100%;resize:vertical}
       return data;
     }
 
-    async function piPayLive(amount = 0.1) {
-      try {
+    async function piPayLive(amount = 0.1, username, user_uid) {
+
         const auth = await piLogin();
         if (!auth) {
           log("❌ Không login được nên không thể thanh toán.");
@@ -447,7 +447,8 @@ textarea{min-height:160px;width:100%;resize:vertical}
         }
         const username = (auth.user && auth.user.username) || "unknown";
 
-        const serverPayment = await backendCreatePayment(amount, username);
+   const serverPayment = await backendCreatePayment(amount, username, user_uid);
+
 
         const paymentDTO = {
           amount: serverPayment.amount,
@@ -514,12 +515,16 @@ textarea{min-height:160px;width:100%;resize:vertical}
         });
       }
 
-      if (btnPay) {
-        btnPay.addEventListener("click", () => {
-          log("🟣 Pi Pay (LIVE) button clicked");
-          piPayLive(0.1);
-        });
-      }
+ btnPay.addEventListener('click', async () => {
+  log('🟣 Pi Pay (LIVE) button clicked');
+  const auth = await piLogin();
+  if (!auth) return;
+
+  const username = auth.user?.username;
+  const user_uid = auth.user?.uid;
+
+  piPayLive(0.1, username, user_uid);
+});
 
       if (btnCheck) {
         btnCheck.addEventListener("click", async () => {
