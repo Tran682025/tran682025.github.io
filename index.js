@@ -3,6 +3,7 @@ const LS_USER = 'pchord.user';
 const LS_PREM = 'pchord.premium';
 const PREFIX  = 'pchord.project.';
 const TRASH   = 'pchord.trash.'; // soft delete
+const BACKEND_URL = "https://c26fde8218ba.ngrok-free.app";
 
 const $ = (s, r=document) => r.querySelector(s);
 const out = $('#out');
