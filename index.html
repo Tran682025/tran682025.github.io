@@ -458,38 +458,38 @@ textarea{min-height:160px;width:100%;resize:vertical}
       span.textContent = localStorage.getItem('backend') || '(none)';
     }
 
- <script>
+<script>
   // Hiển thị backend hiện tại
   const span = document.getElementById('backendNow');
   if (span) {
     span.textContent = localStorage.getItem('backend') || '(none)';
   }
 
-  // Gắn event cho 3 nút Pi
+  // Gắn event cho nút Pi
   const btnLogin = document.getElementById('btnPiLogin');
-  const btnPay   = document.getElementById('btnPiPay');
-  const btnCheck = document.getElementById('btnCheck'); // ĐÚNG với id trong HTML
+  const btnPay = document.getElementById('btnPiPay');
+  const btnCheck = document.getElementById('btnCheck'); // id HTML đúng
 
   if (btnLogin) {
     btnLogin.addEventListener('click', () => {
-      log('🟣 Pi Login button clicked');
+      log("🔑 Pi Login button clicked");
       piLogin();
     });
   }
 
   if (btnPay) {
     btnPay.addEventListener('click', () => {
-      log('🟣 Pi Pay (LIVE) button clicked');
-      piPayLive(0.1); // hoặc amount nào mình đang test
+      log("💸 Pi Pay (LIVE) button clicked");
+      piPayLive(0.1);
     });
   }
 
   if (btnCheck) {
     btnCheck.addEventListener('click', async () => {
-      log('🔍 Check Premium: giả lập kiểm tra trạng thái.');
+      log("🔍 Check Premium clicked");
       const auth = await piLogin();
       if (auth) {
-        log('✅ Premium check demo cho user', (auth.user && auth.user.username) || '(unknown)');
+        log("⭐ Premium check demo cho user:", (auth.user && auth.user.username) || "(unknown)");
       }
     });
   }
