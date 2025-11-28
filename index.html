@@ -449,27 +449,21 @@ textarea{min-height:160px;width:100%;resize:vertical}
     }
   }
 
-  // ===== window.onload: chỉ chạy khi DOM sẵn sàng =====
-  window.addEventListener('load', () => {
-    log('💬 window.load fired (LIVE section).');
-
-    const span = document.getElementById('backendNow');
-    if (span) {
-      span.textContent = localStorage.getItem('backend') || '(none)';
-    }
-
 <script>
-  // Cập nhật backend URL đang dùng
-  (function () {
+  // ===== window.onload: chỉ chạy khi DOM sẵn sàng =====
+  window.addEventListener("load", () => {
+    log("📥 window.load fired (LIVE section);");
+
+    // Cập nhật backend URL hiện tại
     const span = document.getElementById("backendNow");
     if (span) {
       span.textContent = localStorage.getItem("backend") || "(none)";
     }
 
-    // Ba nút Pi
-    const btnLogin = document.getElementById("btnPiLogin");
-    const btnPay   = document.getElementById("btnPiPay");
-    const btnCheck = document.getElementById("btnPiCheck");
+    // Bắt event cho 3 nút Pi
+    const btnLogin  = document.getElementById("btnPiLogin");
+    const btnPay    = document.getElementById("btnPiPay");
+    const btnCheck  = document.getElementById("btnPiCheck");
 
     if (btnLogin) {
       btnLogin.addEventListener("click", () => {
@@ -481,8 +475,7 @@ textarea{min-height:160px;width:100%;resize:vertical}
     if (btnPay) {
       btnPay.addEventListener("click", () => {
         log("🟣 Pi Pay (LIVE) button clicked");
-        // amount test nhỏ, backend vẫn nhận được
-        piPayLive(0.1);
+        piPayLive(0.1); // amount test nhỏ
       });
     }
 
@@ -492,14 +485,13 @@ textarea{min-height:160px;width:100%;resize:vertical}
         const auth = await piLogin();
         if (auth) {
           log(
-            `✅ Premium check demo cho user: ${
-              (auth.user && auth.user.username) || "(unknown)"
-            }`
+            "⭐ Premium check demo cho user:",
+            (auth.user && auth.user.username) || "(unknown)"
           );
         }
       });
     }
-  })();
+  });
 </script>
 </body>
 </html>
