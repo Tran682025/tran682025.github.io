@@ -674,46 +674,82 @@ if (audio && btnMute) {
     btnMute.textContent = audio.muted ? "Unmute" : "Mute";
   });
 }
-// === Chord Runner: theo dõi hợp âm đang phát ===
-(function initChordRunner(){
-  const lyricsBox = document.getElementById("lyrics");
+// === Chord Runner: theo dõi hợp âm đang phát + auto-scroll ===
+function initChordRunner(){
+  const lyricsBox       = document.getElementById("lyrics");
   const currentChordSpan = document.getElementById("currentChord");
   if (!lyricsBox || !currentChordSpan) return;
 
-  let parsed = []; // mỗi phần tử: { time: giây, chord: "Em / D" }
+  // mỗi phần tử: { time: giây, chord: "Em / D", lineIndex }
+  let parsed = [];
+  let totalLines = 0;
+  let lastChord = "";
 
   function parseLyrics(){
     parsed = [];
     const lines = lyricsBox.value.split("\n");
-    for (let line of lines){
-      const m = line.match(/^(\d{1,2}):(\d{2})\s+(.*)$/);
+    totalLines = lines.length || 1;
+
+    for (let i = 0; i < lines.length; i++){
+      const line = lines[i];
+      // match: mm:ss  phần còn lại → chord / lời
+      const m = line.match(/^(\d{2}):(\d{2})\s+(.*)$/);
       if (!m) continue;
-      const t = Number(m[1]) * 60 + Number(m[2]);
+      const t     = Number(m[1]) * 60 + Number(m[2]);
       const chord = m[3].trim();
-      parsed.push({ time: t, chord });
+      parsed.push({ time: t, chord, lineIndex: i });
     }
   }
 
+  // parse ban đầu + khi người dùng sửa lời
   parseLyrics();
   lyricsBox.addEventListener("input", parseLyrics);
 
   const audio = document.getElementById("audio");
   if (!audio) return;
 
+  // cứ 400ms cập nhật 1 lần
   setInterval(() => {
     if (!parsed.length || audio.paused) return;
-    const now = Math.floor(audio.currentTime);
-    let found = "";
 
+    const now = Math.floor(audio.currentTime);
+    let foundChord = "";
+    let foundIndex = -1;
+
+    // tìm dòng gần nhất có time <= now (duyệt ngược cho nhanh)
     for (let i = parsed.length - 1; i >= 0; i--){
       if (now >= parsed[i].time){
-        found = parsed[i].chord;
+        foundChord = parsed[i].chord;
+        foundIndex = parsed[i].lineIndex;
         break;
       }
     }
-    currentChordSpan.textContent = found;
+
+    // update text + pulse khi đổi chord
+    if (foundChord !== lastChord){
+      currentChordSpan.textContent = foundChord || "";
+      if (foundChord){
+        currentChordSpan.classList.remove("chord-pulse");
+        // trigger lại animation
+        void currentChordSpan.offsetWidth;
+        currentChordSpan.classList.add("chord-pulse");
+      }
+      lastChord = foundChord;
+    }
+
+    // Auto-scroll lời theo dòng hiện tại
+    if (foundIndex >= 0 && lyricsBox.scrollHeight > lyricsBox.clientHeight){
+      const ratio = foundIndex / totalLines;
+      const maxScroll = lyricsBox.scrollHeight - lyricsBox.clientHeight;
+      const targetScroll = Math.max(0, Math.min(maxScroll, ratio * maxScroll));
+
+      // cuộn mượt: lerp nhẹ nhàng
+      const current = lyricsBox.scrollTop;
+      lyricsBox.scrollTop = current + (targetScroll - current) * 0.25;
+    }
   }, 400);
-})();
+}
+
 // === Focus Mode ===
 (function initFocusMode(){
   const btn = document.getElementById("btnFocusMode");
