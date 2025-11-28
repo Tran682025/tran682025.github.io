@@ -450,9 +450,9 @@ textarea{min-height:160px;width:100%;resize:vertical}
   }
 
 <script>
-  // ===== window.onload: chỉ chạy khi DOM sẵn sàng =====
+  // ===== Chỉ chạy sau khi DOM sẵn sàng =====
   window.addEventListener("load", () => {
-    log("📥 window.load fired (LIVE section);");
+    log("📂 window.load fired (LIVE section).");
 
     // Cập nhật backend URL hiện tại
     const span = document.getElementById("backendNow");
@@ -461,13 +461,13 @@ textarea{min-height:160px;width:100%;resize:vertical}
     }
 
     // Bắt event cho 3 nút Pi
-    const btnLogin  = document.getElementById("btnPiLogin");
-    const btnPay    = document.getElementById("btnPiPay");
-    const btnCheck  = document.getElementById("btnPiCheck");
+    const btnLogin = document.getElementById("btnPiLogin");
+    const btnPay   = document.getElementById("btnPiPay");
+    const btnCheck = document.getElementById("btnPiCheck");
 
     if (btnLogin) {
       btnLogin.addEventListener("click", () => {
-        log("🔵 Pi Login button clicked");
+        log("🟣 Pi Login button clicked");
         piLogin();
       });
     }
@@ -475,7 +475,8 @@ textarea{min-height:160px;width:100%;resize:vertical}
     if (btnPay) {
       btnPay.addEventListener("click", () => {
         log("🟣 Pi Pay (LIVE) button clicked");
-        piPayLive(0.1); // amount test nhỏ
+        // amount test nhỏ
+        piPayLive(0.1);
       });
     }
 
@@ -485,7 +486,7 @@ textarea{min-height:160px;width:100%;resize:vertical}
         const auth = await piLogin();
         if (auth) {
           log(
-            "⭐ Premium check demo cho user:",
+            "✅ Premium check demo cho user:",
             (auth.user && auth.user.username) || "(unknown)"
           );
         }
