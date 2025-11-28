@@ -1,6 +1,6 @@
 // =========================
 // PiChordify Kingdom – index.js
-// Logic cho player, hợp âm, save/load/share
+// Frontend logic: player, chords, save/share + Pi Login & Pi Pay (LIVE)
 // =========================
 
 // ---- Global state ----
@@ -17,6 +17,11 @@ const MK = {
     progression: "I–V–vi–IV",
     instrument: "piano",
   },
+  pi: {
+    user: null,
+    backendUrl: "",
+    apiBase: "",
+  },
 };
 
 const STORAGE_KEY_SONG = "pichordify.currentSong";
@@ -26,7 +31,7 @@ const KEY_NAMES = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "
 // Major scale steps (semitones)
 const MAJOR_STEPS = [0, 2, 4, 5, 7, 9, 11];
 
-// ===== Utils =====
+// ===== Utils chung =====
 function fmtTime(sec) {
   if (!isFinite(sec)) sec = 0;
   sec = Math.max(0, sec);
@@ -39,12 +44,6 @@ function clamp(v, min, max) {
   return Math.min(max, Math.max(min, v));
 }
 
-// Lấy index trong KEY_NAMES (fallback C)
-function keyIndex(name) {
-  const idx = KEY_NAMES.indexOf(name);
-  return idx >= 0 ? idx : 0;
-}
-
 // Roman numeral -> degree (1..7) + isMinor
 function parseRoman(token) {
   const clean = (token || "").toLowerCase().replace(/[^iv]/g, "");
@@ -54,6 +53,12 @@ function parseRoman(token) {
   return { degree: deg, isMinor };
 }
 
+// Lấy index trong KEY_NAMES (fallback C)
+function keyIndex(name) {
+  const idx = KEY_NAMES.indexOf(name);
+  return idx >= 0 ? idx : 0;
+}
+
 function chordFromRoman(rootIndex, token) {
   const { degree, isMinor } = parseRoman(token);
   const step = MAJOR_STEPS[clamp(degree, 1, 7) - 1];
@@ -61,7 +66,9 @@ function chordFromRoman(rootIndex, token) {
   return note + (isMinor ? "m" : "");
 }
 
-// ===== Player =====
+// =========================
+// 1) AUDIO PLAYER
+// =========================
 function initPlayer() {
   MK.audio = document.getElementById("audio");
   MK.progressBar = document.getElementById("bar");
@@ -187,7 +194,9 @@ function updatePlayButtons() {
   }
 }
 
-// ===== Key / Transpose / Progression =====
+// =========================
+// 2) KEY / PROGRESSION / TRANSPOSE
+// =========================
 function initKeyAndProgression() {
   const selKey = document.getElementById("selKey");
   const selProg = document.getElementById("selProg");
@@ -295,13 +304,17 @@ function updateSuggestions(force = false) {
 
   let extra = "";
   if (force) {
-    extra = `\n\nGợi ý thêm: Chơi arpeggio trên ${MK.state.instrument === "guitar" ? "guitar" : "piano"} với nhịp 4/4, tempo vừa phải.`;
+    extra = `\n\nGợi ý thêm: Chơi arpeggio trên ${
+      MK.state.instrument === "guitar" ? "guitar" : "piano"
+    } với nhịp 4/4, tempo vừa phải.`;
   }
 
   suggestBox.value = line1 + "\n" + line2 + extra;
 }
 
-// ===== Save / Load / Share =====
+// =========================
+// 3) SAVE / LOAD / SHARE
+// =========================
 function initSaveLoadShare() {
   document.getElementById("btnSave")?.addEventListener("click", saveSong);
   document.getElementById("btnLoadLocal")?.addEventListener("click", loadSong);
@@ -415,11 +428,8 @@ function tryLoadFromUrl() {
     applySongData(data);
     log("🌐 Đã nạp bài từ link share.");
   } catch (e) {
-    // fallback decode
     try {
-      const data = JSON.parse(
-        decodeURIComponent(escape(atob(encoded)))
-      );
+      const data = JSON.parse(decodeURIComponent(escape(atob(encoded))));
       applySongData(data);
       log("🌐 Đã nạp bài từ link share.");
     } catch (err) {
@@ -428,12 +438,198 @@ function tryLoadFromUrl() {
   }
 }
 
-// ===== Boot =====
+// =========================
+// 4) PI SDK + PI PAY (LIVE)
+// =========================
+
+function initPiSection() {
+  // Backend URL từ localStorage, giống logic index.html
+  const backendInput = document.getElementById("txtBackend");
+  const backendNow = document.getElementById("backendNow");
+  const stored = (localStorage.getItem("backend") || "").trim();
+
+  if (backendInput) backendInput.value = stored;
+  if (backendNow) backendNow.textContent = stored || "(none)";
+
+  MK.pi.backendUrl = stored.replace(/\/$/, "");
+  MK.pi.apiBase = MK.pi.backendUrl ? MK.pi.backendUrl + "/api" : "";
+
+  initPiSDK();
+
+  const btnLogin = document.getElementById("btnPiLogin");
+  const btnPay = document.getElementById("btnPiPay");
+  const btnCheck = document.getElementById("btnCheck");
+
+  if (btnLogin) {
+    btnLogin.addEventListener("click", () => {
+      log("🟣 Pi Login button clicked");
+      piLogin();
+    });
+  }
+
+  if (btnPay) {
+    btnPay.addEventListener("click", () => {
+      log("🟣 Pi Pay (LIVE) button clicked");
+      piPayLive(0.1);
+    });
+  }
+
+  if (btnCheck) {
+    btnCheck.addEventListener("click", async () => {
+      log("🔍 Check Premium (demo).");
+      const auth = await piLogin();
+      if (auth && auth.user && auth.user.username) {
+        log("⭐ Premium check demo cho user:", auth.user.username);
+      } else {
+        log("⭐ Premium check demo cho user: unknown");
+      }
+    });
+  }
+}
+
+function initPiSDK() {
+  if (!window.Pi) {
+    log(
+      "❌ Pi SDK not found. Hãy mở trong Pi Browser và chắc script sdk.minepi.com đã load."
+    );
+    return;
+  }
+  try {
+    Pi.init({
+      version: "2.0",
+      sandbox: false,
+      onIncompletePaymentFound(payment) {
+        log("⚠️ Incomplete payment (LIVE):", payment && payment.identifier);
+      },
+    });
+    log("✅ Pi SDK initialized (LIVE).");
+
+    const isPiBrowser =
+      typeof Pi.isPiBrowser === "function" ? Pi.isPiBrowser() === true : false;
+    if (!isPiBrowser) {
+      log(
+        "⚠️ Không nhận diện được Pi Browser – chỉ nên test thanh toán thật trong Pi Browser."
+      );
+    } else {
+      log("✅ Đang chạy trong Pi Browser (OK cho live payment).");
+    }
+  } catch (err) {
+    log("❌ Lỗi init Pi SDK (LIVE):", err?.message || err);
+  }
+}
+
+async function piLogin() {
+  if (!window.Pi) {
+    log("❌ Pi SDK chưa sẵn sàng.");
+    return null;
+  }
+  try {
+    const auth = await Pi.authenticate(
+      ["username", "payments"],
+      () => log("🔐 PIN callback được gọi (LIVE).")
+    );
+    if (!auth || !auth.user) {
+      log("❌ Pi Login trả về null/undefined.");
+      return null;
+    }
+    MK.pi.user = auth.user;
+    log("✅ Pi Login OK – user:", auth.user.username);
+    log(
+      "ℹ️ User info:",
+      JSON.stringify({ username: auth.user.username, user_uid: auth.user.uid })
+    );
+    return auth;
+  } catch (err) {
+    log("❌ Pi Login lỗi (LIVE):", err?.message || err);
+    return null;
+  }
+}
+
+async function backendCreatePayment(amount, username, user_uid) {
+  if (!MK.pi.apiBase) {
+    log("❌ API_BASE rỗng – chưa cấu hình Backend URL.");
+    throw new Error("API_BASE empty");
+  }
+  const payload = { amount, username, user_uid };
+
+  const res = await fetch(MK.pi.apiBase + "/create-payment", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.ok) {
+    log("❌ Backend /create-payment lỗi:", data || (await res.text()));
+    throw new Error(data.error || "create-payment failed");
+  }
+  log(
+    "✅ Backend /create-payment OK, payment:",
+    data.payment && data.payment.identifier
+  );
+  return data.payment;
+}
+
+async function piPayLive(amount) {
+  try {
+    const auth = await piLogin();
+    if (!auth || !auth.user) {
+      log("❌ Không có thông tin user sau login, hủy payment.");
+      return;
+    }
+
+    const username = auth.user.username;
+    const user_uid = auth.user.uid;
+
+    log("➡️ Gửi dữ liệu tạo payment lên backend:", username, user_uid);
+
+    // 1) nhờ backend tạo payment trên Pi server
+    const serverPayment = await backendCreatePayment(
+      amount,
+      username,
+      user_uid
+    );
+
+    // 2) chuẩn bị object cho Pi.createPayment
+    const paymentDto = {
+      amount: serverPayment.amount,
+      memo: serverPayment.memo,
+      metadata: serverPayment.metadata,
+      paymentId: serverPayment.identifier,
+    };
+
+    const callbacks = {
+      onReadyForServerApproval: async (paymentId) => {
+        log("🟡 readyForServerApproval (LIVE):", paymentId);
+      },
+      onReadyForServerCompletion: async (paymentId) => {
+        log("🟡 readyForServerCompletion (LIVE):", paymentId);
+      },
+      onCancel: (paymentId) => {
+        log("⛔ PAYMENT CANCELLED (LIVE):", paymentId);
+      },
+      onError: (err) => {
+        log("❌ PAYMENT ERROR (LIVE):", err?.message || err);
+      },
+    };
+
+    log("▶️ Bắt đầu thanh toán LIVE, amount =", String(amount), "Pi…");
+    const payment = await Pi.createPayment(paymentDto, callbacks);
+    log("✅ createPayment (LIVE) đã xong:", payment);
+  } catch (e) {
+    log("❌ X payment (LIVE) lỗi:", e?.message || e);
+  }
+}
+
+// =========================
+// 5) BOOT
+// =========================
 window.addEventListener("DOMContentLoaded", () => {
   try {
     initPlayer();
     initKeyAndProgression();
     initSaveLoadShare();
+    initPiSection();
     updatePlayButtons();
     log("🎼 PiChordify Kingdom frontend (index.js) đã khởi động.");
   } catch (e) {
