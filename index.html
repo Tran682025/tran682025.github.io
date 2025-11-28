@@ -459,43 +459,47 @@ textarea{min-height:160px;width:100%;resize:vertical}
     }
 
 <script>
-  // Hiển thị backend hiện tại
-  const span = document.getElementById('backendNow');
-  if (span) {
-    span.textContent = localStorage.getItem('backend') || '(none)';
-  }
-
-const btnLogin = document.getElementById("btnPiLogin");
-const btnPay   = document.getElementById("btnPiPay");
-const btnCheck = document.getElementById("btnPiCheck");
-
-if (btnLogin) {
-  btnLogin.addEventListener("click", () => {
-    log("🔵 Pi Login button clicked");
-    piLogin();
-  });
-}
-
-if (btnPay) {
-  btnPay.addEventListener("click", () => {
-    log("🟣 Pi Pay (LIVE) button clicked");
-    piPayLive(0.1); // Hắc amount nhỏ mình đang test
-  });
-}
-
-if (btnCheck) {
-  btnCheck.addEventListener("click", async () => {
-    log("🔍 Check Premium: giả lập kiểm tra trạng thái.");
-    const auth = await piLogin();
-    if (auth) {
-      log(`✅ Premium check demo cho user: ${
-        (auth.user && auth.user.username) || "(unknown)"
-      }`);
+  // Cập nhật backend URL đang dùng
+  (function () {
+    const span = document.getElementById("backendNow");
+    if (span) {
+      span.textContent = localStorage.getItem("backend") || "(none)";
     }
-  });
-}
 
+    // Ba nút Pi
+    const btnLogin = document.getElementById("btnPiLogin");
+    const btnPay   = document.getElementById("btnPiPay");
+    const btnCheck = document.getElementById("btnPiCheck");
+
+    if (btnLogin) {
+      btnLogin.addEventListener("click", () => {
+        log("🔵 Pi Login button clicked");
+        piLogin();
+      });
+    }
+
+    if (btnPay) {
+      btnPay.addEventListener("click", () => {
+        log("🟣 Pi Pay (LIVE) button clicked");
+        // amount test nhỏ, backend vẫn nhận được
+        piPayLive(0.1);
+      });
+    }
+
+    if (btnCheck) {
+      btnCheck.addEventListener("click", async () => {
+        log("🔍 Check Premium: giả lập kiểm tra trạng thái.");
+        const auth = await piLogin();
+        if (auth) {
+          log(
+            `✅ Premium check demo cho user: ${
+              (auth.user && auth.user.username) || "(unknown)"
+            }`
+          );
+        }
+      });
+    }
+  })();
 </script>
-
 </body>
 </html>
