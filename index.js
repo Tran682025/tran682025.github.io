@@ -749,6 +749,75 @@ function initChordRunner(){
     }
   }, 400);
 }
+// === Auto fill bài hát theo pattern (v8.3) ===
+(function initPatternFill() {
+  const btn = document.getElementById("btnFillSong");
+  const patternInput = document.getElementById("patternAll");
+  const lyricsBox = document.getElementById("lyrics");
+  const audio = document.getElementById("audio");
+
+  if (!btn || !patternInput || !lyricsBox || !audio) return;
+
+  // Tách pattern: bỏ khoảng trắng thừa, bỏ ký hiệu |
+  function parsePattern(str) {
+    return (str || "")
+      .split(/\s+/)
+      .map((s) => s.trim())
+      .filter((s) => s && s !== "|");
+  }
+
+  // Định dạng thời gian mm:ss
+  function fmtTime(sec) {
+    const s = Math.max(0, Math.floor(sec));
+    const mm = String(Math.floor(s / 60)).padStart(2, "0");
+    const ss = String(s % 60).padStart(2, "0");
+    return `${mm}:${ss}`;
+  }
+
+  btn.addEventListener("click", () => {
+    const chords = parsePattern(patternInput.value);
+
+    if (!chords.length) {
+      log("⚠️ Chưa nhập pattern hợp âm (ví dụ: C G Am F | F G Em Am).");
+      return;
+    }
+
+     // ===== Auto-fill lyrics theo pattern cho cả bài (v8.3) =====
+    const duration = audio.duration;
+    if (!duration || !isFinite(duration)) {
+      log("⚠️ Chưa đọc được thời lượng MP3. Hãy chọn file, bấm Play một lần rồi thử lại.");
+      return;
+    }
+
+    const total = Math.floor(duration);
+    if (total < 4) {
+      log("⚠️ Bài hát quá ngắn, không auto fill được.");
+      return;
+    }
+
+    // Mặc định: 4 giây / 1 hợp âm (sau này cho chỉnh ở v8.x)
+    const step  = 4;
+    const lines = [];
+    let t = 0;
+    let i = 0;
+
+    // chords ở phía trên callback đã chuẩn bị sẵn
+    while (t < total) {
+      const chord   = chords[i % chords.length];
+      const mm      = String(Math.floor(t / 60)).padStart(2, "0");
+      const ss      = String(Math.floor(t % 60)).padStart(2, "0");
+      const timeStr = `${mm}:${ss}`;
+
+      lines.push(`${timeStr}   ${chord}`);
+      t += step;
+      i++;
+    }
+
+    lyricsBox.value = lines.join("\n");
+    log(`✅ Đã auto fill ${lines.length} dòng hợp âm cho cả bài (pattern lặp, ${step}s / hợp âm).`);
+
+  });
+})();
 
 // === Focus Mode ===
 (function initFocusMode(){
