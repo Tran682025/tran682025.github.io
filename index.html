@@ -235,7 +235,7 @@ body.focus-mode .title{
         <button id="btnSuggest" class="btn">Tự gợi ý hợp âm</button>
       </div>
 
-      <div class="row" style="margin-top:12px">
+        <div class="row" style="margin-top:12px">
         <div style="flex:1">
           <div class="small">Lời + hợp âm (mỗi dòng có mốc thời gian — dạng: <span class="kbd">mm:ss Em / D</span>)</div>
           <textarea id="lyrics" placeholder="00:12   Em  /  D ..."></textarea>
@@ -246,10 +246,25 @@ body.focus-mode .title{
         </div>
       </div>
 
+      <!-- ===== Auto fill theo pattern (v8.3) ===== -->
+      <div class="row" style="margin-top:8px;align-items:flex-end">
+        <div style="flex:1">
+          <div class="small">Mẫu hợp âm cho cả bài (pattern)</div>
+          <input id="patternAll" placeholder="Ví dụ: C G Am F | F G Em Am"/>
+          <div class="small">
+            Pattern sẽ lặp từ đầu đến cuối bài, mỗi hợp âm chia đều theo thời lượng MP3.
+          </div>
+        </div>
+        <button id="btnFillSong" class="btn ghost" style="margin-left:10px;margin-top:18px">
+          Tự fill cả bài
+        </button>
+      </div>
+
       <!-- ===== Audio ===== -->
       <div style="margin-top:10px">
         <div class="row">
           <input id="audioUrl" placeholder="https://…/song.mp3" style="flex:1"/>
+
           <input id="filePick" type="file" accept="audio/mpeg" class="hidden"/>
           <button id="btnPick" class="btn ghost">Chọn MP3</button>
           <button id="btnLoad" class="btn ghost">Load</button>
@@ -260,7 +275,28 @@ body.focus-mode .title{
           <button id="btnStop" class="btn bad">Stop</button>
           <span id="time" class="mono small">0:00 / 0:00</span>
         </div>
-     <div class="progress" style="margin-top:8px"><i id="bar"></i></div>
+    <div class="progress" style="margin-top:8px"><i id="bar"></i></div>
+
+<!-- Volume + Mute -->
+<div class="row" style="margin-top:8px;align-items:center">
+  <span class="small" style="margin-right:8px">🔊 Volume</span>
+  <input id="vol" type="range" min="0" max="1" step="0.01" value="1"
+         style="flex:1;margin-right:8px"/>
+  <button id="btnMute" class="btn ghost">Mute</button>
+</div>
+
+<!-- Chord Runner lane: nhiều hợp âm xếp hàng -->
+<div class="row" style="margin-top:6px;align-items:center">
+  <span class="small">🎯 Hợp âm đang phát:</span>
+  <div id="chordLane"
+       class="mono small chord-lane"
+       style="margin-left:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+  </div>
+</div>
+
+<!-- ===== Local save / Export ===== -->
+<div class="row" style="margin-top:12px">
+
 
 <!-- Chord Runner: hiển thị hợp âm đang phát -->
 <div class="row" style="margin-top:6px;align-items:center">
