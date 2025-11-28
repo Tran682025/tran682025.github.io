@@ -812,12 +812,21 @@ function initChordRunner(){
       t += step;
       i++;
     }
+  lyricsBox.value = lines.join("\n");
 
-    lyricsBox.value = lines.join("\n");
-    log(`✅ Đã auto fill ${lines.length} dòng hợp âm cho cả bài (pattern lặp, ${step}s / hợp âm).`);
+  // 👉 Báo cho Chord Runner biết lyrics đã đổi, để parse lại và chạy theo MP3
+  try {
+    const ev = new Event("input", { bubbles: true });
+    lyricsBox.dispatchEvent(ev);
+  } catch (e) {
+    // fallback cho trình duyệt cũ nếu cần
+    const ev = document.createEvent("Event");
+    ev.initEvent("input", true, false);
+    lyricsBox.dispatchEvent(ev);
+  }
 
-  });
-})();
+  log(`✅ Đã auto fill ${lines.length} dòng hợp âm cho cả bài (pattern lặp, ${step}s / hợp âm).`);
+});
 
 // === Focus Mode ===
 (function initFocusMode(){
