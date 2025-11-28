@@ -331,6 +331,7 @@ function collectSongData() {
     instrument: MK.state.instrument,
     lyrics: $id("lyrics")?.value || "",
     suggest: $id("suggest")?.value || "",
+    audioUrl: $id("audioUrl")?.value || "",   // V8-C: mang luôn link MP3 (nếu có)
   };
 }
 
@@ -342,28 +343,53 @@ function applySongData(data) {
   const lyricsEl = $id("lyrics");
   const suggestEl = $id("suggest");
   const badgeTrans = $id("transposeView");
+  const audioUrlEl = $id("audioUrl");
 
   if (titleEl) titleEl.value = data.title || "";
+
   if (selKey && data.key && KEY_NAMES.includes(data.key)) {
     selKey.value = data.key;
     MK.state.key = data.key;
   }
+
   if (typeof data.transpose === "number") {
     MK.state.transpose = data.transpose;
     if (badgeTrans) badgeTrans.textContent = String(data.transpose);
   }
+
   if (selProg && data.progression) {
     selProg.value = data.progression;
     MK.state.progression = data.progression;
   }
-  if (lyricsEl && typeof data.lyrics === "string") lyricsEl.value = data.lyrics;
-  if (suggestEl && typeof data.suggest === "string")
-    suggestEl.value = data.suggest;
 
-  if (data.instrument) MK.state.instrument = data.instrument;
+  if (lyricsEl && typeof data.lyrics === "string") {
+    lyricsEl.value = data.lyrics;
+  }
+
+  if (suggestEl && typeof data.suggest === "string") {
+    suggestEl.value = data.suggest;
+  }
+
+  if (data.instrument) {
+    MK.state.instrument = data.instrument;
+  }
+
+  // V8-C: nếu có audioUrl, tự điền vào ô và gán cho player (không auto-play)
+  if (data.audioUrl && typeof data.audioUrl === "string") {
+    if (audioUrlEl) audioUrlEl.value = data.audioUrl;
+    if (MK.audio) {
+      MK.audio.src = data.audioUrl;
+      MK.state.isPlaying = false;
+      MK.state.current = 0;
+      updateTimeUI();
+      updateProgressUI();
+      log("🎧 Đã gắn link MP3 từ bài chia sẻ:", data.audioUrl);
+    }
+  }
 
   updateSuggestions(false);
 }
+
 
 function saveSong() {
   const data = collectSongData();
@@ -404,13 +430,15 @@ function shareSong() {
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard
         .writeText(url)
-        .then(() => log("📎 Đã copy link share vào clipboard."))
-        .catch(() => log("🔗 Link share:", url));
+        .then(() =>
+          log("📎 Đã copy link chia sẻ bài học vào clipboard. Gửi cho bạn bè để mở đúng bài này.")
+        )
+        .catch(() => log("🔗 Link chia sẻ:", url));
     } else {
-      log("🔗 Link share:", url);
+      log("🔗 Link chia sẻ:", url);
     }
   } catch (e) {
-    log("❌ Lỗi tạo link share:", e.message || e);
+    log("❌ Lỗi tạo link chia sẻ:", e.message || e);
   }
 }
 
@@ -418,18 +446,25 @@ function tryLoadFromUrl() {
   const params = new URLSearchParams(window.location.search);
   const encoded = params.get("song");
   if (!encoded) return;
+
   try {
     const json = decodeURIComponent(encoded);
     const data = JSON.parse(decodeURIComponent(escape(atob(json))));
     applySongData(data);
-    log("🌐 Đã nạp bài từ link share.");
+    log("🌐 Đã nạp bài từ link chia sẻ (v8).");
+    if (data.title) {
+      log("🎵 Tiêu đề:", data.title);
+    }
+    if (data.audioUrl) {
+      log("🎧 Có đính kèm link MP3 trong bài chia sẻ.");
+    }
   } catch (e) {
     try {
       const data = JSON.parse(decodeURIComponent(escape(atob(encoded))));
       applySongData(data);
-      log("🌐 Đã nạp bài từ link share.");
+      log("🌐 Đã nạp bài từ link chia sẻ (fallback).");
     } catch {
-      log("❌ Không đọc được dữ liệu từ link share.");
+      log("❌ Không đọc được dữ liệu từ link chia sẻ.");
     }
   }
 }
