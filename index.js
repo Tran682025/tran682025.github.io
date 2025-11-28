@@ -618,3 +618,24 @@ window.addEventListener("DOMContentLoaded", () => {
     log("❌ Lỗi init index.js:", e.message || e);
   }
 });
+// === v7.7 Volume & Mute ===
+const audio = document.getElementById("audio");
+const vol = document.getElementById("vol");
+const btnMute = document.getElementById("btnMute");
+
+if (audio && vol) {
+  vol.addEventListener("input", () => {
+    audio.volume = Number(vol.value);
+    if (audio.volume > 0) {
+      audio.muted = false;
+      btnMute.textContent = "Mute";
+    }
+  });
+}
+
+if (audio && btnMute) {
+  btnMute.addEventListener("click", () => {
+    audio.muted = !audio.muted;
+    btnMute.textContent = audio.muted ? "Unmute" : "Mute";
+  });
+}
