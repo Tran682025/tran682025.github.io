@@ -126,7 +126,8 @@ textarea{min-height:160px;width:100%;resize:vertical}
 
 <div class="wrap">
   <div class="row" style="justify-content:space-between;align-items:flex-end;margin-bottom:10px">
-    <h1 class="title">PiChordify Kingdom</h1>
+  <span class="ver">v8.0 — Social</span>
+
     <div class="row">
       <span class="ver">v7.6</span>
       <img src="assets/musickingdom-golden-turtle.jpg" alt="Musickingdom Icon" class="mk-version-icon"/>
@@ -209,13 +210,15 @@ textarea{min-height:160px;width:100%;resize:vertical}
 </div>
 
       <!-- ===== Local save / Export ===== -->
-      <div class="row" style="margin-top:12px">
-        <button id="btnSave" class="btn ghost">Save</button>
-        <button id="btnLoadLocal" class="btn ghost">Load</button>
-        <button id="btnShare" class="btn">Share link</button>
-        <button id="btnPDF" class="btn ok">Export Lead Sheet (PDF)</button>
-        <span class="small">Lưu cục bộ (localStorage). “Share link” mã hoá trong URL.</span>
-      </div>
+    <div class="row" style="margin-top:12px">
+  <button id="btnSave" class="btn ghost">Lưu tạm (trình duyệt)</button>
+  <button id="btnLoadLocal" class="btn ghost">Mở bản đã lưu</button>
+  <button id="btnShare" class="btn">Chia sẻ bài học</button>
+  <button id="btnPDF" class="btn ok">Xuất Lead Sheet (PDF)</button>
+  <span class="small">
+    Dành cho học & chia sẻ: lưu tạm trên máy, hoặc tạo 1 đường link để gửi cho người khác mở lại đúng bài này.
+  </span>
+</div>
 
       <audio id="audio" preload="auto"></audio>
     </div>
