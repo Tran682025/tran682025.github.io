@@ -1,9 +1,39 @@
 // =========================
 // PiChordify Kingdom – index.js
-// Frontend logic: player, chords, save/share + Pi Login & Pi Pay (LIVE)
+// Frontend logic: helpers, log, player, chords, save/share + Pi Login & Pi Pay (LIVE)
 // =========================
 
-// ---- Global state ----
+// ===== Helpers & logger (tự lập, không phụ thuộc index.html) =====
+const $id = (id) => document.getElementById(id);
+
+function log(...args) {
+  try {
+    const now = new Date().toLocaleTimeString();
+    const line =
+      `[${now}] ` +
+      args
+        .map((x) => (typeof x === "string" ? x : JSON.stringify(x)))
+        .join(" ");
+
+    const box = document.getElementById("log");
+    if (box) {
+      box.value = (box.value ? box.value + "\n" : "") + line;
+      box.scrollTop = box.scrollHeight;
+    }
+    console.log(...args);
+  } catch (e) {
+    console.error("log error", e);
+  }
+}
+
+window.onerror = (m, s, l, c, e) => {
+  log("❌ JS error:", m, "@", s, ":", l, c, e && e.stack);
+};
+window.addEventListener("unhandledrejection", (ev) => {
+  log("❌ Promise error:", ev.reason && ev.reason.message || ev.reason);
+});
+
+// ===== Global state =====
 const MK = {
   audio: null,
   progressBar: null,
@@ -25,13 +55,10 @@ const MK = {
 };
 
 const STORAGE_KEY_SONG = "pichordify.currentSong";
-
-// Note names cho 12 cung
 const KEY_NAMES = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"];
-// Major scale steps (semitones)
 const MAJOR_STEPS = [0, 2, 4, 5, 7, 9, 11];
 
-// ===== Utils chung =====
+// ===== Utils =====
 function fmtTime(sec) {
   if (!isFinite(sec)) sec = 0;
   sec = Math.max(0, sec);
@@ -39,12 +66,9 @@ function fmtTime(sec) {
   const s = Math.floor(sec % 60);
   return `${m}:${String(s).padStart(2, "0")}`;
 }
-
 function clamp(v, min, max) {
   return Math.min(max, Math.max(min, v));
 }
-
-// Roman numeral -> degree (1..7) + isMinor
 function parseRoman(token) {
   const clean = (token || "").toLowerCase().replace(/[^iv]/g, "");
   const map = { i: 1, ii: 2, iii: 3, iv: 4, v: 5, vi: 6, vii: 7 };
@@ -52,13 +76,10 @@ function parseRoman(token) {
   const isMinor = token === token.toLowerCase();
   return { degree: deg, isMinor };
 }
-
-// Lấy index trong KEY_NAMES (fallback C)
 function keyIndex(name) {
   const idx = KEY_NAMES.indexOf(name);
   return idx >= 0 ? idx : 0;
 }
-
 function chordFromRoman(rootIndex, token) {
   const { degree, isMinor } = parseRoman(token);
   const step = MAJOR_STEPS[clamp(degree, 1, 7) - 1];
@@ -70,9 +91,9 @@ function chordFromRoman(rootIndex, token) {
 // 1) AUDIO PLAYER
 // =========================
 function initPlayer() {
-  MK.audio = document.getElementById("audio");
-  MK.progressBar = document.getElementById("bar");
-  MK.timeLabel = document.getElementById("time");
+  MK.audio = $id("audio");
+  MK.progressBar = $id("bar");
+  MK.timeLabel = $id("time");
 
   if (!MK.audio) {
     log("⚠️ Không tìm thấy thẻ <audio>.");
@@ -105,16 +126,15 @@ function initPlayer() {
     });
   }
 
-  // Nút chọn file
-  const pickBtn = document.getElementById("btnPick");
-  const fileInput = document.getElementById("filePick");
+  const pickBtn = $id("btnPick");
+  const fileInput = $id("filePick");
   if (pickBtn && fileInput) {
     pickBtn.addEventListener("click", () => fileInput.click());
     fileInput.addEventListener("change", () => {
       const file = fileInput.files && fileInput.files[0];
       if (!file) return;
       const url = URL.createObjectURL(file);
-      document.getElementById("audioUrl").value = "";
+      $id("audioUrl").value = "";
       MK.audio.src = url;
       MK.audio.play().catch(() => {});
       MK.state.isPlaying = true;
@@ -123,11 +143,10 @@ function initPlayer() {
     });
   }
 
-  // Nút load URL
-  const loadBtn = document.getElementById("btnLoad");
+  const loadBtn = $id("btnLoad");
   if (loadBtn) {
     loadBtn.addEventListener("click", () => {
-      const url = document.getElementById("audioUrl").value.trim();
+      const url = $id("audioUrl").value.trim();
       if (!url) {
         log("⚠️ Hãy nhập URL file MP3 trước.");
         return;
@@ -140,8 +159,7 @@ function initPlayer() {
     });
   }
 
-  // Play / Pause / Stop
-  document.getElementById("btnPlay")?.addEventListener("click", () => {
+  $id("btnPlay")?.addEventListener("click", () => {
     if (!MK.audio || !MK.audio.src) {
       log("⚠️ Chưa có file audio.");
       return;
@@ -151,13 +169,13 @@ function initPlayer() {
     updatePlayButtons();
   });
 
-  document.getElementById("btnPause")?.addEventListener("click", () => {
+  $id("btnPause")?.addEventListener("click", () => {
     MK.audio?.pause();
     MK.state.isPlaying = false;
     updatePlayButtons();
   });
 
-  document.getElementById("btnStop")?.addEventListener("click", () => {
+  $id("btnStop")?.addEventListener("click", () => {
     if (!MK.audio) return;
     MK.audio.pause();
     MK.audio.currentTime = 0;
@@ -174,16 +192,14 @@ function updateTimeUI() {
     MK.state.duration
   )}`;
 }
-
 function updateProgressUI() {
   if (!MK.progressBar || !MK.state.duration) return;
   const ratio = clamp(MK.state.current / MK.state.duration, 0, 1);
   MK.progressBar.style.width = `${ratio * 100}%`;
 }
-
 function updatePlayButtons() {
-  const playBtn = document.getElementById("btnPlay");
-  const pauseBtn = document.getElementById("btnPause");
+  const playBtn = $id("btnPlay");
+  const pauseBtn = $id("btnPause");
   if (!playBtn || !pauseBtn) return;
   if (MK.state.isPlaying) {
     playBtn.disabled = true;
@@ -198,11 +214,10 @@ function updatePlayButtons() {
 // 2) KEY / PROGRESSION / TRANSPOSE
 // =========================
 function initKeyAndProgression() {
-  const selKey = document.getElementById("selKey");
-  const selProg = document.getElementById("selProg");
-  const badgeTrans = document.getElementById("transposeView");
+  const selKey = $id("selKey");
+  const selProg = $id("selProg");
+  const badgeTrans = $id("transposeView");
 
-  // Populate keys
   if (selKey && !selKey.options.length) {
     KEY_NAMES.forEach((k) => {
       const opt = document.createElement("option");
@@ -230,15 +245,11 @@ function initKeyAndProgression() {
     });
   }
 
-  document.getElementById("btnUp")?.addEventListener("click", () =>
-    changeKey(+1)
-  );
-  document.getElementById("btnDown")?.addEventListener("click", () =>
-    changeKey(-1)
-  );
+  $id("btnUp")?.addEventListener("click", () => changeKey(+1));
+  $id("btnDown")?.addEventListener("click", () => changeKey(-1));
 
   function changeKey(delta) {
-    const sel = document.getElementById("selKey");
+    const sel = $id("selKey");
     if (!sel) return;
     const idx = keyIndex(MK.state.key);
     const newIdx = (idx + delta + KEY_NAMES.length) % KEY_NAMES.length;
@@ -249,21 +260,14 @@ function initKeyAndProgression() {
     updateSuggestions();
   }
 
-  // Instrument tabs
-  document.getElementById("tabPiano")?.addEventListener("click", () =>
-    setInstrument("piano")
-  );
-  document.getElementById("tabGuitar")?.addEventListener("click", () =>
-    setInstrument("guitar")
-  );
-  document.getElementById("tabUke")?.addEventListener("click", () =>
-    setInstrument("ukulele")
-  );
+  $id("tabPiano")?.addEventListener("click", () => setInstrument("piano"));
+  $id("tabGuitar")?.addEventListener("click", () => setInstrument("guitar"));
+  $id("tabUke")?.addEventListener("click", () => setInstrument("ukulele"));
 
   function setInstrument(name) {
     MK.state.instrument = name;
     ["tabPiano", "tabGuitar", "tabUke"].forEach((id) => {
-      const btn = document.getElementById(id);
+      const btn = $id(id);
       if (!btn) return;
       btn.classList.toggle(
         "active",
@@ -275,17 +279,13 @@ function initKeyAndProgression() {
     updateSuggestions();
   }
 
-  // Nút "Tự gợi ý hợp âm"
-  document.getElementById("btnSuggest")?.addEventListener("click", () => {
-    updateSuggestions(true);
-  });
+  $id("btnSuggest")?.addEventListener("click", () => updateSuggestions(true));
 
-  // Gợi ý lần đầu
   updateSuggestions(false);
 }
 
 function updateSuggestions(force = false) {
-  const suggestBox = document.getElementById("suggest");
+  const suggestBox = $id("suggest");
   if (!suggestBox) return;
 
   const keyName = MK.state.key || "C";
@@ -316,34 +316,32 @@ function updateSuggestions(force = false) {
 // 3) SAVE / LOAD / SHARE
 // =========================
 function initSaveLoadShare() {
-  document.getElementById("btnSave")?.addEventListener("click", saveSong);
-  document.getElementById("btnLoadLocal")?.addEventListener("click", loadSong);
-  document.getElementById("btnShare")?.addEventListener("click", shareSong);
-
-  // Tự load từ URL (nếu có ?song=...)
+  $id("btnSave")?.addEventListener("click", saveSong);
+  $id("btnLoadLocal")?.addEventListener("click", loadSong);
+  $id("btnShare")?.addEventListener("click", shareSong);
   tryLoadFromUrl();
 }
 
 function collectSongData() {
   return {
-    title: document.getElementById("title")?.value || "",
+    title: $id("title")?.value || "",
     key: MK.state.key,
     progression: MK.state.progression,
     transpose: MK.state.transpose,
     instrument: MK.state.instrument,
-    lyrics: document.getElementById("lyrics")?.value || "",
-    suggest: document.getElementById("suggest")?.value || "",
+    lyrics: $id("lyrics")?.value || "",
+    suggest: $id("suggest")?.value || "",
   };
 }
 
 function applySongData(data) {
   if (!data) return;
-  const titleEl = document.getElementById("title");
-  const selKey = document.getElementById("selKey");
-  const selProg = document.getElementById("selProg");
-  const lyricsEl = document.getElementById("lyrics");
-  const suggestEl = document.getElementById("suggest");
-  const badgeTrans = document.getElementById("transposeView");
+  const titleEl = $id("title");
+  const selKey = $id("selKey");
+  const selProg = $id("selProg");
+  const lyricsEl = $id("lyrics");
+  const suggestEl = $id("suggest");
+  const badgeTrans = $id("transposeView");
 
   if (titleEl) titleEl.value = data.title || "";
   if (selKey && data.key && KEY_NAMES.includes(data.key)) {
@@ -362,9 +360,7 @@ function applySongData(data) {
   if (suggestEl && typeof data.suggest === "string")
     suggestEl.value = data.suggest;
 
-  if (data.instrument) {
-    MK.state.instrument = data.instrument;
-  }
+  if (data.instrument) MK.state.instrument = data.instrument;
 
   updateSuggestions(false);
 }
@@ -432,7 +428,7 @@ function tryLoadFromUrl() {
       const data = JSON.parse(decodeURIComponent(escape(atob(encoded))));
       applySongData(data);
       log("🌐 Đã nạp bài từ link share.");
-    } catch (err) {
+    } catch {
       log("❌ Không đọc được dữ liệu từ link share.");
     }
   }
@@ -441,11 +437,9 @@ function tryLoadFromUrl() {
 // =========================
 // 4) PI SDK + PI PAY (LIVE)
 // =========================
-
 function initPiSection() {
-  // Backend URL từ localStorage, giống logic index.html
-  const backendInput = document.getElementById("txtBackend");
-  const backendNow = document.getElementById("backendNow");
+  const backendInput = $id("txtBackend");
+  const backendNow = $id("backendNow");
   const stored = (localStorage.getItem("backend") || "").trim();
 
   if (backendInput) backendInput.value = stored;
@@ -456,35 +450,25 @@ function initPiSection() {
 
   initPiSDK();
 
-  const btnLogin = document.getElementById("btnPiLogin");
-  const btnPay = document.getElementById("btnPiPay");
-  const btnCheck = document.getElementById("btnCheck");
+  $id("btnPiLogin")?.addEventListener("click", () => {
+    log("🟣 Pi Login button clicked");
+    piLogin();
+  });
 
-  if (btnLogin) {
-    btnLogin.addEventListener("click", () => {
-      log("🟣 Pi Login button clicked");
-      piLogin();
-    });
-  }
+  $id("btnPiPay")?.addEventListener("click", () => {
+    log("🟣 Pi Pay (LIVE) button clicked");
+    piPayLive(0.1);
+  });
 
-  if (btnPay) {
-    btnPay.addEventListener("click", () => {
-      log("🟣 Pi Pay (LIVE) button clicked");
-      piPayLive(0.1);
-    });
-  }
-
-  if (btnCheck) {
-    btnCheck.addEventListener("click", async () => {
-      log("🔍 Check Premium (demo).");
-      const auth = await piLogin();
-      if (auth && auth.user && auth.user.username) {
-        log("⭐ Premium check demo cho user:", auth.user.username);
-      } else {
-        log("⭐ Premium check demo cho user: unknown");
-      }
-    });
-  }
+  $id("btnCheck")?.addEventListener("click", async () => {
+    log("🔍 Check Premium (demo).");
+    const auth = await piLogin();
+    if (auth && auth.user && auth.user.username) {
+      log("⭐ Premium check demo cho user:", auth.user.username);
+    } else {
+      log("⭐ Premium check demo cho user: unknown");
+    }
+  });
 }
 
 function initPiSDK() {
@@ -583,14 +567,12 @@ async function piPayLive(amount) {
 
     log("➡️ Gửi dữ liệu tạo payment lên backend:", username, user_uid);
 
-    // 1) nhờ backend tạo payment trên Pi server
     const serverPayment = await backendCreatePayment(
       amount,
       username,
       user_uid
     );
 
-    // 2) chuẩn bị object cho Pi.createPayment
     const paymentDto = {
       amount: serverPayment.amount,
       memo: serverPayment.memo,
