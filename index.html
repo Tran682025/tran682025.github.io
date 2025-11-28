@@ -107,6 +107,25 @@ textarea{min-height:160px;width:100%;resize:vertical}
 @media(min-width:768px){
   .mk-version-icon{width:56px;}
 }
+  /* === Focus mode: tập trung vùng hợp âm / player === */
+body.focus-mode .mk-hero {
+  display: none;
+}
+
+body.focus-mode .rightBox {
+  display: none;
+}
+
+body.focus-mode .wrap {
+  max-width: 980px;
+}
+
+/* Cho ô Lời + gợi ý cao hơn chút khi focus */
+body.focus-mode #lyrics,
+body.focus-mode #suggest {
+  min-height: 220px;
+}
+
 </style>
 </head>
 
