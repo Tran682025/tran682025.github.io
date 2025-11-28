@@ -125,6 +125,41 @@ body.focus-mode #lyrics,
 body.focus-mode #suggest {
   min-height: 220px;
 }
+/* Hợp âm đang phát – pill hiển thị */
+#currentChord{
+  display:inline-block;
+  padding:4px 10px;
+  border-radius:999px;
+  background:#111827;
+  border:1px solid #374151;
+  min-width:60px;
+  font-weight:600;
+}
+
+/* Khi Focus mode: chữ to hơn chút cho dễ nhìn */
+body.focus-mode #currentChord{
+  font-size:17px;
+  padding:6px 14px;
+}
+
+/* Khi đổi chord thì pulse nhẹ */
+.chord-pulse{
+  animation:chordPulse .28s ease-out;
+}
+@keyframes chordPulse{
+  0%{transform:scale(1);}
+  50%{transform:scale(1.12);}
+  100%{transform:scale(1);}
+}
+
+/* Zoom nhẹ cho vùng luyện tập khi Focus mode */
+body.focus-mode textarea{
+  font-size:16px;
+  line-height:1.5;
+}
+body.focus-mode .title{
+  font-size:36px;
+}
 
 </style>
 </head>
@@ -147,7 +182,7 @@ body.focus-mode #suggest {
   <div class="row" style="justify-content:space-between;align-items:flex-end;margin-bottom:10px">
     <h1 class="title">PiChordify Kingdom</h1>
     <div class="row" style="align-items:center;gap:8px">
-      <span class="ver">v8.1 — Chord Runner</span>
+      <span class="ver">v8.2 — Chord Runner</span>
       <img src="assets/musickingdom-golden-turtle.jpg"
            alt="Musickingdom Icon"
            class="mk-version-icon"/>
