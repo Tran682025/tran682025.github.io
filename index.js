@@ -143,21 +143,36 @@ function initPlayer() {
     });
   }
 
-  const loadBtn = $id("btnLoad");
-  if (loadBtn) {
-    loadBtn.addEventListener("click", () => {
-      const url = $id("audioUrl").value.trim();
-      if (!url) {
-        log("⚠️ Hãy nhập URL file MP3 trước.");
-        return;
-      }
-      MK.audio.src = url;
-      MK.audio.play().catch(() => {});
-      MK.state.isPlaying = true;
-      log("🎧 Đã load MP3 từ URL:", url);
-      updatePlayButtons();
-    });
-  }
+ const loadBtn = $('#btnLoad');
+if (loadBtn) {
+  loadBtn.addEventListener('click', () => {
+    const urlInput = $('#audiourl');
+    if (!urlInput) return;
+
+    const url = urlInput.value.trim();
+    if (!url) {
+      log('⚠ Hãy nhập URL file MP3 trước.');
+      return;
+    }
+
+    // 1) Load & play như cũ
+    MK.audio.src = url;
+    MK.audio.play().catch(() => {});
+    MK.state.isPlaying = true;
+    log(`🎧 Đã load MP3 từ URL: ${url}`);
+    updatePlayButtons();
+
+    // 2) Auto điền "Tên bài" nếu đang để trống
+    const titleEl = $('#titleEl');
+    if (titleEl && !titleEl.value.trim()) {
+      let last = url.split('/').pop() || '';
+      last = last.split('?')[0].split('#')[0];
+      last = last.replace(/\.(mp3|wav|m4a|aac|flac)$/i, '');
+      titleEl.value = decodeURIComponent(last);
+    }
+  });
+}
+
 
   $id("btnPlay")?.addEventListener("click", () => {
     if (!MK.audio || !MK.audio.src) {
@@ -653,7 +668,7 @@ window.addEventListener("DOMContentLoaded", () => {
     log("❌ Lỗi init index.js:", e.message || e);
   }
 });
-// === v7.7 Volume & Mute ===
+// === v8.10 Volume & Mute ===
 const audio = document.getElementById("audio");
 const vol = document.getElementById("vol");
 const btnMute = document.getElementById("btnMute");
@@ -666,6 +681,17 @@ if (audio && vol) {
       btnMute.textContent = "Mute";
     }
   });
+}
+const titleEl = document.getElementById("titleEl");
+
+function setTitleFromName(name) {
+  if (!titleEl) return;
+  // bỏ đuôi .mp3, .wav...
+  const clean = name.replace(/\.(mp3|wav|m4a|aac|flac)$/i, "");
+  // chỉ auto-fill khi ô tiêu đề đang trống, để không đè tên Trẫm đã gõ tay
+  if (!titleEl.value.trim()) {
+    titleEl.value = decodeURIComponent(clean);
+  }
 }
 
 if (audio && btnMute) {
@@ -827,6 +853,29 @@ function initChordRunner(){
 
   log(`✅ Đã auto fill ${lines.length} dòng hợp âm cho cả bài (pattern lặp, ${step}s / hợp âm).`);
 });
+// === Load MP3 từ file chọn ===
+(function initFilePick(){
+  const fileInput = document.getElementById("filepick");
+  const audio     = document.getElementById("audio");
+  const titleEl   = document.getElementById("titleEl");
+
+  if (!fileInput || !audio) return;
+
+  fileInput.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    audio.src = URL.createObjectURL(file);
+
+    // 👉 auto điền tên bài (nếu chưa nhập)
+    if (titleEl && !titleEl.value.trim()) {
+      let clean = file.name.replace(/\.(mp3|wav|m4a|aac|flac)$/i, "");
+      titleEl.value = decodeURIComponent(clean);
+    }
+
+    log(`🎵 Đã load file MP3 local: ${file.name}`);
+  });
+})();
 
 // === Focus Mode ===
 (function initFocusMode(){
