@@ -1,9 +1,5 @@
-// PiChordify Kingdom — v8.3 "Chord Runner"
-// Frontend hoàn chỉnh: player + chord tools + Pi Login / Pay (LIVE)
-
-//////////////////////////////
-// 0. Helpers & global state
-//////////////////////////////
+// PiChordify Kingdom — v8.10 "Chord Runner"
+// Player + chord tools + Pi Login / Pay (LIVE)
 
 const MK = {
   audio: null,
@@ -17,7 +13,6 @@ function $(id) {
   return document.getElementById(id);
 }
 
-// Log ra khung Log bên phải
 function log(...args) {
   const box = $("log");
   if (!box) {
@@ -51,7 +46,6 @@ function initPlayer() {
   const btnPlay = $("btnPlay");
   const btnPause = $("btnPause");
   const btnStop = $("btnStop");
-
   const timeSpan = $("time");
   const bar = $("bar");
 
@@ -60,12 +54,19 @@ function initPlayer() {
 
   const urlInput = $("audiourl");
   const btnLoad = $("btnLoad");
-  const fileInput = $("filepick");
-  const btnPick = $("btnPick");
+
+  // === Nút chọn file local: chịu khó tìm input[type=file] cho chắc ===
+  const fileInput =
+    $("filepick") ||
+    document.querySelector('input[type="file"][accept*="audio"]') ||
+    document.querySelector('input[type="file"]');
+
+  const btnPick =
+    $("btnPick") ||
+    document.querySelector('button[id*="Pick"],button[id*="pick"]');
 
   const titleEl = $("titleEl");
 
-  // Cập nhật time + progress
   function updateTime() {
     if (!timeSpan || !bar) return;
 
@@ -76,12 +77,7 @@ function initPlayer() {
     const ss = (v) => String(v % 60).padStart(2, "0");
 
     timeSpan.textContent = `${mm(cur)}:${ss(cur)} / ${mm(dur)}:${ss(dur)}`;
-
-    if (dur > 0) {
-      bar.value = String((cur / dur) * 100);
-    } else {
-      bar.value = "0";
-    }
+    bar.value = dur > 0 ? String((cur / dur) * 100) : "0";
   }
 
   audio.addEventListener("timeupdate", updateTime);
@@ -94,7 +90,6 @@ function initPlayer() {
     updateTime();
   });
 
-  // Thanh kéo tiến độ
   if (bar) {
     bar.addEventListener("input", () => {
       if (!audio.duration || !isFinite(audio.duration)) return;
@@ -105,7 +100,6 @@ function initPlayer() {
     });
   }
 
-  // Volume + mute
   if (vol) {
     vol.addEventListener("input", () => {
       const v = Number(vol.value || "1");
@@ -124,7 +118,6 @@ function initPlayer() {
     });
   }
 
-  // Nút Play / Pause / Stop
   if (btnPlay) {
     btnPlay.addEventListener("click", () => {
       if (!audio.src) {
@@ -162,7 +155,6 @@ function initPlayer() {
     });
   }
 
-  // Helper: auto điền Title từ tên file
   function setTitleFromName(name) {
     if (!titleEl) return;
     const clean = name.replace(/\.(mp3|wav|m4a|aac|flac)$/i, "");
@@ -171,7 +163,6 @@ function initPlayer() {
     }
   }
 
-  // Chọn file local
   if (btnPick && fileInput) {
     btnPick.addEventListener("click", () => {
       fileInput.click();
@@ -180,19 +171,16 @@ function initPlayer() {
     fileInput.addEventListener("change", (e) => {
       const file = e.target.files[0];
       if (!file) return;
-
       const url = URL.createObjectURL(file);
       audio.src = url;
       MK.state.duration = 0;
       MK.state.isPlaying = false;
       updateTime();
-
       setTitleFromName(file.name);
       log(`📂 Đã load file MP3 local: ${file.name}.`);
     });
   }
 
-  // Load từ URL
   if (btnLoad && urlInput) {
     btnLoad.addEventListener("click", () => {
       const url = urlInput.value.trim();
@@ -206,7 +194,6 @@ function initPlayer() {
       MK.state.isPlaying = false;
       updateTime();
 
-      // Auto điền tên bài nếu đang trống
       if (titleEl && !titleEl.value.trim()) {
         let last = url.split("/").pop() || "";
         last = last.split("?")[0].split("#")[0];
@@ -225,7 +212,6 @@ function initPlayer() {
 // 2. Gợi ý hợp âm theo key
 //////////////////////////////
 
-// Các progression mẫu
 const MK_PROGS = {
   "I-V-vi-IV": ["I", "V", "vi", "IV"],
   "I-vi-IV-V": ["I", "vi", "IV", "V"],
@@ -243,16 +229,7 @@ const MK_KEYS = {
 function suggestChord(key, degree) {
   const scale = MK_KEYS[key];
   if (!scale) return "?";
-
-  const map = {
-    I: 0,
-    ii: 1,
-    iii: 2,
-    IV: 3,
-    V: 4,
-    vi: 5,
-    vii: 6,
-  };
+  const map = { I: 0, ii: 1, iii: 2, IV: 3, V: 4, vi: 5, vii: 6 };
   const idx = map[degree];
   if (idx == null) return "?";
   return scale[idx] || "?";
@@ -262,21 +239,23 @@ function initChordSuggest() {
   const keySel = $("selKey");
   const progSel = $("selProg");
   const suggestBox = $("suggest");
-  const btnSuggest = $("btnSuggest");
+  const btnSuggest =
+    $("btnSuggest") ||
+    document.querySelector('button[id*="Suggest"],button[id*="suggest"]');
 
-  if (!keySel || !progSel || !suggestBox || !btnSuggest) return;
+  if (!keySel || !progSel || !suggestBox || !btnSuggest) {
+    // Nếu HTML khác ID, thì thôi, khỏi lỗi
+    return;
+  }
 
   btnSuggest.addEventListener("click", () => {
     const key = keySel.value || "C";
     const progName = progSel.value || "I-V-vi-IV";
     const degrees = MK_PROGS[progName] || MK_PROGS["I-V-vi-IV"];
-
     const chords = degrees.map((deg) => suggestChord(key, deg));
     const lines = [];
-
     lines.push(`[Key ${key}]  ${progName}`);
     lines.push(chords.join("   |   "));
-
     suggestBox.value = lines.join("\n");
   });
 }
@@ -293,8 +272,18 @@ function parsePattern(str) {
 }
 
 function initAutoPatternFill() {
-  const patternInput = $("patternInput");
-  const btnFillAll = $("btnAutoPattern");
+  // cố gắng bắt mọi khả năng ID cho pattern + nút
+  const patternInput =
+    $("patternInput") ||
+    $("patternBox") ||
+    $("pattern") ||
+    document.querySelector("textarea[id*='pattern']");
+
+  const btnFillAll =
+    $("btnAutoPattern") ||
+    $("btnPattern") ||
+    document.querySelector("button[id*='Pattern'],button[id*='pattern']");
+
   const lyricsBox = $("lyrics");
 
   if (!patternInput || !btnFillAll || !lyricsBox || !MK.audio) return;
@@ -318,7 +307,6 @@ function initAutoPatternFill() {
       return;
     }
 
-    // Mặc định 4 giây/1 hợp âm (tạm thời)
     const step = 4;
     const lines = [];
     let t = 0;
@@ -344,13 +332,12 @@ function initAutoPatternFill() {
 }
 
 //////////////////////////////
-// 4. Chord Runner: theo dõi hợp âm
+// 4. Chord Runner
 //////////////////////////////
 
 function initChordRunner() {
   const lyricsBox = $("lyrics");
   const currentChordSpan = $("currentChord");
-
   if (!lyricsBox || !currentChordSpan || !MK.audio) return;
 
   let parsed = [];
@@ -374,26 +361,23 @@ function initChordRunner() {
     if (!parsed.length || MK.audio.paused) return;
     const now = Math.floor(MK.audio.currentTime || 0);
     let found = "";
-
     for (let i = parsed.length - 1; i >= 0; i--) {
       if (now >= parsed[i].time) {
         found = parsed[i].chord;
         break;
       }
     }
-
     currentChordSpan.textContent = found;
   }, 400);
 }
 
 //////////////////////////////
-// 5. Focus Mode (ẩn header + card phải)
+// 5. Focus Mode (vẫn giữ, nhưng chỉ ẩn header + card phải)
 //////////////////////////////
 
 function initFocusMode() {
   const btn = $("btnFocusMode");
   if (!btn) return;
-
   btn.addEventListener("click", () => {
     document.body.classList.toggle("focus-mode");
     const on = document.body.classList.contains("focus-mode");
@@ -402,7 +386,7 @@ function initFocusMode() {
 }
 
 //////////////////////////////
-// 6. Backend URL settings
+// 6. Backend settings
 //////////////////////////////
 
 function getBackend() {
@@ -420,13 +404,8 @@ function initBackendSettings() {
   const btnSaveBackend = $("btnSaveBackend");
   const span = $("backendNow");
 
-  if (span) {
-    span.textContent = getBackend() || "(none)";
-  }
-
-  if (backendInput) {
-    backendInput.value = getBackend();
-  }
+  if (span) span.textContent = getBackend() || "(none)";
+  if (backendInput) backendInput.value = getBackend();
 
   if (btnSaveBackend && backendInput) {
     btnSaveBackend.addEventListener("click", () => {
@@ -438,7 +417,7 @@ function initBackendSettings() {
 }
 
 //////////////////////////////
-// 7. Pi SDK: Login / Premium / Pay
+// 7. Pi SDK
 //////////////////////////////
 
 function initPiSdk() {
@@ -459,7 +438,6 @@ function initPiSdk() {
   const btnPremium = $("btnCheckPremium");
   const btnPayLive = $("btnPayLive");
 
-  // Login
   if (btnLogin) {
     btnLogin.addEventListener("click", async () => {
       try {
@@ -474,7 +452,6 @@ function initPiSdk() {
     });
   }
 
-  // Kiểm tra Premium
   if (btnPremium) {
     btnPremium.addEventListener("click", async () => {
       const backend = getBackend();
@@ -482,7 +459,6 @@ function initPiSdk() {
         log("⚠ Chưa cấu hình backend (dev). Hãy vào 'Cài đặt backend'.");
         return;
       }
-
       try {
         log("⏳ Đang gửi yêu cầu kiểm tra Premium...");
         const res = await fetch(backend + "/premium-status", {
@@ -497,7 +473,6 @@ function initPiSdk() {
     });
   }
 
-  // Pi Pay (LIVE)
   if (btnPayLive) {
     btnPayLive.addEventListener("click", async () => {
       const backend = getBackend();
@@ -505,7 +480,6 @@ function initPiSdk() {
         log("⚠ Chưa cấu hình backend (dev). Hãy vào 'Cài đặt backend'.");
         return;
       }
-
       try {
         log("⏳ Bắt đầu tạo thanh toán (LIVE)...");
         const amount = 0.1;
@@ -520,7 +494,6 @@ function initPiSdk() {
 
         log("📩 Pi.createPayment trả về:", payment);
 
-        // Gửi payment tới backend để approve
         const res = await fetch(backend + "/pay-live", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -549,7 +522,6 @@ window.addEventListener("DOMContentLoaded", () => {
     initFocusMode();
     initBackendSettings();
     initPiSdk();
-
     log("🎼 PiChordify Kingdom frontend (index.js) đã khởi động.");
   } catch (e) {
     console.error(e);
