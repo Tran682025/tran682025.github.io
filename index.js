@@ -674,3 +674,55 @@ if (audio && btnMute) {
     btnMute.textContent = audio.muted ? "Unmute" : "Mute";
   });
 }
+// === Chord Runner: theo dõi hợp âm đang phát ===
+(function initChordRunner(){
+  const lyricsBox = document.getElementById("lyrics");
+  const currentChordSpan = document.getElementById("currentChord");
+  if (!lyricsBox || !currentChordSpan) return;
+
+  let parsed = []; // mỗi phần tử: { time: giây, chord: "Em / D" }
+
+  function parseLyrics(){
+    parsed = [];
+    const lines = lyricsBox.value.split("\n");
+    for (let line of lines){
+      const m = line.match(/^(\d{1,2}):(\d{2})\s+(.*)$/);
+      if (!m) continue;
+      const t = Number(m[1]) * 60 + Number(m[2]);
+      const chord = m[3].trim();
+      parsed.push({ time: t, chord });
+    }
+  }
+
+  parseLyrics();
+  lyricsBox.addEventListener("input", parseLyrics);
+
+  const audio = document.getElementById("audio");
+  if (!audio) return;
+
+  setInterval(() => {
+    if (!parsed.length || audio.paused) return;
+    const now = Math.floor(audio.currentTime);
+    let found = "";
+
+    for (let i = parsed.length - 1; i >= 0; i--){
+      if (now >= parsed[i].time){
+        found = parsed[i].chord;
+        break;
+      }
+    }
+    currentChordSpan.textContent = found;
+  }, 400);
+})();
+// === Focus Mode ===
+(function initFocusMode(){
+  const btn = document.getElementById("btnFocusMode");
+  if (!btn) return;
+
+  btn.addEventListener("click", () => {
+    document.body.classList.toggle("focus-mode");
+    btn.textContent = document.body.classList.contains("focus-mode")
+      ? "Thoát chế độ tập trung"
+      : "Chế độ tập trung";
+  });
+})();
