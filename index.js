@@ -1,217 +1,442 @@
-// ===== consts / helpers
-const LS_USER = 'pchord.user';
-const LS_PREM = 'pchord.premium';
-const PREFIX  = 'pchord.project.';
-const TRASH   = 'pchord.trash.'; // soft delete
-const BACKEND_URL = " https://2c6dfe281a1b.ngrok-free.app";
+// =========================
+// PiChordify Kingdom – index.js
+// Logic cho player, hợp âm, save/load/share
+// =========================
 
-const $ = (s, r=document) => r.querySelector(s);
-const out = $('#out');
+// ---- Global state ----
+const MK = {
+  audio: null,
+  progressBar: null,
+  timeLabel: null,
+  state: {
+    isPlaying: false,
+    duration: 0,
+    current: 0,
+    transpose: 0,
+    key: "C",
+    progression: "I–V–vi–IV",
+    instrument: "piano",
+  },
+};
 
-const slug = s => (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-  .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+const STORAGE_KEY_SONG = "pichordify.currentSong";
 
-const currentId = () => $('#projIdEl')?.value?.trim() || localStorage.getItem('pchord.currId') || '';
-const setCurrentId = id => { localStorage.setItem('pchord.currId', id||''); if($('#projIdEl')) $('#projIdEl').value=id||''; uiRefresh(); };
-const toast = m => { out.textContent = m; console.log(m); };
+// Note names cho 12 cung
+const KEY_NAMES = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"];
+// Major scale steps (semitones)
+const MAJOR_STEPS = [0, 2, 4, 5, 7, 9, 11];
 
-// ===== auth / premium demo
-const getUser = () => { try{return JSON.parse(localStorage.getItem(LS_USER)||'null')}catch{return null} };
-const setUser = u => localStorage.setItem(LS_USER, JSON.stringify(u));
-const hasPrem = () => localStorage.getItem(LS_PREM) === '1';
-const setPrem = v => localStorage.setItem(LS_PREM, v?'1':'0');
-
-// ===== init
-document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('form').forEach(f=>f.addEventListener('submit',e=>e.preventDefault()));
-
-  $('#btnLogin')?.addEventListener('click', onLogin);
-  $('#btnLogout')?.addEventListener('click', onLogout);
-  $('#btnBuyPremium')?.addEventListener('click', onBuyPremium);
-
-  $('#btnSaveProject')?.addEventListener('click', onSaveProject);
-  $('#btnOpenLast')?.addEventListener('click', onOpenLast);
-  $('#btnList')?.addEventListener('click', onList);
-
-  $('#btnDelete')?.addEventListener('click', onDelete);
-  $('#btnTrash')?.addEventListener('click', onTrashList);
-  $('#btnRestore')?.addEventListener('click', onRestore);
-  $('#btnPurge')?.addEventListener('click', onPurge);
-
-  $('#btnExportSrt')?.addEventListener('click', onExportSrt);
-  $('#btnExportPdf')?.addEventListener('click', onExportPdf);
-
-  uiRefresh();
-});
-
-// ===== UI state
-function uiRefresh(){
-  const user = getUser();
-  const premium = hasPrem();
-  const hasId = !!currentId();
-
-  $('#premiumBadge')?.classList.toggle('hidden', !premium);
-  $('#btnBuyPremium')?.toggleAttribute('disabled', premium);
-  $('#btnLogin')?.classList.toggle('hidden', !!user);
-  $('#btnLogout')?.classList.toggle('hidden', !user);
-
-  ['#btnDelete','#btnRestore','#btnPurge'].forEach(sel => $(sel)?.toggleAttribute('disabled', !hasId));
-  $('#btnExportPdf')?.toggleAttribute('disabled', !premium);
-
-  $('#idTip')?.classList.toggle('hidden', hasId);
+// ===== Utils =====
+function fmtTime(sec) {
+  if (!isFinite(sec)) sec = 0;
+  sec = Math.max(0, sec);
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-// ===== Auth/Premium (thay bằng PiSDK sau)
-async function onLogin(){
-  // TODO: Pi.authenticate(...)
-  const fake = { username: 'Tranmarket', uid: 'uid_'+Date.now() };
-  setUser(fake);
-  toast(`Xin chào, ${fake.username}!`);
-  uiRefresh();
+function clamp(v, min, max) {
+  return Math.min(max, Math.max(min, v));
 }
-function onLogout(){
-  localStorage.removeItem(LS_USER);
-  setPrem(false);
-  toast('Đã đăng xuất.');
-  uiRefresh();
+
+// Lấy index trong KEY_NAMES (fallback C)
+function keyIndex(name) {
+  const idx = KEY_NAMES.indexOf(name);
+  return idx >= 0 ? idx : 0;
 }
-async function onBuyPremium(){
-  const u = getUser();
-  if (!u) { toast('Hãy đăng nhập trước.'); return; }
 
-  try {
-    // Bước 1 — gửi request tạo payment tới backend → PiPay popup
-    const res1 = await fetch(`${BACKEND_URL}/api/create-payment`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ amount: 1, username: u.username })
-    }).then(r => r.json());
+// Roman numeral -> degree (1..7) + isMinor
+function parseRoman(token) {
+  const clean = (token || "").toLowerCase().replace(/[^iv]/g, "");
+  const map = { i: 1, ii: 2, iii: 3, iv: 4, v: 5, vi: 6, vii: 7 };
+  const deg = map[clean] || 1;
+  const isMinor = token === token.toLowerCase();
+  return { degree: deg, isMinor };
+}
 
-    if (!res1 || !res1.payment) {
-      toast('Lỗi tạo thanh toán ❌');
+function chordFromRoman(rootIndex, token) {
+  const { degree, isMinor } = parseRoman(token);
+  const step = MAJOR_STEPS[clamp(degree, 1, 7) - 1];
+  const note = KEY_NAMES[(rootIndex + step) % 12];
+  return note + (isMinor ? "m" : "");
+}
+
+// ===== Player =====
+function initPlayer() {
+  MK.audio = document.getElementById("audio");
+  MK.progressBar = document.getElementById("bar");
+  MK.timeLabel = document.getElementById("time");
+
+  if (!MK.audio) {
+    log("⚠️ Không tìm thấy thẻ <audio>.");
+    return;
+  }
+
+  MK.audio.addEventListener("loadedmetadata", () => {
+    MK.state.duration = MK.audio.duration || 0;
+    updateTimeUI();
+  });
+
+  MK.audio.addEventListener("timeupdate", () => {
+    MK.state.current = MK.audio.currentTime || 0;
+    updateTimeUI();
+    updateProgressUI();
+  });
+
+  MK.audio.addEventListener("ended", () => {
+    MK.state.isPlaying = false;
+    updatePlayButtons();
+  });
+
+  const progress = document.querySelector(".progress");
+  if (progress) {
+    progress.addEventListener("click", (ev) => {
+      if (!MK.audio || !MK.state.duration) return;
+      const rect = progress.getBoundingClientRect();
+      const ratio = clamp((ev.clientX - rect.left) / rect.width, 0, 1);
+      MK.audio.currentTime = ratio * MK.state.duration;
+    });
+  }
+
+  // Nút chọn file
+  const pickBtn = document.getElementById("btnPick");
+  const fileInput = document.getElementById("filePick");
+  if (pickBtn && fileInput) {
+    pickBtn.addEventListener("click", () => fileInput.click());
+    fileInput.addEventListener("change", () => {
+      const file = fileInput.files && fileInput.files[0];
+      if (!file) return;
+      const url = URL.createObjectURL(file);
+      document.getElementById("audioUrl").value = "";
+      MK.audio.src = url;
+      MK.audio.play().catch(() => {});
+      MK.state.isPlaying = true;
+      log("🎧 Đã load file MP3 local:", file.name);
+      updatePlayButtons();
+    });
+  }
+
+  // Nút load URL
+  const loadBtn = document.getElementById("btnLoad");
+  if (loadBtn) {
+    loadBtn.addEventListener("click", () => {
+      const url = document.getElementById("audioUrl").value.trim();
+      if (!url) {
+        log("⚠️ Hãy nhập URL file MP3 trước.");
+        return;
+      }
+      MK.audio.src = url;
+      MK.audio.play().catch(() => {});
+      MK.state.isPlaying = true;
+      log("🎧 Đã load MP3 từ URL:", url);
+      updatePlayButtons();
+    });
+  }
+
+  // Play / Pause / Stop
+  document.getElementById("btnPlay")?.addEventListener("click", () => {
+    if (!MK.audio || !MK.audio.src) {
+      log("⚠️ Chưa có file audio.");
       return;
     }
+    MK.audio.play().catch((e) => log("❌ Lỗi play:", e.message || e));
+    MK.state.isPlaying = true;
+    updatePlayButtons();
+  });
 
-    const paymentId = res1.payment.identifier;
+  document.getElementById("btnPause")?.addEventListener("click", () => {
+    MK.audio?.pause();
+    MK.state.isPlaying = false;
+    updatePlayButtons();
+  });
 
-    toast('Đang chờ Pi xác nhận thanh toán 🟣...');
+  document.getElementById("btnStop")?.addEventListener("click", () => {
+    if (!MK.audio) return;
+    MK.audio.pause();
+    MK.audio.currentTime = 0;
+    MK.state.isPlaying = false;
+    updateTimeUI();
+    updateProgressUI();
+    updatePlayButtons();
+  });
+}
 
-    // Bước 2 — liên tục hỏi backend xem đã xác nhận chưa
-    const interval = setInterval(async () => {
-      const res2 = await fetch(`${BACKEND_URL}/api/complete-payment`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paymentId })
-      }).then(r => r.json());
+function updateTimeUI() {
+  if (!MK.timeLabel) return;
+  MK.timeLabel.textContent = `${fmtTime(MK.state.current)} / ${fmtTime(
+    MK.state.duration
+  )}`;
+}
 
-      if (res2.ok) {
-        clearInterval(interval);
-        setPrem(true);
-        toast('Thanh toán Premium thành công 🟣');
-        uiRefresh();
-      }
-    }, 2500);
-  } catch(err) {
-    console.error(err);
-    toast('Lỗi thanh toán ❌');
+function updateProgressUI() {
+  if (!MK.progressBar || !MK.state.duration) return;
+  const ratio = clamp(MK.state.current / MK.state.duration, 0, 1);
+  MK.progressBar.style.width = `${ratio * 100}%`;
+}
+
+function updatePlayButtons() {
+  const playBtn = document.getElementById("btnPlay");
+  const pauseBtn = document.getElementById("btnPause");
+  if (!playBtn || !pauseBtn) return;
+  if (MK.state.isPlaying) {
+    playBtn.disabled = true;
+    pauseBtn.disabled = false;
+  } else {
+    playBtn.disabled = false;
+    pauseBtn.disabled = true;
   }
 }
 
-// ===== Projects (localStorage demo)
-function read(id){ return JSON.parse(localStorage.getItem(PREFIX+id)||'null'); }
-function write(rec){ localStorage.setItem(PREFIX+rec.id, JSON.stringify(rec)); }
-function del(id){ const rec = read(id); if(rec){ localStorage.setItem(TRASH+id, JSON.stringify(rec)); localStorage.removeItem(PREFIX+id); } }
-function purge(id){ localStorage.removeItem(PREFIX+id); localStorage.removeItem(TRASH+id); }
+// ===== Key / Transpose / Progression =====
+function initKeyAndProgression() {
+  const selKey = document.getElementById("selKey");
+  const selProg = document.getElementById("selProg");
+  const badgeTrans = document.getElementById("transposeView");
 
-function onSaveProject(){
-  const title = $('#titleEl')?.value?.trim() || 'Untitled';
-  const raw   = $('#chartEl')?.value || '';
-  let id = currentId();
-  if(!id) id = `${slug(title)||'untitled'}-${Date.now().toString(36)}`;
-  const rec = { id, title, raw, ts: Date.now() };
-  write(rec);
-  setCurrentId(id);
-  localStorage.setItem('pchord.last', id);
-  toast(`Đã lưu: ${title}\nID: ${id}`);
-}
-function onOpenLast(){
-  const id = localStorage.getItem('pchord.last');
-  if(!id){ toast('Chưa có bản lưu nào.'); return; }
-  const rec = read(id); if(!rec){ toast('Không tìm thấy project.'); return; }
-  $('#titleEl').value = rec.title; $('#chartEl').value = rec.raw; setCurrentId(rec.id);
-  toast('Đã mở bản gần nhất.');
-}
-function onList(){
-  const keys = Object.keys(localStorage).filter(k=>k.startsWith(PREFIX));
-  if(!keys.length){ toast('Chưa có project nào.'); return; }
-  const list = keys.map(k=>JSON.parse(localStorage.getItem(k))).sort((a,b)=>b.ts-a.ts);
-  const pick = prompt('Chọn ID:\n'+list.map(x=>`${x.id} — ${x.title}`).join('\n'));
-  if(pick){ const rec = read(pick); if(rec){ $('#titleEl').value=rec.title; $('#chartEl').value=rec.raw; setCurrentId(rec.id); toast('Đã mở '+rec.title); } }
-}
-function onDelete(){
-  const id = currentId(); if(!id){ toast('Chưa có ID.'); return; }
-  del(id); setCurrentId('');
-  toast('Đã đưa vào Thùng rác.');
-}
-function onTrashList(){
-  const keys = Object.keys(localStorage).filter(k=>k.startsWith(TRASH));
-  if(!keys.length){ toast('Thùng rác trống.'); return; }
-  const list = keys.map(k=>JSON.parse(localStorage.getItem(k)));
-  toast('Trong thùng rác:\n'+list.map(x=>`${x.id} — ${x.title}`).join('\n'));
-}
-function onRestore(){
-  const id = currentId(); if(!id){ toast('Chưa có ID.'); return; }
-  const rec = JSON.parse(localStorage.getItem(TRASH+id)||'null');
-  if(!rec){ toast('Không có trong thùng rác.'); return; }
-  write(rec); localStorage.removeItem(TRASH+id);
-  toast('Đã khôi phục.');
-}
-function onPurge(){
-  const id = currentId(); if(!id){ toast('Chưa có ID.'); return; }
-  purge(id); setCurrentId('');
-  toast('Đã xoá vĩnh viễn.');
+  // Populate keys
+  if (selKey && !selKey.options.length) {
+    KEY_NAMES.forEach((k) => {
+      const opt = document.createElement("option");
+      opt.value = k;
+      opt.textContent = k;
+      selKey.appendChild(opt);
+    });
+    selKey.value = MK.state.key;
+  }
+
+  if (selKey) {
+    selKey.addEventListener("change", () => {
+      MK.state.key = selKey.value || "C";
+      MK.state.transpose = 0;
+      if (badgeTrans) badgeTrans.textContent = "0";
+      updateSuggestions();
+    });
+  }
+
+  if (selProg) {
+    MK.state.progression = selProg.value;
+    selProg.addEventListener("change", () => {
+      MK.state.progression = selProg.value;
+      updateSuggestions();
+    });
+  }
+
+  document.getElementById("btnUp")?.addEventListener("click", () =>
+    changeKey(+1)
+  );
+  document.getElementById("btnDown")?.addEventListener("click", () =>
+    changeKey(-1)
+  );
+
+  function changeKey(delta) {
+    const sel = document.getElementById("selKey");
+    if (!sel) return;
+    const idx = keyIndex(MK.state.key);
+    const newIdx = (idx + delta + KEY_NAMES.length) % KEY_NAMES.length;
+    MK.state.key = KEY_NAMES[newIdx];
+    MK.state.transpose += delta;
+    sel.value = MK.state.key;
+    if (badgeTrans) badgeTrans.textContent = String(MK.state.transpose);
+    updateSuggestions();
+  }
+
+  // Instrument tabs
+  document.getElementById("tabPiano")?.addEventListener("click", () =>
+    setInstrument("piano")
+  );
+  document.getElementById("tabGuitar")?.addEventListener("click", () =>
+    setInstrument("guitar")
+  );
+  document.getElementById("tabUke")?.addEventListener("click", () =>
+    setInstrument("ukulele")
+  );
+
+  function setInstrument(name) {
+    MK.state.instrument = name;
+    ["tabPiano", "tabGuitar", "tabUke"].forEach((id) => {
+      const btn = document.getElementById(id);
+      if (!btn) return;
+      btn.classList.toggle(
+        "active",
+        (id === "tabPiano" && name === "piano") ||
+          (id === "tabGuitar" && name === "guitar") ||
+          (id === "tabUke" && name === "ukulele")
+      );
+    });
+    updateSuggestions();
+  }
+
+  // Nút "Tự gợi ý hợp âm"
+  document.getElementById("btnSuggest")?.addEventListener("click", () => {
+    updateSuggestions(true);
+  });
+
+  // Gợi ý lần đầu
+  updateSuggestions(false);
 }
 
-// ===== Export
-function parseLines(text, dur){
-  const lines = (text||'').split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
-  return lines.map((line,i)=>({ i:i+1, t:i*dur, d:dur, text: line }));
-}
-function fmtTs(sec){
-  const s=Math.max(0,Math.floor(sec)), ms=Math.round((sec-s)*1000);
-  const hh=String(Math.floor(s/3600)).padStart(2,'0');
-  const mm=String(Math.floor((s%3600)/60)).padStart(2,'0');
-  const ss=String(s%60).padStart(2,'0'); const mss=String(ms).padStart(3,'0');
-  return `${hh}:${mm}:${ss},${mss}`;
-}
-function download(name, blob){
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); URL.revokeObjectURL(a.href);
+function updateSuggestions(force = false) {
+  const suggestBox = document.getElementById("suggest");
+  if (!suggestBox) return;
+
+  const keyName = MK.state.key || "C";
+  const rootIdx = keyIndex(keyName);
+  const pattern = MK.state.progression || "I–V–vi–IV";
+
+  const tokens = pattern.split(/[\-–]+/).map((t) => t.trim()).filter(Boolean);
+  if (!tokens.length) {
+    suggestBox.value = "";
+    return;
+  }
+
+  const chords = tokens.map((tk) => chordFromRoman(rootIdx, tk));
+  const line1 = `[Key ${keyName}]  ${pattern}`;
+  const line2 = chords.join("  |  ");
+
+  let extra = "";
+  if (force) {
+    extra = `\n\nGợi ý thêm: Chơi arpeggio trên ${MK.state.instrument === "guitar" ? "guitar" : "piano"} với nhịp 4/4, tempo vừa phải.`;
+  }
+
+  suggestBox.value = line1 + "\n" + line2 + extra;
 }
 
-async function onExportSrt(){
-  const title = $('#titleEl')?.value?.trim() || 'Chord Sheet';
-  const dur   = Number($('#durEl')?.value || 2);
-  const raw   = $('#chartEl')?.value || '';
-  const items = parseLines(raw, dur);
-  if(!items.length){ toast('Không thấy dòng hợp lệ.'); return; }
-  const srt = items.map((it,idx)=>`${idx+1}\n${fmtTs(it.t)} --> ${fmtTs(it.t+it.d)}\n${it.text}\n`).join('\n');
-  download(`${title}.srt`, new Blob([srt],{type:'text/plain;charset=utf-8'}));
-  toast('Đã tải .srt');
+// ===== Save / Load / Share =====
+function initSaveLoadShare() {
+  document.getElementById("btnSave")?.addEventListener("click", saveSong);
+  document.getElementById("btnLoadLocal")?.addEventListener("click", loadSong);
+  document.getElementById("btnShare")?.addEventListener("click", shareSong);
+
+  // Tự load từ URL (nếu có ?song=...)
+  tryLoadFromUrl();
 }
 
-async function onExportPdf(){
-  if(!hasPrem()){ toast('Tính năng PDF dành cho Premium.'); return; }
-  const title = $('#titleEl')?.value?.trim() || 'Chord Sheet';
-  const dur   = Number($('#durEl')?.value || 2);
-  const raw   = $('#chartEl')?.value || '';
-  const items = parseLines(raw, dur);
-  if(!items.length){ toast('Không thấy dòng hợp lệ.'); return; }
-
-  // Fallback client-only: tạo file HTML để in ra PDF
-  const html = `<!doctype html><meta charset="utf-8">
-  <style>body{font-family:system-ui,Arial;margin:24px} h1{margin:0 0 12px}</style>
-  <h1>${title}</h1>
-  <pre>${items.map(x=>x.text).join('\n')}</pre>`;
-  download(`${title}.pdf.html`, new Blob([html],{type:'application/octet-stream'}));
-  toast('Đã xuất bản in (mở file → In → Lưu PDF).');
+function collectSongData() {
+  return {
+    title: document.getElementById("title")?.value || "",
+    key: MK.state.key,
+    progression: MK.state.progression,
+    transpose: MK.state.transpose,
+    instrument: MK.state.instrument,
+    lyrics: document.getElementById("lyrics")?.value || "",
+    suggest: document.getElementById("suggest")?.value || "",
+  };
 }
+
+function applySongData(data) {
+  if (!data) return;
+  const titleEl = document.getElementById("title");
+  const selKey = document.getElementById("selKey");
+  const selProg = document.getElementById("selProg");
+  const lyricsEl = document.getElementById("lyrics");
+  const suggestEl = document.getElementById("suggest");
+  const badgeTrans = document.getElementById("transposeView");
+
+  if (titleEl) titleEl.value = data.title || "";
+  if (selKey && data.key && KEY_NAMES.includes(data.key)) {
+    selKey.value = data.key;
+    MK.state.key = data.key;
+  }
+  if (typeof data.transpose === "number") {
+    MK.state.transpose = data.transpose;
+    if (badgeTrans) badgeTrans.textContent = String(data.transpose);
+  }
+  if (selProg && data.progression) {
+    selProg.value = data.progression;
+    MK.state.progression = data.progression;
+  }
+  if (lyricsEl && typeof data.lyrics === "string") lyricsEl.value = data.lyrics;
+  if (suggestEl && typeof data.suggest === "string")
+    suggestEl.value = data.suggest;
+
+  if (data.instrument) {
+    MK.state.instrument = data.instrument;
+  }
+
+  updateSuggestions(false);
+}
+
+function saveSong() {
+  const data = collectSongData();
+  try {
+    localStorage.setItem(STORAGE_KEY_SONG, JSON.stringify(data));
+    log("✅ Đã lưu bài hiện tại vào trình duyệt.");
+  } catch (e) {
+    log("❌ Lỗi lưu localStorage:", e.message || e);
+  }
+}
+
+function loadSong() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_SONG);
+    if (!raw) {
+      log("⚠️ Chưa có bản lưu nào.");
+      return;
+    }
+    const data = JSON.parse(raw);
+    applySongData(data);
+    log("✅ Đã tải lại bài từ bản lưu.");
+  } catch (e) {
+    log("❌ Lỗi đọc bản lưu:", e.message || e);
+  }
+}
+
+function shareSong() {
+  const data = collectSongData();
+  try {
+    const json = JSON.stringify(data);
+    const b64 = btoa(unescape(encodeURIComponent(json)));
+    const url =
+      window.location.origin +
+      window.location.pathname +
+      "?song=" +
+      encodeURIComponent(b64);
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard
+        .writeText(url)
+        .then(() => log("📎 Đã copy link share vào clipboard."))
+        .catch(() => log("🔗 Link share:", url));
+    } else {
+      log("🔗 Link share:", url);
+    }
+  } catch (e) {
+    log("❌ Lỗi tạo link share:", e.message || e);
+  }
+}
+
+function tryLoadFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const encoded = params.get("song");
+  if (!encoded) return;
+  try {
+    const json = decodeURIComponent(encoded);
+    const data = JSON.parse(decodeURIComponent(escape(atob(json))));
+    applySongData(data);
+    log("🌐 Đã nạp bài từ link share.");
+  } catch (e) {
+    // fallback decode
+    try {
+      const data = JSON.parse(
+        decodeURIComponent(escape(atob(encoded)))
+      );
+      applySongData(data);
+      log("🌐 Đã nạp bài từ link share.");
+    } catch (err) {
+      log("❌ Không đọc được dữ liệu từ link share.");
+    }
+  }
+}
+
+// ===== Boot =====
+window.addEventListener("DOMContentLoaded", () => {
+  try {
+    initPlayer();
+    initKeyAndProgression();
+    initSaveLoadShare();
+    updatePlayButtons();
+    log("🎼 PiChordify Kingdom frontend (index.js) đã khởi động.");
+  } catch (e) {
+    log("❌ Lỗi init index.js:", e.message || e);
+  }
+});
