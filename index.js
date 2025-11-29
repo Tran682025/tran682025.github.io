@@ -13,6 +13,27 @@ function $(id) {
   return document.getElementById(id);
 }
 
+// === v8.1 – Auto fill "Tên bài" từ MP3 / URL ===
+const titleEl = document.getElementById("titleEl");
+
+function setTitleFromName(name) {
+  if (!titleEl) return;
+
+  // lấy phần sau dấu "/"
+  let clean = name.split("/").pop() || name;
+
+  // bỏ query string ?token=...
+  clean = clean.split("?")[0].split("#")[0];
+
+  // bỏ đuôi file audio
+  clean = clean.replace(/\.(mp3|wav|m4a|aac|flac)$/i, "");
+
+  // chỉ auto nếu ô đang TRỐNG
+  if (!titleEl.value.trim()) {
+    titleEl.value = decodeURI(clean);
+  }
+}
+
 function log(...args) {
   const box = $("log");
   if (!box) {
@@ -21,11 +42,11 @@ function log(...args) {
   }
   const now = new Date().toLocaleTimeString("vi-VN", { hour12: false });
   const line =
-    "[" + now + "] " +
+    "[" +
+    now +
+    "] " +
     args
-      .map((x) =>
-        typeof x === "string" ? x : JSON.stringify(x)
-      )
+      .map((x) => (typeof x === "string" ? x : JSON.stringify(x)))
       .join(" ");
   box.value = (box.value ? box.value + "\n" : "") + line;
   box.scrollTop = box.scrollHeight;
@@ -64,8 +85,6 @@ function initPlayer() {
   const btnPick =
     $("btnPick") ||
     document.querySelector('button[id*="Pick"],button[id*="pick"]');
-
-  const titleEl = $("titleEl");
 
   function updateTime() {
     if (!timeSpan || !bar) return;
@@ -155,14 +174,6 @@ function initPlayer() {
     });
   }
 
-  function setTitleFromName(name) {
-    if (!titleEl) return;
-    const clean = name.replace(/\.(mp3|wav|m4a|aac|flac)$/i, "");
-    if (!titleEl.value.trim()) {
-      titleEl.value = decodeURIComponent(clean);
-    }
-  }
-
   if (btnPick && fileInput) {
     btnPick.addEventListener("click", () => {
       fileInput.click();
@@ -176,7 +187,9 @@ function initPlayer() {
       MK.state.duration = 0;
       MK.state.isPlaying = false;
       updateTime();
+
       setTitleFromName(file.name);
+
       log(`📂 Đã load file MP3 local: ${file.name}.`);
     });
   }
@@ -194,12 +207,7 @@ function initPlayer() {
       MK.state.isPlaying = false;
       updateTime();
 
-      if (titleEl && !titleEl.value.trim()) {
-        let last = url.split("/").pop() || "";
-        last = last.split("?")[0].split("#")[0];
-        last = last.replace(/\.(mp3|wav|m4a|aac|flac)$/i, "");
-        titleEl.value = decodeURIComponent(last);
-      }
+      setTitleFromName(url);
 
       log(`🌐 Đã load MP3 từ URL: ${url}`);
     });
@@ -297,7 +305,9 @@ function initAutoPatternFill() {
 
     const duration = MK.audio.duration;
     if (!duration || !isFinite(duration)) {
-      log("⚠ Chưa đọc được thời lượng MP3. Hãy load file, bấm Play một lần rồi thử lại.");
+      log(
+        "⚠ Chưa đọc được thời lượng MP3. Hãy load file, bấm Play một lần rồi thử lại."
+      );
       return;
     }
 
@@ -327,7 +337,9 @@ function initAutoPatternFill() {
     }
 
     lyricsBox.value = lines.join("\n");
-    log(`✅ Đã auto fill ${lines.length} dòng hợp âm cho cả bài (pattern lặp, ${step}s / hợp âm).`);
+    log(
+      `✅ Đã auto fill ${lines.length} dòng hợp âm cho cả bài (pattern lặp, ${step}s / hợp âm).`
+    );
   });
 }
 
