@@ -1,383 +1,616 @@
-// index.js
-// Tranmarket Kingdom — ROOM V19.0
-// Frontend clean build
+// index.js — PiChordify Kingdom v20.0
+// Mục tiêu: player + log ổn định, Pi Login + Pi Pay (LIVE) rõ ràng.
 
 (function () {
-  const BACKEND_URL = "http://localhost:5000"; // chỉnh nếu anh dùng domain khác
-
   const state = {
     audio: null,
     isPlaying: false,
-    focusOn: false,
-    focusScrollTimer: null,
-    scrollSpeed: 1, // 1.0 = mặc định
-    backendHealthy: false,
+    isMuted: false,
+    lastVolume: 1,
+    currentUser: null,
+    backendUrl: "",
     piReady: false,
   };
 
-  // ===== Utils =====
-  function $(selector) {
-    return document.querySelector(selector);
+  // ========== Helpers ==========
+  function $(id) {
+    return document.getElementById(id);
   }
 
-  function formatTime(secondsRaw) {
-    if (isNaN(secondsRaw)) return "0:00";
-    const total = Math.floor(secondsRaw);
-    const minutes = Math.floor(total / 60);
-    const seconds = total % 60;
-    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  function formatTime(sec) {
+    if (!isFinite(sec) || sec < 0) sec = 0;
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   }
 
-  function setText(id, text) {
-    const el = document.getElementById(id);
-    if (el) el.textContent = text;
+  // ----- Log panel + console mirror -----
+  const logEl = $("log");
+  const btnLogToggle = $("btnLogToggle");
+
+  const originalConsole = {
+    log: console.log,
+    warn: console.warn,
+    error: console.error,
+  };
+
+  function appendLogLine(raw) {
+    if (!logEl) return;
+    const ts = new Date().toLocaleTimeString("vi-VN", { hour12: false });
+    const line = `[${ts}] ${raw}`;
+    logEl.value += (logEl.value ? "\n" : "") + line;
+    logEl.scrollTop = logEl.scrollHeight;
   }
 
-  // ===== Player =====
-  function initPlayer() {
-    const audio = $("#audio");
-    const playToggle = $("#play-toggle");
-    const playIcon = $("#play-icon");
-    const playLabel = $("#play-label");
-    const timeCurrent = $("#time-current");
-    const timeTotal = $("#time-total");
-    const progressBar = $("#progress-bar");
-    const rewind5 = $("#rewind-5");
-    const forward5 = $("#forward-5");
-
-    if (!audio || !playToggle || !progressBar) {
-      console.warn("Player elements missing, skip initPlayer");
-      return;
-    }
-
-    state.audio = audio;
-
-    audio.addEventListener("loadedmetadata", () => {
-      setText("time-total", formatTime(audio.duration));
-    });
-
-    audio.addEventListener("timeupdate", () => {
-      setText("time-current", formatTime(audio.currentTime));
-      const ratio = audio.duration ? audio.currentTime / audio.duration : 0;
-      progressBar.style.width = `${Math.min(100, ratio * 100)}%`;
-    });
-
-    audio.addEventListener("ended", () => {
-      state.isPlaying = false;
-      playIcon.textContent = "▶";
-      playLabel.textContent = "Play";
-    });
-
-    playToggle.addEventListener("click", () => {
-      if (!state.audio) return;
-      if (state.isPlaying) {
-        state.audio.pause();
-        state.isPlaying = false;
-        playIcon.textContent = "▶";
-        playLabel.textContent = "Play";
-      } else {
-        state.audio
-          .play()
-          .then(() => {
-            state.isPlaying = true;
-            playIcon.textContent = "⏸";
-            playLabel.textContent = "Pause";
-          })
-          .catch((err) => {
-            console.error("Play error:", err);
-            alert("Không play được demo audio. Kiểm tra lại file audio/demo.mp3.");
-          });
-      }
-    });
-
-    if (rewind5) {
-      rewind5.addEventListener("click", () => {
-        if (!state.audio) return;
-        state.audio.currentTime = Math.max(0, state.audio.currentTime - 5);
-      });
-    }
-
-    if (forward5) {
-      forward5.addEventListener("click", () => {
-        if (!state.audio) return;
-        const dur = state.audio.duration || 0;
-        state.audio.currentTime = Math.min(dur, state.audio.currentTime + 5);
-      });
-    }
-
-    // Space = play/pause
-    window.addEventListener("keydown", (e) => {
-      if (e.code === "Space" && !["INPUT", "TEXTAREA"].includes(e.target.tagName)) {
-        e.preventDefault();
-        playToggle.click();
-      }
-    });
-  }
-
-  // ===== Focus mode + auto scroll =====
-  function updateFocusUI() {
-    const body = document.body;
-    const focusDot = $("#focus-status-dot");
-    const focusText = $("#focus-status-text");
-    const badge = $("#focus-indicator");
-    const footerStatus = $("#chord-footer-status");
-
-    if (state.focusOn) {
-      body.classList.add("focus-on");
-      if (focusDot) focusDot.classList.add("focus-active");
-      if (focusText) focusText.textContent = "Bật · Chord sẽ tự cuộn nhẹ";
-      if (badge) badge.textContent = "Focus: ON";
-      if (footerStatus) footerStatus.textContent = "Focus mode · Auto scroll đang chạy";
-    } else {
-      body.classList.remove("focus-on");
-      if (focusDot) focusDot.classList.remove("focus-active");
-      if (focusText) focusText.textContent = "Tắt · Chord sẽ không tự cuộn";
-      if (badge) badge.textContent = "Focus: OFF";
-      if (footerStatus) footerStatus.textContent = "Ready · Focus đã tắt";
-    }
-  }
-
-  function startAutoScroll() {
-    const container = $("#chord-scroll");
-    if (!container) return;
-
-    stopAutoScroll();
-
-    const baseSpeed = 0.35; // pixel mỗi tick ở speed=1
-    const tickMs = 40;
-    const delta = baseSpeed * state.scrollSpeed;
-
-    state.focusScrollTimer = setInterval(() => {
-      const maxScroll = container.scrollHeight - container.clientHeight;
-      if (container.scrollTop >= maxScroll) return;
-      container.scrollTop = Math.min(maxScroll, container.scrollTop + delta);
-    }, tickMs);
-  }
-
-  function stopAutoScroll() {
-    if (state.focusScrollTimer) {
-      clearInterval(state.focusScrollTimer);
-      state.focusScrollTimer = null;
-    }
-  }
-
-  function toggleFocusMode() {
-    state.focusOn = !state.focusOn;
-    if (state.focusOn) {
-      startAutoScroll();
-    } else {
-      stopAutoScroll();
-    }
-    updateFocusUI();
-  }
-
-  function initFocusMode() {
-    const btn = $("#focus-toggle");
-    const slower = $("#scroll-slower");
-    const faster = $("#scroll-faster");
-    const label = $("#scroll-speed-label");
-    const scrollContainer = $("#chord-scroll");
-
-    if (!btn || !scrollContainer || !label) {
-      console.warn("Focus elements missing, skip initFocusMode");
-      return;
-    }
-
-    // Nút
-    btn.addEventListener("click", () => toggleFocusMode());
-
-    // Phím F bật/tắt focus
-    window.addEventListener("keydown", (e) => {
-      if (e.key.toLowerCase() === "f" && !["INPUT", "TEXTAREA"].includes(e.target.tagName)) {
-        e.preventDefault();
-        toggleFocusMode();
-      }
-    });
-
-    // Tăng/giảm tốc độ
-    function applySpeed() {
-      label.textContent = `Scroll: x${state.scrollSpeed.toFixed(1)}`;
-      if (state.focusOn) {
-        startAutoScroll();
-      }
-    }
-
-    if (slower) {
-      slower.addEventListener("click", () => {
-        state.scrollSpeed = Math.max(0.4, state.scrollSpeed - 0.2);
-        applySpeed();
-      });
-    }
-    if (faster) {
-      faster.addEventListener("click", () => {
-        state.scrollSpeed = Math.min(3.0, state.scrollSpeed + 0.2);
-        applySpeed();
-      });
-    }
-
-    // Mũi tên / PageUp / PageDown vẫn dùng cuộn tay
-    if (scrollContainer) {
-      scrollContainer.addEventListener("wheel", () => {
-        if (state.focusOn) {
-          // Người dùng cuộn tay thì giữ, không reset gì
-        }
-      });
-    }
-
-    updateFocusUI();
-  }
-
-  // ===== Backend =====
-  async function checkBackend() {
-    const statusText = $("#backend-status-text");
-    const versionInfo = $("#version-info");
+  function log(msg) {
+    appendLogLine(msg);
     try {
-      if (statusText) statusText.textContent = "Backend: checking…";
-      const res = await fetch(`${BACKEND_URL}/api/health`);
-      if (!res.ok) throw new Error("Non-200");
-      const data = await res.json();
-      state.backendHealthy = true;
-      if (statusText) statusText.textContent = "Backend: online";
-      if (versionInfo) {
-        versionInfo.textContent = `Index.js v19.0 · Backend: ${data.app || "OK"}`;
-      }
-    } catch (err) {
-      console.warn("Backend health error:", err.message);
-      state.backendHealthy = false;
-      if (statusText) statusText.textContent = "Backend: offline";
-      if (versionInfo) {
-        versionInfo.textContent = "Index.js v19.0 · Backend offline";
-      }
-    }
+      originalConsole.log("[PK20]", msg);
+    } catch (_) {}
   }
 
-  async function saveSession() {
-    const statusText = $("#session-status-text");
-    if (statusText) {
-      statusText.textContent = "Đang gửi session lên backend…";
-    }
+  function logWarn(msg) {
+    appendLogLine("⚠ " + msg);
+    try {
+      originalConsole.warn("[PK20]", msg);
+    } catch (_) {}
+  }
 
-    if (!state.backendHealthy) {
-      if (statusText) {
-        statusText.textContent = "Backend offline · Session chỉ lưu tạm trên máy";
-      }
-      alert("Backend chưa online. Hãy chạy server.js và load lại trang.");
-      return;
-    }
+  function logError(msg) {
+    appendLogLine("✘ " + msg);
+    try {
+      originalConsole.error("[PK20]", msg);
+    } catch (_) {}
+  }
 
-    const payload = {
-      focusOn: state.focusOn,
-      scrollSpeed: state.scrollSpeed,
-      trackTitle: $("#song-title")?.textContent || "Unknown",
-      createdFrom: "TranmarketKingdom ROOM V19.0",
-      ts: new Date().toISOString(),
+  // Mirror console.log / warn / error → log panel, nhưng dùng originalConsole nên không loop.
+  ["log", "warn", "error"].forEach((fn) => {
+    console[fn] = function (...args) {
+      try {
+        originalConsole[fn].apply(originalConsole, args);
+      } catch (_) {}
+      const text = args
+        .map((a) => {
+          if (a instanceof Error) return a.message;
+          if (typeof a === "object") {
+            try {
+              return JSON.stringify(a);
+            } catch (_) {
+              return String(a);
+            }
+          }
+          return String(a);
+        })
+        .join(" ");
+      appendLogLine(`console.${fn}: ${text}`);
     };
+  });
 
-    try {
-      const res = await fetch(`${BACKEND_URL}/api/sessions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.ok) throw new Error("Save failed");
-      if (statusText) {
-        statusText.textContent = "Đã lưu session lên backend ✔";
-      }
-    } catch (err) {
-      console.error("Save session error:", err);
-      if (statusText) {
-        statusText.textContent = "Lỗi khi lưu session lên backend";
-      }
-      alert("Không lưu được session. Kiểm tra lại backend hoặc BACKEND_URL.");
-    }
+  if (btnLogToggle && logEl) {
+    btnLogToggle.addEventListener("click", () => {
+      logEl.classList.toggle("log-max");
+      btnLogToggle.textContent = logEl.classList.contains("log-max")
+        ? "Thu nhỏ log"
+        : "Mở rộng log";
+    });
   }
 
-  function initBackendButtons() {
-    const saveBtn = $("#save-session-btn");
-    if (saveBtn) {
-      saveBtn.addEventListener("click", () => {
-        saveSession();
-      });
-    }
+  // ========== Focus mode ==========
+  function initFocusMode() {
+    const btn = $("btnFocusMode");
+    if (!btn) return;
+
+    btn.addEventListener("click", () => {
+      document.body.classList.toggle("focus-mode");
+      const on = document.body.classList.contains("focus-mode");
+      btn.textContent = on ? "Thoát chế độ tập trung" : "Chế độ tập trung";
+      log(on ? "Đã bật Focus mode." : "Đã tắt Focus mode.");
+    });
   }
 
-  // ===== Pi SDK =====
-  function initPi() {
-    const piBtn = $("#pi-login-btn");
-    const piStatus = $("#pi-status-text");
+  // ========== Instrument tabs ==========
+  function initInstrumentTabs() {
+    const tabs = ["tabPiano", "tabGuitar", "tabUke"]
+      .map((id) => $(id))
+      .filter(Boolean);
 
-    if (piStatus) {
-      piStatus.textContent = "Đang kiểm tra Pi SDK…";
-    }
+    tabs.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        tabs.forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        log("Nhạc cụ: " + btn.textContent.trim());
+      });
+    });
+  }
 
-    if (typeof window.Pi === "undefined") {
-      if (piStatus) {
-        piStatus.textContent = "Không tìm thấy Pi SDK · Chỉ chạy đầy đủ trong Pi Browser";
-      }
-      if (piBtn) {
-        piBtn.addEventListener("click", () => {
-          alert("Pi SDK chưa sẵn. Thử mở app này trong Pi Browser để login.");
-        });
-      }
-      return;
-    }
+  // ========== Chord suggest (đơn giản) ==========
+  const PROGRESSIONS = {
+    "I-V-vi-IV": ["I", "V", "vi", "IV"],
+    "I-vi-IV-V": ["I", "vi", "IV", "V"],
+    "I-IV-V": ["I", "IV", "V", "V"],
+  };
 
-    // Pi SDK có tồn tại
-    state.piReady = true;
+  const KEY_MAP = {
+    C: { I: "C", V: "G", vi: "Am", IV: "F" },
+    G: { I: "G", V: "D", vi: "Em", IV: "C" },
+    D: { I: "D", V: "A", vi: "Bm", IV: "G" },
+    A: { I: "A", V: "E", vi: "F#m", IV: "D" },
+    F: { I: "F", V: "C", vi: "Dm", IV: "Bb" },
+  };
 
-    if (piStatus) {
-      piStatus.textContent = "Pi SDK tìm thấy · Sẵn sàng thử login sandbox";
-    }
+  function initChordSuggest() {
+    const btn = $("btnSuggest");
+    const keySel = $("selKey");
+    const progSel = $("selProg");
+    const out = $("suggest");
 
-    if (!piBtn) return;
+    if (!btn || !keySel || !progSel || !out) return;
 
-    piBtn.addEventListener("click", async () => {
-      if (!window.Pi) {
-        alert("Pi SDK mất kết nối. Thử load lại trang trong Pi Browser.");
+    btn.addEventListener("click", () => {
+      const key = keySel.value || "C";
+      const progKey = progSel.value || "I-V-vi-IV";
+      const prog = PROGRESSIONS[progKey] || PROGRESSIONS["I-V-vi-IV"];
+      const map = KEY_MAP[key] || KEY_MAP["C"];
+
+      const chords = prog.map((deg) => map[deg] || deg);
+      const lines = [
+        `Key: ${key}`,
+        `Tiến trình: ${progKey}`,
+        "",
+        "[Verse]",
+        chords.join("  /  "),
+        "",
+        "[Chorus]",
+        chords.slice().reverse().join("  /  "),
+      ];
+
+      out.value = lines.join("\n");
+      out.scrollTop = 0;
+      log("Đã gợi ý hợp âm cho key " + key + " — " + progKey);
+    });
+  }
+
+  // ========== Auto pattern fill ==========
+  function initAutoPatternFill() {
+    const patternInput = $("patternInput");
+    const btn = $("btnAutoPattern");
+    const lyrics = $("lyrics");
+    const audio = $("audio");
+
+    if (!patternInput || !btn || !lyrics || !audio) return;
+
+    btn.addEventListener("click", () => {
+      const patternRaw = (patternInput.value || "").trim();
+      if (!patternRaw) {
+        alert("Điền pattern hợp âm trước đã.");
         return;
       }
 
-      try {
-        // Nhớ thay "YOUR_API_KEY_HERE" bằng key app thực tế trong môi trường Pi
-        window.Pi.init({
-          version: "2.0",
-          sandbox: true,
-        });
-
-        const scopes = ["username", "payments"];
-        const authPromise = window.Pi.authenticate(scopes, onIncompletePaymentFound);
-
-        const auth = await authPromise;
-        console.log("Pi auth result:", auth);
-
-        if (piStatus) {
-          piStatus.textContent = `Đăng nhập Pi: ${auth.user.username}`;
-        }
-      } catch (err) {
-        console.error("Pi login error:", err);
-        if (piStatus) {
-          piStatus.textContent = "Lỗi Pi login (sandbox)";
-        }
-        alert("Pi login sandbox lỗi. Xem console để debug chi tiết.");
+      const tokens = patternRaw
+        .split(/[|\s]+/)
+        .map((t) => t.trim())
+        .filter(Boolean);
+      if (!tokens.length) {
+        alert("Pattern không hợp lệ.");
+        return;
       }
+
+      const duration = audio.duration || 180; // mặc định 3 phút
+      const step = duration / tokens.length;
+
+      const lines = tokens.map((ch, i) => {
+        const t = formatTime(step * i);
+        return `${t}   ${ch}`;
+      });
+
+      lyrics.value = lines.join("\n");
+      lyrics.scrollTop = 0;
+      log("Đã auto-fill " + tokens.length + " hợp âm theo pattern.");
     });
   }
 
+  // ========== Audio player ==========
+  function initAudioPlayer() {
+    const audio = $("audio");
+    const urlInput = $("audiourl");
+    const filePick = $("filepick");
+    const btnPick = $("btnPick");
+    const btnLoad = $("btnLoad");
+    const btnPlay = $("btnPlay");
+    const btnPause = $("btnPause");
+    const btnStop = $("btnStop");
+    const timeLabel = $("time");
+    const bar = $("bar");
+    const vol = $("vol");
+    const btnMute = $("btnMute");
+    const currentChord = $("currentChord");
+    const lyrics = $("lyrics");
+
+    if (!audio) return;
+    state.audio = audio;
+
+    function updateTime() {
+      if (!timeLabel) return;
+      const cur = audio.currentTime || 0;
+      const dur = audio.duration || 0;
+      timeLabel.textContent = `${formatTime(cur)} / ${formatTime(dur)}`;
+      if (bar && dur > 0) {
+        bar.value = ((cur / dur) * 100).toFixed(1);
+      }
+      // Chord runner đơn giản: quét lyrics tìm timestamp <= cur gần nhất
+      if (lyrics && currentChord) {
+        const text = lyrics.value || "";
+        const lines = text.split(/\r?\n/);
+        let found = "";
+        for (const line of lines) {
+          const m = line.match(/^(\d{2}:\d{2})\s+(.*)$/);
+          if (!m) continue;
+          const t = m[1];
+          const rest = m[2];
+          const parts = t.split(":");
+          const sec = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+          if (sec <= cur + 0.25) {
+            found = rest.trim();
+          } else {
+            break;
+          }
+        }
+        if (found) {
+          currentChord.textContent = found;
+          currentChord.classList.remove("chord-pulse");
+          void currentChord.offsetWidth;
+          currentChord.classList.add("chord-pulse");
+        }
+      }
+    }
+
+    audio.addEventListener("timeupdate", updateTime);
+    audio.addEventListener("loadedmetadata", updateTime);
+    audio.addEventListener("ended", () => {
+      state.isPlaying = false;
+      updateTime();
+      log("Track đã kết thúc.");
+    });
+
+    if (btnPick && filePick) {
+      btnPick.addEventListener("click", () => filePick.click());
+      filePick.addEventListener("change", () => {
+        if (!filePick.files || !filePick.files[0]) return;
+        const file = filePick.files[0];
+        const url = URL.createObjectURL(file);
+        audio.src = url;
+        if (urlInput) urlInput.value = file.name;
+        log("Đã chọn file local: " + file.name);
+      });
+    }
+
+    if (btnLoad && urlInput) {
+      btnLoad.addEventListener("click", () => {
+        const url = (urlInput.value || "").trim();
+        if (!url) {
+          alert("Nhập URL MP3 trước đã.");
+          return;
+        }
+        audio.src = url;
+        audio.load();
+        log("Đã load audio từ URL.");
+      });
+    }
+
+    if (btnPlay) {
+      btnPlay.addEventListener("click", () => {
+        if (!audio.src) {
+          alert("Chưa có file MP3. Chọn file hoặc nhập URL.");
+          return;
+        }
+        audio
+          .play()
+          .then(() => {
+            state.isPlaying = true;
+            log("Play.");
+          })
+          .catch((err) => {
+            logError("Play lỗi: " + (err && err.message));
+          });
+      });
+    }
+
+    if (btnPause) {
+      btnPause.addEventListener("click", () => {
+        audio.pause();
+        state.isPlaying = false;
+        log("Pause.");
+      });
+    }
+
+    if (btnStop) {
+      btnStop.addEventListener("click", () => {
+        audio.pause();
+        audio.currentTime = 0;
+        state.isPlaying = false;
+        updateTime();
+        log("Stop.");
+      });
+    }
+
+    if (bar) {
+      bar.addEventListener("input", () => {
+        const v = parseFloat(bar.value) || 0;
+        const dur = audio.duration || 0;
+        audio.currentTime = (dur * v) / 100;
+        updateTime();
+      });
+    }
+
+    if (vol) {
+      vol.addEventListener("input", () => {
+        const v = parseFloat(vol.value);
+        audio.volume = v;
+        if (v > 0) {
+          state.lastVolume = v;
+          state.isMuted = false;
+          if (btnMute) btnMute.textContent = "Mute";
+        }
+      });
+    }
+
+    if (btnMute && vol) {
+      btnMute.addEventListener("click", () => {
+        if (!state.isMuted) {
+          state.lastVolume = vol.value;
+          vol.value = 0;
+          audio.volume = 0;
+          state.isMuted = true;
+          btnMute.textContent = "Unmute";
+          log("Mute.");
+        } else {
+          const v = parseFloat(state.lastVolume || "1") || 1;
+          vol.value = v;
+          audio.volume = v;
+          state.isMuted = false;
+          btnMute.textContent = "Mute";
+          log("Unmute.");
+        }
+      });
+    }
+
+    updateTime();
+    log("Player đã khởi động.");
+  }
+
+  // ========== Local save (rất đơn giản) ==========
+  function initLocalSave() {
+    const btnSave = $("btnSave");
+    const btnLoadLocal = $("btnLoadLocal");
+    const lyrics = $("lyrics");
+    const suggest = $("suggest");
+    const titleEl = $("titleEl");
+
+    if (btnSave) {
+      btnSave.addEventListener("click", () => {
+        const payload = {
+          title: titleEl ? titleEl.value : "",
+          lyrics: lyrics ? lyrics.value : "",
+          suggest: suggest ? suggest.value : "",
+        };
+        localStorage.setItem("pk20-song", JSON.stringify(payload));
+        log("Đã lưu tạm vào trình duyệt.");
+      });
+    }
+
+    if (btnLoadLocal) {
+      btnLoadLocal.addEventListener("click", () => {
+        const raw = localStorage.getItem("pk20-song");
+        if (!raw) {
+          alert("Chưa có bản lưu nào.");
+          return;
+        }
+        try {
+          const payload = JSON.parse(raw);
+          if (titleEl) titleEl.value = payload.title || "";
+          if (lyrics) lyrics.value = payload.lyrics || "";
+          if (suggest) suggest.value = payload.suggest || "";
+          log("Đã load lại bản lưu.");
+        } catch (e) {
+          logError("Load local lỗi: " + e.message);
+        }
+      });
+    }
+  }
+
+  // ========== Backend config ==========
+  function initBackendConfig() {
+    const input = $("backendUrl");
+    const btn = $("btnSaveBackend");
+    const span = $("backendNow");
+
+    const saved = localStorage.getItem("backend") || "";
+    state.backendUrl = saved;
+    if (input) input.value = saved;
+    if (span) span.textContent = saved || "(none)";
+
+    if (btn && input) {
+      btn.addEventListener("click", () => {
+        const url = (input.value || "").trim();
+        state.backendUrl = url;
+        localStorage.setItem("backend", url);
+        if (span) span.textContent = url || "(none)";
+        log("Đã lưu backend: " + (url || "(none)"));
+      });
+    }
+  }
+
+  async function postBackend(path, body) {
+    if (!state.backendUrl) {
+      logWarn("Chưa cấu hình backend; bỏ qua " + path);
+      return { ok: false, error: "No backend" };
+    }
+    const url = state.backendUrl.replace(/\/+$/, "") + path;
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body || {}),
+      });
+      const data = await res.json().catch(() => ({}));
+      log("Backend " + path + " status " + res.status);
+      return { ok: res.ok, data };
+    } catch (e) {
+      logError("Gọi backend lỗi: " + e.message);
+      return { ok: false, error: e.message };
+    }
+  }
+
+  // ========== Pi SDK (LIVE) ==========
+  function initPiSdk() {
+    const btnLogin = $("btnPiLogin");
+    const btnPay = $("btnPayLive");
+    const btnCheckPremium = $("btnCheckPremium");
+
+    if (typeof window.Pi === "undefined") {
+      logWarn("Không tìm thấy Pi SDK. Mở app trong Pi Browser để dùng Pi Login / Pay.");
+      if (btnLogin) {
+        btnLogin.addEventListener("click", () => {
+          alert("Không có Pi SDK. Thử mở trong Pi Browser.");
+        });
+      }
+      if (btnPay) {
+        btnPay.addEventListener("click", () => {
+          alert("Không có Pi SDK nên không test được Pi Payment.");
+        });
+      }
+      if (btnCheckPremium) {
+        btnCheckPremium.addEventListener("click", () => {
+          alert("Không có Pi SDK. Cần mở trong Pi Browser.");
+        });
+      }
+      return;
+    }
+
+    const Pi = window.Pi;
+    try {
+      Pi.init({ version: "2.0", sandbox: false });
+      state.piReady = true;
+      log("Pi SDK initialized (LIVE).");
+    } catch (e) {
+      state.piReady = false;
+      logError("Pi SDK init lỗi: " + e.message);
+    }
+
+    async function handleLogin() {
+      if (!state.piReady) {
+        logWarn("Pi SDK chưa sẵn, không login được.");
+        return;
+      }
+      log("Đang login với Pi...");
+      try {
+        const scopes = ["username", "payments"];
+        const auth = await Pi.authenticate(scopes, onIncompletePaymentFound);
+        state.currentUser = auth.user;
+        log("Login thành công. " + auth.user.username);
+      } catch (e) {
+        logError("Pi login lỗi: " + e.message);
+        alert("Pi login lỗi. Xem log để chi tiết.");
+      }
+    }
+
+    async function handleCheckPremium() {
+      if (!state.currentUser) {
+        alert("Đăng nhập Pi trước đã.");
+        return;
+      }
+      const res = await postBackend("/premium/check", {
+        uid: state.currentUser.uid,
+        username: state.currentUser.username,
+      });
+      if (!res.ok) {
+        alert("Không kiểm tra được premium. Xem log.");
+        return;
+      }
+      const status = res.data && res.data.status;
+      log("Premium status: " + status);
+      alert("Premium: " + status);
+    }
+
+    async function handlePayLive() {
+      if (!state.currentUser) {
+        alert("Đăng nhập Pi trước đã.");
+        return;
+      }
+      if (!state.backendUrl) {
+        if (!confirm("Chưa cấu hình backend. Vẫn tạo payment (sẽ không approve/complete được)?")) {
+          return;
+        }
+      }
+
+      try {
+        log("Bắt đầu tạo payment LIVE 1 Pi...");
+        const paymentData = {
+          amount: "1",
+          memo: "PiChordify Kingdom premium demo",
+          metadata: {
+            app: "PiChordifyKingdom",
+            version: "20.0",
+          },
+        };
+
+        const callbacks = {
+          onReadyForServerApproval: async (paymentId) => {
+            log("onReadyForServerApproval: " + paymentId);
+            await postBackend("/payments/approve", {
+              paymentId,
+              user: state.currentUser,
+            });
+          },
+          onReadyForServerCompletion: async (paymentId, txid) => {
+            log("onReadyForServerCompletion: " + paymentId + " txid=" + txid);
+            await postBackend("/payments/complete", {
+              paymentId,
+              txid,
+              user: state.currentUser,
+            });
+          },
+          onCancel: (paymentId) => {
+            logWarn("Payment bị huỷ: " + paymentId);
+          },
+          onError: (error, payment) => {
+            logError("Pi.createPayment error: " + (error && error.message));
+            if (payment) {
+              log("Payment object (error): " + JSON.stringify(payment));
+            }
+          },
+        };
+
+        const payment = await Pi.createPayment(paymentData, callbacks);
+        log("✅ Pi.createPayment trả về: " + JSON.stringify(payment));
+      } catch (e) {
+        logError("✘ x payment (LIVE) lỗi: " + (e.message || e));
+        alert("Payment lỗi. Xem log.");
+      }
+    }
+
+    if (btnLogin) btnLogin.addEventListener("click", handleLogin);
+    if (btnCheckPremium) btnCheckPremium.addEventListener("click", handleCheckPremium);
+    if (btnPay) btnPay.addEventListener("click", handlePayLive);
+  }
+
   function onIncompletePaymentFound(payment) {
-    console.log("Incomplete Pi payment found:", payment);
-    // Chỗ này sau anh nối backend để complete/cancel payment
+    logWarn("Có payment chưa hoàn tất: " + JSON.stringify(payment));
+    // Sau này có thể gọi backend để sync lại.
   }
 
-  // ===== Init tổng =====
-  function initApp() {
-    initPlayer();
+  // ========== Init ==========
+  function init() {
+    log("PiChordify Kingdom frontend (index.js v20.0) đã khởi động.");
     initFocusMode();
-    initBackendButtons();
-    checkBackend();
-    initPi();
+    initInstrumentTabs();
+    initChordSuggest();
+    initAutoPatternFill();
+    initAudioPlayer();
+    initLocalSave();
+    initBackendConfig();
+    initPiSdk();
   }
 
-  // Run
-  window.addEventListener("DOMContentLoaded", initApp);
+  document.addEventListener("DOMContentLoaded", init);
 })();
