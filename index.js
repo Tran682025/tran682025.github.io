@@ -382,6 +382,20 @@ function initChordRunner() {
       parsed.push({ time: t, chord: chord });
     }
   }
+//////////////////////////////
+// 5.bis. Log panel toggle
+//////////////////////////////
+
+function initLogPanel() {
+  var logBox = $("log");
+  var btn = $("btnLogToggle");
+  if (!logBox || !btn) return;
+
+  btn.addEventListener("click", function () {
+    var isMax = logBox.classList.toggle("log-max");
+    btn.textContent = isMax ? "Thu nhỏ log" : "Mở rộng log";
+  });
+}
 
   lyricsBox.addEventListener("input", parseLyrics);
   parseLyrics();
@@ -568,6 +582,7 @@ window.addEventListener("DOMContentLoaded", function () {
     initChordRunner();
     initBackendSettings();
     initPiSdk();
+    initLogPanel();
     log("🎼 PiChordify Kingdom frontend (index.js) đã khởi động.");
   } catch (e) {
     console.error(e);
