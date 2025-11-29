@@ -38,6 +38,17 @@
         width:100%;
       }
     }
+/* Log box có thể kéo dãn + mode fullscreen */
+#log{
+  resize:vertical;
+  min-height:160px;
+  max-height:60vh;
+}
+
+/* Khi bật chế độ log-max, chiều cao chiếm gần full màn */
+.log-max{
+  height:60vh !important;
+}
 
     .card{
       background:var(--panel);
@@ -431,12 +442,15 @@
 </script>
 
       <div style="margin-top:12px">
-        <div class="small">Log</div>
-        <textarea id="log" class="mono" style="height:260px"></textarea>
-        <div class="small">Console mirror (copy/paste được)</div>
-      </div>
-    </div>
+  <div class="row" style="justify-content:space-between;align-items:center">
+    <div class="small">Log</div>
+    <button id="btnLogToggle" class="btn ghost" style="padding:4px 10px;font-size:11px">
+      Mở rộng log
+    </button>
   </div>
+  <textarea id="log" class="mono" style="height:260px"></textarea>
+  <div class="small">Console mirror (copy/paste được) – có thể kéo dãn hoặc bấm “Mở rộng log”.</div>
+</div>
 
   <div class="small" style="margin-top:10px">
     © PiChordify Kingdom — Hackathon demo “có nhạc thật”
