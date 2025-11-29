@@ -1,616 +1,587 @@
-// index.js — PiChordify Kingdom v20.0
-// Mục tiêu: player + log ổn định, Pi Login + Pi Pay (LIVE) rõ ràng.
+// PiChordify Kingdom — v20.0 "Chord Runner LIVE"
+// Player + chord tools + Pi Login / Pay (LIVE)
+// BẢN TƯƠNG THÍCH PI BROWSER (KHÔNG DÙNG OPTIONAL CHAINING)
 
-(function () {
-  const state = {
-    audio: null,
+const MK = {
+  audio: null,
+  state: {
     isPlaying: false,
-    isMuted: false,
-    lastVolume: 1,
-    currentUser: null,
-    backendUrl: "",
-    piReady: false,
-  };
+    duration: 0,
+    user: null,
+  },
+};
 
-  // ========== Helpers ==========
-  function $(id) {
-    return document.getElementById(id);
-  }
+function $(id) {
+  return document.getElementById(id);
+}
 
-  function formatTime(sec) {
-    if (!isFinite(sec) || sec < 0) sec = 0;
-    const m = Math.floor(sec / 60);
-    const s = Math.floor(sec % 60);
-    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-  }
+// === Auto fill "Tên bài" từ MP3 / URL ===
+var titleEl = $("titleEl");
 
-  // ----- Log panel + console mirror -----
-  const logEl = $("log");
-  const btnLogToggle = $("btnLogToggle");
-
-  const originalConsole = {
-    log: console.log,
-    warn: console.warn,
-    error: console.error,
-  };
-
-  function appendLogLine(raw) {
-    if (!logEl) return;
-    const ts = new Date().toLocaleTimeString("vi-VN", { hour12: false });
-    const line = `[${ts}] ${raw}`;
-    logEl.value += (logEl.value ? "\n" : "") + line;
-    logEl.scrollTop = logEl.scrollHeight;
-  }
-
-  function log(msg) {
-    appendLogLine(msg);
+function setTitleFromName(name) {
+  if (!titleEl) return;
+  var clean = (name || "").split("/").pop() || name;
+  clean = clean.split("?")[0].split("#")[0];
+  clean = clean.replace(/\.(mp3|wav|m4a|aac|flac)$/i, "");
+  if (!titleEl.value.trim()) {
     try {
-      originalConsole.log("[PK20]", msg);
-    } catch (_) {}
+      titleEl.value = decodeURI(clean);
+    } catch (e) {
+      titleEl.value = clean;
+    }
   }
+}
 
-  function logWarn(msg) {
-    appendLogLine("⚠ " + msg);
-    try {
-      originalConsole.warn("[PK20]", msg);
-    } catch (_) {}
-  }
+// === Log panel (giữ kiểu cũ) ===
+function log() {
+  var args = Array.prototype.slice.call(arguments);
+  var box = $("log");
+  var textParts = [];
 
-  function logError(msg) {
-    appendLogLine("✘ " + msg);
-    try {
-      originalConsole.error("[PK20]", msg);
-    } catch (_) {}
-  }
-
-  // Mirror console.log / warn / error → log panel, nhưng dùng originalConsole nên không loop.
-  ["log", "warn", "error"].forEach((fn) => {
-    console[fn] = function (...args) {
+  for (var i = 0; i < args.length; i++) {
+    var x = args[i];
+    if (typeof x === "string") {
+      textParts.push(x);
+    } else {
       try {
-        originalConsole[fn].apply(originalConsole, args);
-      } catch (_) {}
-      const text = args
-        .map((a) => {
-          if (a instanceof Error) return a.message;
-          if (typeof a === "object") {
-            try {
-              return JSON.stringify(a);
-            } catch (_) {
-              return String(a);
-            }
-          }
-          return String(a);
-        })
-        .join(" ");
-      appendLogLine(`console.${fn}: ${text}`);
-    };
+        textParts.push(JSON.stringify(x));
+      } catch (e) {
+        textParts.push(String(x));
+      }
+    }
+  }
+
+  var now = new Date().toLocaleTimeString("vi-VN", { hour12: false });
+  var line = "[" + now + "] " + textParts.join(" ");
+
+  if (!box) {
+    // fallback ra console
+    console.log(line);
+    return;
+  }
+
+  box.value = (box.value ? box.value + "\n" : "") + line;
+  box.scrollTop = box.scrollHeight;
+}
+
+//////////////////////////////
+// 1. Audio player + volume
+//////////////////////////////
+
+function initPlayer() {
+  var audio = $("audio");
+  if (!audio) {
+    console.error("Không tìm thấy thẻ <audio>.");
+    return;
+  }
+  MK.audio = audio;
+
+  var btnPlay = $("btnPlay");
+  var btnPause = $("btnPause");
+  var btnStop = $("btnStop");
+  var timeSpan = $("time");
+  var bar = $("bar");
+
+  var vol = $("vol");
+  var btnMute = $("btnMute");
+
+  var urlInput = $("audiourl");
+  var btnLoad = $("btnLoad");
+
+  var fileInput =
+    $("filepick") ||
+    document.querySelector('input[type="file"][accept*="audio"]') ||
+    document.querySelector('input[type="file"]');
+
+  var btnPick =
+    $("btnPick") ||
+    document.querySelector('button[id*="Pick"],button[id*="pick"]');
+
+  function mm(v) {
+    return String(Math.floor(v / 60)).padStart(2, "0");
+  }
+  function ss(v) {
+    return String(v % 60).padStart(2, "0");
+  }
+
+  function updateTime() {
+    if (!timeSpan || !bar) return;
+    var cur = Math.floor(audio.currentTime || 0);
+    var dur = Math.floor(audio.duration || 0);
+    timeSpan.textContent = mm(cur) + ":" + ss(cur) + " / " + mm(dur) + ":" + ss(dur);
+    bar.value = dur > 0 ? String((cur / dur) * 100) : "0";
+  }
+
+  audio.addEventListener("timeupdate", updateTime);
+  audio.addEventListener("loadedmetadata", function () {
+    MK.state.duration = audio.duration || 0;
+    updateTime();
+  });
+  audio.addEventListener("ended", function () {
+    MK.state.isPlaying = false;
+    updateTime();
   });
 
-  if (btnLogToggle && logEl) {
-    btnLogToggle.addEventListener("click", () => {
-      logEl.classList.toggle("log-max");
-      btnLogToggle.textContent = logEl.classList.contains("log-max")
-        ? "Thu nhỏ log"
-        : "Mở rộng log";
-    });
-  }
-
-  // ========== Focus mode ==========
-  function initFocusMode() {
-    const btn = $("btnFocusMode");
-    if (!btn) return;
-
-    btn.addEventListener("click", () => {
-      document.body.classList.toggle("focus-mode");
-      const on = document.body.classList.contains("focus-mode");
-      btn.textContent = on ? "Thoát chế độ tập trung" : "Chế độ tập trung";
-      log(on ? "Đã bật Focus mode." : "Đã tắt Focus mode.");
-    });
-  }
-
-  // ========== Instrument tabs ==========
-  function initInstrumentTabs() {
-    const tabs = ["tabPiano", "tabGuitar", "tabUke"]
-      .map((id) => $(id))
-      .filter(Boolean);
-
-    tabs.forEach((btn) => {
-      btn.addEventListener("click", () => {
-        tabs.forEach((b) => b.classList.remove("active"));
-        btn.classList.add("active");
-        log("Nhạc cụ: " + btn.textContent.trim());
-      });
-    });
-  }
-
-  // ========== Chord suggest (đơn giản) ==========
-  const PROGRESSIONS = {
-    "I-V-vi-IV": ["I", "V", "vi", "IV"],
-    "I-vi-IV-V": ["I", "vi", "IV", "V"],
-    "I-IV-V": ["I", "IV", "V", "V"],
-  };
-
-  const KEY_MAP = {
-    C: { I: "C", V: "G", vi: "Am", IV: "F" },
-    G: { I: "G", V: "D", vi: "Em", IV: "C" },
-    D: { I: "D", V: "A", vi: "Bm", IV: "G" },
-    A: { I: "A", V: "E", vi: "F#m", IV: "D" },
-    F: { I: "F", V: "C", vi: "Dm", IV: "Bb" },
-  };
-
-  function initChordSuggest() {
-    const btn = $("btnSuggest");
-    const keySel = $("selKey");
-    const progSel = $("selProg");
-    const out = $("suggest");
-
-    if (!btn || !keySel || !progSel || !out) return;
-
-    btn.addEventListener("click", () => {
-      const key = keySel.value || "C";
-      const progKey = progSel.value || "I-V-vi-IV";
-      const prog = PROGRESSIONS[progKey] || PROGRESSIONS["I-V-vi-IV"];
-      const map = KEY_MAP[key] || KEY_MAP["C"];
-
-      const chords = prog.map((deg) => map[deg] || deg);
-      const lines = [
-        `Key: ${key}`,
-        `Tiến trình: ${progKey}`,
-        "",
-        "[Verse]",
-        chords.join("  /  "),
-        "",
-        "[Chorus]",
-        chords.slice().reverse().join("  /  "),
-      ];
-
-      out.value = lines.join("\n");
-      out.scrollTop = 0;
-      log("Đã gợi ý hợp âm cho key " + key + " — " + progKey);
-    });
-  }
-
-  // ========== Auto pattern fill ==========
-  function initAutoPatternFill() {
-    const patternInput = $("patternInput");
-    const btn = $("btnAutoPattern");
-    const lyrics = $("lyrics");
-    const audio = $("audio");
-
-    if (!patternInput || !btn || !lyrics || !audio) return;
-
-    btn.addEventListener("click", () => {
-      const patternRaw = (patternInput.value || "").trim();
-      if (!patternRaw) {
-        alert("Điền pattern hợp âm trước đã.");
-        return;
-      }
-
-      const tokens = patternRaw
-        .split(/[|\s]+/)
-        .map((t) => t.trim())
-        .filter(Boolean);
-      if (!tokens.length) {
-        alert("Pattern không hợp lệ.");
-        return;
-      }
-
-      const duration = audio.duration || 180; // mặc định 3 phút
-      const step = duration / tokens.length;
-
-      const lines = tokens.map((ch, i) => {
-        const t = formatTime(step * i);
-        return `${t}   ${ch}`;
-      });
-
-      lyrics.value = lines.join("\n");
-      lyrics.scrollTop = 0;
-      log("Đã auto-fill " + tokens.length + " hợp âm theo pattern.");
-    });
-  }
-
-  // ========== Audio player ==========
-  function initAudioPlayer() {
-    const audio = $("audio");
-    const urlInput = $("audiourl");
-    const filePick = $("filepick");
-    const btnPick = $("btnPick");
-    const btnLoad = $("btnLoad");
-    const btnPlay = $("btnPlay");
-    const btnPause = $("btnPause");
-    const btnStop = $("btnStop");
-    const timeLabel = $("time");
-    const bar = $("bar");
-    const vol = $("vol");
-    const btnMute = $("btnMute");
-    const currentChord = $("currentChord");
-    const lyrics = $("lyrics");
-
-    if (!audio) return;
-    state.audio = audio;
-
-    function updateTime() {
-      if (!timeLabel) return;
-      const cur = audio.currentTime || 0;
-      const dur = audio.duration || 0;
-      timeLabel.textContent = `${formatTime(cur)} / ${formatTime(dur)}`;
-      if (bar && dur > 0) {
-        bar.value = ((cur / dur) * 100).toFixed(1);
-      }
-      // Chord runner đơn giản: quét lyrics tìm timestamp <= cur gần nhất
-      if (lyrics && currentChord) {
-        const text = lyrics.value || "";
-        const lines = text.split(/\r?\n/);
-        let found = "";
-        for (const line of lines) {
-          const m = line.match(/^(\d{2}:\d{2})\s+(.*)$/);
-          if (!m) continue;
-          const t = m[1];
-          const rest = m[2];
-          const parts = t.split(":");
-          const sec = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
-          if (sec <= cur + 0.25) {
-            found = rest.trim();
-          } else {
-            break;
-          }
-        }
-        if (found) {
-          currentChord.textContent = found;
-          currentChord.classList.remove("chord-pulse");
-          void currentChord.offsetWidth;
-          currentChord.classList.add("chord-pulse");
-        }
-      }
-    }
-
-    audio.addEventListener("timeupdate", updateTime);
-    audio.addEventListener("loadedmetadata", updateTime);
-    audio.addEventListener("ended", () => {
-      state.isPlaying = false;
+  if (bar) {
+    bar.addEventListener("input", function () {
+      if (!audio.duration || !isFinite(audio.duration)) return;
+      var percent = Number(bar.value || "0");
+      audio.currentTime = (percent / 100) * audio.duration;
       updateTime();
-      log("Track đã kết thúc.");
+    });
+  }
+
+  if (vol) {
+    vol.addEventListener("input", function () {
+      var v = Number(vol.value || "1");
+      audio.volume = v;
+      if (v > 0) {
+        audio.muted = false;
+        if (btnMute) btnMute.textContent = "Mute";
+      }
+    });
+  }
+
+  if (btnMute) {
+    btnMute.addEventListener("click", function () {
+      audio.muted = !audio.muted;
+      btnMute.textContent = audio.muted ? "Unmute" : "Mute";
+    });
+  }
+
+  if (btnPlay) {
+    btnPlay.addEventListener("click", function () {
+      if (!audio.src) {
+        log("⚠ Chưa có file audio. Hãy chọn hoặc load file MP3 trước.");
+        return;
+      }
+      audio
+        .play()
+        .then(function () {
+          MK.state.isPlaying = true;
+          log("▶ Bắt đầu phát audio.");
+        })
+        .catch(function (e) {
+          console.error(e);
+          log("❌ Lỗi khi phát audio:", e && e.message ? e.message : e);
+        });
+    });
+  }
+
+  if (btnPause) {
+    btnPause.addEventListener("click", function () {
+      audio.pause();
+      MK.state.isPlaying = false;
+      log("⏸ Tạm dừng audio.");
+    });
+  }
+
+  if (btnStop) {
+    btnStop.addEventListener("click", function () {
+      audio.pause();
+      audio.currentTime = 0;
+      MK.state.isPlaying = false;
+      updateTime();
+      log("⏹ Dừng audio.");
+    });
+  }
+
+  if (btnPick && fileInput) {
+    btnPick.addEventListener("click", function () {
+      fileInput.click();
     });
 
-    if (btnPick && filePick) {
-      btnPick.addEventListener("click", () => filePick.click());
-      filePick.addEventListener("change", () => {
-        if (!filePick.files || !filePick.files[0]) return;
-        const file = filePick.files[0];
-        const url = URL.createObjectURL(file);
-        audio.src = url;
-        if (urlInput) urlInput.value = file.name;
-        log("Đã chọn file local: " + file.name);
-      });
-    }
-
-    if (btnLoad && urlInput) {
-      btnLoad.addEventListener("click", () => {
-        const url = (urlInput.value || "").trim();
-        if (!url) {
-          alert("Nhập URL MP3 trước đã.");
-          return;
-        }
-        audio.src = url;
-        audio.load();
-        log("Đã load audio từ URL.");
-      });
-    }
-
-    if (btnPlay) {
-      btnPlay.addEventListener("click", () => {
-        if (!audio.src) {
-          alert("Chưa có file MP3. Chọn file hoặc nhập URL.");
-          return;
-        }
-        audio
-          .play()
-          .then(() => {
-            state.isPlaying = true;
-            log("Play.");
-          })
-          .catch((err) => {
-            logError("Play lỗi: " + (err && err.message));
-          });
-      });
-    }
-
-    if (btnPause) {
-      btnPause.addEventListener("click", () => {
-        audio.pause();
-        state.isPlaying = false;
-        log("Pause.");
-      });
-    }
-
-    if (btnStop) {
-      btnStop.addEventListener("click", () => {
-        audio.pause();
-        audio.currentTime = 0;
-        state.isPlaying = false;
-        updateTime();
-        log("Stop.");
-      });
-    }
-
-    if (bar) {
-      bar.addEventListener("input", () => {
-        const v = parseFloat(bar.value) || 0;
-        const dur = audio.duration || 0;
-        audio.currentTime = (dur * v) / 100;
-        updateTime();
-      });
-    }
-
-    if (vol) {
-      vol.addEventListener("input", () => {
-        const v = parseFloat(vol.value);
-        audio.volume = v;
-        if (v > 0) {
-          state.lastVolume = v;
-          state.isMuted = false;
-          if (btnMute) btnMute.textContent = "Mute";
-        }
-      });
-    }
-
-    if (btnMute && vol) {
-      btnMute.addEventListener("click", () => {
-        if (!state.isMuted) {
-          state.lastVolume = vol.value;
-          vol.value = 0;
-          audio.volume = 0;
-          state.isMuted = true;
-          btnMute.textContent = "Unmute";
-          log("Mute.");
-        } else {
-          const v = parseFloat(state.lastVolume || "1") || 1;
-          vol.value = v;
-          audio.volume = v;
-          state.isMuted = false;
-          btnMute.textContent = "Mute";
-          log("Unmute.");
-        }
-      });
-    }
-
-    updateTime();
-    log("Player đã khởi động.");
+    fileInput.addEventListener("change", function (e) {
+      var file = e.target.files[0];
+      if (!file) return;
+      var url = URL.createObjectURL(file);
+      audio.src = url;
+      MK.state.duration = 0;
+      MK.state.isPlaying = false;
+      updateTime();
+      setTitleFromName(file.name);
+      log("📂 Đã load file MP3 local: " + file.name + ".");
+    });
   }
 
-  // ========== Local save (rất đơn giản) ==========
-  function initLocalSave() {
-    const btnSave = $("btnSave");
-    const btnLoadLocal = $("btnLoadLocal");
-    const lyrics = $("lyrics");
-    const suggest = $("suggest");
-    const titleEl = $("titleEl");
-
-    if (btnSave) {
-      btnSave.addEventListener("click", () => {
-        const payload = {
-          title: titleEl ? titleEl.value : "",
-          lyrics: lyrics ? lyrics.value : "",
-          suggest: suggest ? suggest.value : "",
-        };
-        localStorage.setItem("pk20-song", JSON.stringify(payload));
-        log("Đã lưu tạm vào trình duyệt.");
-      });
-    }
-
-    if (btnLoadLocal) {
-      btnLoadLocal.addEventListener("click", () => {
-        const raw = localStorage.getItem("pk20-song");
-        if (!raw) {
-          alert("Chưa có bản lưu nào.");
-          return;
-        }
-        try {
-          const payload = JSON.parse(raw);
-          if (titleEl) titleEl.value = payload.title || "";
-          if (lyrics) lyrics.value = payload.lyrics || "";
-          if (suggest) suggest.value = payload.suggest || "";
-          log("Đã load lại bản lưu.");
-        } catch (e) {
-          logError("Load local lỗi: " + e.message);
-        }
-      });
-    }
-  }
-
-  // ========== Backend config ==========
-  function initBackendConfig() {
-    const input = $("backendUrl");
-    const btn = $("btnSaveBackend");
-    const span = $("backendNow");
-
-    const saved = localStorage.getItem("backend") || "";
-    state.backendUrl = saved;
-    if (input) input.value = saved;
-    if (span) span.textContent = saved || "(none)";
-
-    if (btn && input) {
-      btn.addEventListener("click", () => {
-        const url = (input.value || "").trim();
-        state.backendUrl = url;
-        localStorage.setItem("backend", url);
-        if (span) span.textContent = url || "(none)";
-        log("Đã lưu backend: " + (url || "(none)"));
-      });
-    }
-  }
-
-  async function postBackend(path, body) {
-    if (!state.backendUrl) {
-      logWarn("Chưa cấu hình backend; bỏ qua " + path);
-      return { ok: false, error: "No backend" };
-    }
-    const url = state.backendUrl.replace(/\/+$/, "") + path;
-    try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body || {}),
-      });
-      const data = await res.json().catch(() => ({}));
-      log("Backend " + path + " status " + res.status);
-      return { ok: res.ok, data };
-    } catch (e) {
-      logError("Gọi backend lỗi: " + e.message);
-      return { ok: false, error: e.message };
-    }
-  }
-
-  // ========== Pi SDK (LIVE) ==========
-  function initPiSdk() {
-    const btnLogin = $("btnPiLogin");
-    const btnPay = $("btnPayLive");
-    const btnCheckPremium = $("btnCheckPremium");
-
-    if (typeof window.Pi === "undefined") {
-      logWarn("Không tìm thấy Pi SDK. Mở app trong Pi Browser để dùng Pi Login / Pay.");
-      if (btnLogin) {
-        btnLogin.addEventListener("click", () => {
-          alert("Không có Pi SDK. Thử mở trong Pi Browser.");
-        });
+  if (btnLoad && urlInput) {
+    btnLoad.addEventListener("click", function () {
+      var url = (urlInput.value || "").trim();
+      if (!url) {
+        log("⚠ Hãy nhập URL file MP3 trước.");
+        return;
       }
-      if (btnPay) {
-        btnPay.addEventListener("click", () => {
-          alert("Không có Pi SDK nên không test được Pi Payment.");
-        });
-      }
-      if (btnCheckPremium) {
-        btnCheckPremium.addEventListener("click", () => {
-          alert("Không có Pi SDK. Cần mở trong Pi Browser.");
-        });
-      }
+      audio.src = url;
+      MK.state.duration = 0;
+      MK.state.isPlaying = false;
+      updateTime();
+      setTitleFromName(url);
+      log("🌐 Đã load MP3 từ URL: " + url);
+    });
+  }
+
+  log("🎵 Player đã khởi động.");
+}
+
+//////////////////////////////
+// 2. Gợi ý hợp âm theo key
+//////////////////////////////
+
+var MK_PROGS = {
+  "I-V-vi-IV": ["I", "V", "vi", "IV"],
+  "I-vi-IV-V": ["I", "vi", "IV", "V"],
+  "I-IV-V": ["I", "IV", "V"],
+};
+
+var MK_KEYS = {
+  C: ["C", "Dm", "Em", "F", "G", "Am", "Bdim"],
+  G: ["G", "Am", "Bm", "C", "D", "Em", "F#dim"],
+  D: ["D", "Em", "F#m", "G", "A", "Bm", "C#dim"],
+  A: ["A", "Bm", "C#m", "D", "E", "F#m", "G#dim"],
+  F: ["F", "Gm", "Am", "Bb", "C", "Dm", "Edim"],
+};
+
+function suggestChord(key, degree) {
+  var scale = MK_KEYS[key];
+  if (!scale) return "?";
+  var map = { I: 0, ii: 1, iii: 2, IV: 3, V: 4, vi: 5, vii: 6 };
+  var idx = map[degree];
+  if (idx == null) return "?";
+  return scale[idx] || "?";
+}
+
+function initChordSuggest() {
+  var keySel = $("selKey");
+  var progSel = $("selProg");
+  var suggestBox = $("suggest");
+  var btnSuggest =
+    $("btnSuggest") ||
+    document.querySelector('button[id*="Suggest"],button[id*="suggest"]');
+
+  if (!keySel || !progSel || !suggestBox || !btnSuggest) return;
+
+  btnSuggest.addEventListener("click", function () {
+    var key = keySel.value || "C";
+    var progName = progSel.value || "I-V-vi-IV";
+    var degrees = MK_PROGS[progName] || MK_PROGS["I-V-vi-IV"];
+    var chords = degrees.map(function (deg) {
+      return suggestChord(key, deg);
+    });
+    var lines = [];
+    lines.push("[Key " + key + "]  " + progName);
+    lines.push(chords.join("   |   "));
+    suggestBox.value = lines.join("\n");
+  });
+}
+
+//////////////////////////////
+// 3. Auto pattern fill toàn bài
+//////////////////////////////
+
+function parsePattern(str) {
+  return (str || "")
+    .split(/\s+/)
+    .map(function (x) {
+      return x.trim();
+    })
+    .filter(function (x) {
+      return Boolean(x);
+    });
+}
+
+function initAutoPatternFill() {
+  var patternInput =
+    $("patternInput") ||
+    $("patternBox") ||
+    $("pattern") ||
+    document.querySelector("textarea[id*='pattern']");
+
+  var btnFillAll =
+    $("btnAutoPattern") ||
+    $("btnPattern") ||
+    document.querySelector("button[id*='Pattern'],button[id*='pattern']");
+
+  var lyricsBox = $("lyrics");
+
+  if (!patternInput || !btnFillAll || !lyricsBox || !MK.audio) return;
+
+  btnFillAll.addEventListener("click", function () {
+    var chords = parsePattern(patternInput.value);
+    if (!chords.length) {
+      log("⚠ Chưa nhập pattern hợp âm (ví dụ: C G Am F | F G Em Am).");
       return;
     }
 
-    const Pi = window.Pi;
-    try {
-      Pi.init({ version: "2.0", sandbox: false });
-      state.piReady = true;
-      log("Pi SDK initialized (LIVE).");
-    } catch (e) {
-      state.piReady = false;
-      logError("Pi SDK init lỗi: " + e.message);
+    var duration = MK.audio.duration;
+    if (!duration || !isFinite(duration)) {
+      log("⚠ Chưa đọc được thời lượng MP3. Hãy load file, bấm Play một lần rồi thử lại.");
+      return;
     }
 
-    async function handleLogin() {
-      if (!state.piReady) {
-        logWarn("Pi SDK chưa sẵn, không login được.");
-        return;
+    var total = Math.floor(duration);
+    if (total < 4) {
+      log("⚠ Bài hát quá ngắn, không auto fill được.");
+      return;
+    }
+
+    var step = 4;
+    var lines = [];
+    var t = 0;
+    var i = 0;
+
+    function fmt(sec) {
+      var mm = String(Math.floor(sec / 60)).padStart(2, "0");
+      var ss = String(sec % 60).padStart(2, "0");
+      return mm + ":" + ss;
+    }
+
+    while (t < total) {
+      var chord = chords[i % chords.length];
+      lines.push(fmt(t) + "    " + chord);
+      t += step;
+      i++;
+    }
+
+    lyricsBox.value = lines.join("\n");
+    log("✅ Đã auto fill " + lines.length + " dòng hợp âm cho cả bài (pattern lặp, " + step + "s / hợp âm).");
+  });
+}
+
+//////////////////////////////
+// 4. Chord Runner
+//////////////////////////////
+
+function initChordRunner() {
+  var lyricsBox = $("lyrics");
+  var currentChordSpan = $("currentChord");
+  if (!lyricsBox || !currentChordSpan || !MK.audio) return;
+
+  var parsed = [];
+
+  function parseLyrics() {
+    parsed = [];
+    var lines = lyricsBox.value.split("\n");
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      var m = line.match(/^(\d{2}):(\d{2})\s+(.+)$/);
+      if (!m) continue;
+      var t = Number(m[1]) * 60 + Number(m[2]);
+      var chord = m[3].trim();
+      parsed.push({ time: t, chord: chord });
+    }
+  }
+
+  lyricsBox.addEventListener("input", parseLyrics);
+  parseLyrics();
+
+  setInterval(function () {
+    if (!parsed.length || MK.audio.paused) return;
+    var now = Math.floor(MK.audio.currentTime || 0);
+    var found = "";
+    for (var i = parsed.length - 1; i >= 0; i--) {
+      if (now >= parsed[i].time) {
+        found = parsed[i].chord;
+        break;
       }
-      log("Đang login với Pi...");
+    }
+    currentChordSpan.textContent = found;
+  }, 400);
+}
+
+//////////////////////////////
+// 5. Log panel toggle
+//////////////////////////////
+
+function initLogPanel() {
+  var logBox = $("log");
+  var btn = $("btnLogToggle");
+  if (!logBox || !btn) return;
+  btn.addEventListener("click", function () {
+    var isMax = logBox.classList.toggle("log-max");
+    btn.textContent = isMax ? "Thu nhỏ log" : "Mở rộng log";
+  });
+}
+
+//////////////////////////////
+// 6. Backend settings
+//////////////////////////////
+
+function getBackend() {
+  return localStorage.getItem("backend") || "";
+}
+
+function setBackend(url) {
+  localStorage.setItem("backend", url);
+  var span = $("backendNow");
+  if (span) span.textContent = url || "(none)";
+}
+
+function initBackendSettings() {
+  var backendInput = $("backendUrl");
+  var btnSaveBackend = $("btnSaveBackend");
+  var span = $("backendNow");
+
+  if (span) span.textContent = getBackend() || "(none)";
+  if (backendInput) backendInput.value = getBackend();
+
+  if (btnSaveBackend && backendInput) {
+    btnSaveBackend.addEventListener("click", function () {
+      var url = (backendInput.value || "").trim();
+      setBackend(url);
+      log("🔧 Đã lưu backend:", url || "(none)");
+    });
+  }
+}
+
+//////////////////////////////
+// 7. Pi SDK (LIVE)
+//////////////////////////////
+
+function onIncompletePaymentFound(payment) {
+  log("⚠ onIncompletePaymentFound:", payment);
+}
+
+function initPiSdk() {
+  if (typeof window.Pi === "undefined") {
+    log("⚠ Không tìm thấy Pi SDK (window.Pi). Mở app trong Pi Browser.");
+    return;
+  }
+
+  var Pi = window.Pi;
+
+  try {
+    Pi.init({ version: "2.0", sandbox: false });
+    log("✅ Pi SDK initialized (LIVE).");
+  } catch (e) {
+    console.error(e);
+    log("❌ Lỗi init Pi SDK:", e && e.message ? e.message : e);
+  }
+
+  var btnLogin = $("btnPiLogin");
+  var btnPremium = $("btnCheckPremium");
+  var btnPayLive = $("btnPayLive");
+
+  if (btnLogin) {
+    btnLogin.addEventListener("click", async function () {
       try {
-        const scopes = ["username", "payments"];
-        const auth = await Pi.authenticate(scopes, onIncompletePaymentFound);
-        state.currentUser = auth.user;
-        log("Login thành công. " + auth.user.username);
+        log("⏳ Đang login với Pi...");
+        var scopes = ["username", "payments"];
+        var auth = await Pi.authenticate(scopes, onIncompletePaymentFound);
+        var username = auth && auth.user ? auth.user.username : "(unknown)";
+        MK.state.user = auth.user || null;
+        log("✅ Login thành công.", username);
       } catch (e) {
-        logError("Pi login lỗi: " + e.message);
-        alert("Pi login lỗi. Xem log để chi tiết.");
+        console.error(e);
+        log("❌ Pi Login lỗi:", e && e.message ? e.message : e);
       }
-    }
+    });
+  }
 
-    async function handleCheckPremium() {
-      if (!state.currentUser) {
-        alert("Đăng nhập Pi trước đã.");
+  if (btnPremium) {
+    btnPremium.addEventListener("click", async function () {
+      var backend = getBackend();
+      if (!backend) {
+        log("⚠ Chưa cấu hình backend (dev). Hãy vào 'Cài đặt backend'.");
         return;
       }
-      const res = await postBackend("/premium/check", {
-        uid: state.currentUser.uid,
-        username: state.currentUser.username,
-      });
-      if (!res.ok) {
-        alert("Không kiểm tra được premium. Xem log.");
-        return;
+      try {
+        log("⏳ Đang gửi yêu cầu kiểm tra Premium...");
+        var res = await fetch(backend.replace(/\/+$/, "") + "/premium-status", {
+          credentials: "include",
+        });
+        var data = await res.json();
+        log("📡 Premium:", data);
+      } catch (e) {
+        console.error(e);
+        log("❌ Lỗi gọi /premium-status:", e && e.message ? e.message : e);
       }
-      const status = res.data && res.data.status;
-      log("Premium status: " + status);
-      alert("Premium: " + status);
-    }
+    });
+  }
 
-    async function handlePayLive() {
-      if (!state.currentUser) {
-        alert("Đăng nhập Pi trước đã.");
+  if (btnPayLive) {
+    btnPayLive.addEventListener("click", async function () {
+      var backend = getBackend();
+      if (!backend) {
+        log("⚠ Chưa cấu hình backend (dev). Hãy vào 'Cài đặt backend'.");
         return;
-      }
-      if (!state.backendUrl) {
-        if (!confirm("Chưa cấu hình backend. Vẫn tạo payment (sẽ không approve/complete được)?")) {
-          return;
-        }
       }
 
       try {
-        log("Bắt đầu tạo payment LIVE 1 Pi...");
-        const paymentData = {
-          amount: "1",
-          memo: "PiChordify Kingdom premium demo",
-          metadata: {
-            app: "PiChordifyKingdom",
-            version: "20.0",
-          },
+        log("⏳ Bắt đầu tạo thanh toán (LIVE)...");
+
+        var amount = "0.1"; // để ở dạng chuỗi 0.1 Pi cho rẻ
+        var memo = "Musickingdom test for Tran2020";
+        var metadata = {
+          username: MK.state.user && MK.state.user.username ? MK.state.user.username : "Tran2020",
+          app: "PiChordifyKingdom",
+          version: "20.0",
         };
 
-        const callbacks = {
-          onReadyForServerApproval: async (paymentId) => {
-            log("onReadyForServerApproval: " + paymentId);
-            await postBackend("/payments/approve", {
-              paymentId,
-              user: state.currentUser,
-            });
-          },
-          onReadyForServerCompletion: async (paymentId, txid) => {
-            log("onReadyForServerCompletion: " + paymentId + " txid=" + txid);
-            await postBackend("/payments/complete", {
-              paymentId,
-              txid,
-              user: state.currentUser,
-            });
-          },
-          onCancel: (paymentId) => {
-            logWarn("Payment bị huỷ: " + paymentId);
-          },
-          onError: (error, payment) => {
-            logError("Pi.createPayment error: " + (error && error.message));
-            if (payment) {
-              log("Payment object (error): " + JSON.stringify(payment));
+        var paymentData = {
+          amount: amount,
+          memo: memo,
+          metadata: metadata,
+        };
+
+        var backendBase = backend.replace(/\/+$/, "");
+
+        var payment = await Pi.createPayment(paymentData, {
+          onReadyForServerApproval: async function (paymentId) {
+            log("🛰️ onReadyForServerApproval, paymentId:", paymentId);
+            try {
+              var res = await fetch(backendBase + "/pay-live", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  identifier: paymentId,
+                  amount: paymentData.amount,
+                  username: paymentData.metadata.username,
+                }),
+              });
+              var data = await res.json();
+              log("💾 Backend /pay-live trả về:", data);
+            } catch (err) {
+              console.error(err);
+              log("❌ Lỗi gọi backend /pay-live:", err && err.message ? err.message : err);
             }
           },
-        };
+          onReadyForServerCompletion: function (paymentId, txid) {
+            log("✅ onReadyForServerCompletion:", paymentId, "txid:", txid);
+          },
+          onCancel: function (paymentId) {
+            log("⚠ User huỷ thanh toán:", paymentId);
+          },
+          onError: function (err) {
+            console.error(err);
+            log("❌ Lỗi Pi Payment (callback):", err && err.message ? err.message : err);
+          },
+        });
 
-        const payment = await Pi.createPayment(paymentData, callbacks);
-        log("✅ Pi.createPayment trả về: " + JSON.stringify(payment));
+        log("📩 Pi.createPayment trả về:", payment);
       } catch (e) {
-        logError("✘ x payment (LIVE) lỗi: " + (e.message || e));
-        alert("Payment lỗi. Xem log.");
+        console.error(e);
+        log("❌ X payment (LIVE) lỗi:", e && e.message ? e.message : e);
       }
-    }
-
-    if (btnLogin) btnLogin.addEventListener("click", handleLogin);
-    if (btnCheckPremium) btnCheckPremium.addEventListener("click", handleCheckPremium);
-    if (btnPay) btnPay.addEventListener("click", handlePayLive);
+    });
   }
+}
 
-  function onIncompletePaymentFound(payment) {
-    logWarn("Có payment chưa hoàn tất: " + JSON.stringify(payment));
-    // Sau này có thể gọi backend để sync lại.
-  }
+//////////////////////////////
+// 8. Boot
+//////////////////////////////
 
-  // ========== Init ==========
-  function init() {
-    log("PiChordify Kingdom frontend (index.js v20.0) đã khởi động.");
-    initFocusMode();
-    initInstrumentTabs();
+window.addEventListener("DOMContentLoaded", function () {
+  try {
+    initPlayer();
     initChordSuggest();
     initAutoPatternFill();
-    initAudioPlayer();
-    initLocalSave();
-    initBackendConfig();
+    initChordRunner();
+    initBackendSettings();
     initPiSdk();
+    initLogPanel();
+    log("🎼 PiChordify Kingdom frontend (index.js v20.0) đã khởi động.");
+  } catch (e) {
+    console.error(e);
+    log("❌ Lỗi init index.js:", e && e.message ? e.message : e);
   }
-
-  document.addEventListener("DOMContentLoaded", init);
-})();
+});
