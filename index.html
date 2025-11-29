@@ -1,230 +1,148 @@
+<!-- index.html -->
+
 <!doctype html>
 <html lang="vi">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>PiChordify Kingdom — v8.10</title>
 
-  <!-- ===== Palette / Reset ===== -->
   <style>
-    :root{
-      --bg:#0f1320; --panel:#131a2a; --muted:#8892b0; --text:#e6e9ef;
-      --brand1:#8a5cff; --brand2:#49c6ff; --accent:#9b7bff; --ok:#24d17e; --warn:#ffb347; --err:#ff5d73;
-      --ring:rgba(138,92,255,.35);
-      --mono:"SFMono-Regular","JetBrains Mono",ui-monospace,Consolas,monospace;
-      --sans:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,"Noto Sans",sans-serif;
-    }
-    *{box-sizing:border-box}
-    html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:var(--sans)}
-    h1,h2,h3{margin:0 0 .5rem}
-    small{color:var(--muted)}
-    a{color:var(--brand2);text-decoration:none}
+  :root{
+    --bg:#0f1320; --panel:#131a2a; --muted:#8892b0; --text:#e6e9ef;
+    --brand1:#8a5cff; --brand2:#49c6ff; --accent:#9b7bff; --ok:#24d17e; --warn:#ffb347; --err:#ff5d73;
+    --ring:rgba(138,92,255,.35);
+    --mono:"SFMono-Regular","JetBrains Mono",ui-monospace,Consolas,monospace;
+    --sans:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,"Noto Sans",sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:var(--sans)}
+  h1,h2,h3{margin:0 0 .5rem}
+  small{color:var(--muted)}
+  a{color:var(--brand2);text-decoration:none}
 
-    .wrap{
-      max-width:1280px;
-      margin:0 auto;
-      padding:0 16px;
-    }
+  .wrap{
+    max-width:1280px;
+    margin:0 auto;
+    padding:0 16px;
+  }
+  .grid{
+    display:block;
+    width:100%;
+  }
+  textarea{min-height:260px;}
 
+  @media(min-width:970px){
     .grid{
       display:block;
       width:100%;
     }
-    textarea{min-height:260px;}
+  }
 
-    @media(min-width:970px){
-      .grid{
-        display:block;
-        width:100%;
-      }
-    }
-/* Log box có thể kéo dãn + mode fullscreen */
-#log{
-  resize:vertical;
-  min-height:160px;
-  max-height:60vh;
-}
+  .card{background:var(--panel);border:1px solid #1b2236;border-radius:14px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+  .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  select,input,button,textarea{background:#0c1322;color:var(--text);border:1px solid #25304d;border-radius:12px;padding:10px 12px;font-size:15px}
+  select,input,textarea{outline:none}
+  select:focus,input:focus,textarea:focus,button:focus{box-shadow:0 0 0 3px var(--ring);border-color:#3b4b77}
+  button{cursor:pointer}
+  .btn{background:linear-gradient(90deg,var(--brand1),var(--brand2));border:none}
+  .btn.ghost{background:#0c1322}
+  .btn.bad{background:#2a0f18;border:1px solid #4b1122}
+  .btn.ok{background:#0f2a22;border:1px solid #11553c}
+  .badge{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:#0e1629;border:1px solid #232e4a;font-size:13px;color:#cfd6e6}
 
-/* Khi bật chế độ log-max, chiều cao chiếm gần full màn */
-.log-max{
-  height:60vh !important;
-}
+  h1.title{font-weight:800;letter-spacing:.5px;font-size:42px;line-height:1.05}
+  .ver{margin-left:10px;border-radius:999px;padding:6px 10px;background:#1a2033;border:1px solid #2a365d;color:#bfc7de;font-weight:600}
 
-    .card{
-      background:var(--panel);
-      border:1px solid #1b2236;
-      border-radius:14px;
-      padding:16px;
-      box-shadow:0 10px 30px rgba(0,0,0,.25);
-      margin-bottom:16px;
-    }
-    .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-    select,input,button,textarea{
-      background:#0c1322;
-      color:var(--text);
-      border:1px solid #25304d;
-      border-radius:12px;
-      padding:10px 12px;
-      font-size:15px;
-    }
-    select,input,textarea{outline:none}
-    select:focus,input:focus,textarea:focus,button:focus{
-      box-shadow:0 0 0 3px var(--ring);
-      border-color:#3b4b77;
-    }
-    button{cursor:pointer}
-    .btn{background:linear-gradient(90deg,var(--brand1),var(--brand2));border:none}
-    .btn.ghost{background:#0c1322}
-    .btn.bad{background:#2a0f18;border:1px solid #4b1122}
-    .btn.ok{background:#0f2a22;border:1px solid #11553c}
-    .badge{
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      padding:6px 10px;
-      border-radius:999px;
-      background:#0e1629;
-      border:1px solid #232e4a;
-      font-size:13px;
-      color:#cfd6e6;
-    }
+  .mono{font-family:var(--mono);white-space:pre-wrap}
+  textarea{min-height:160px;width:100%;resize:vertical}
+  #suggest{min-height:112px}
 
-    h1.title{font-weight:800;letter-spacing:.5px;font-size:42px;line-height:1.05}
-    .ver{margin-left:10px;border-radius:999px;padding:6px 10px;background:#1a2033;border:1px solid #2a365d;color:#bfc7de;font-weight:600}
+  .progress{height:8px;border-radius:999px;background:#0c1322;border:1px solid #25304d;position:relative}
+  .progress>i{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,#3e5cf5,#34d1ff);border-radius:999px}
 
-    .mono{font-family:var(--mono);white-space:pre-wrap}
-    textarea{min-height:160px;width:100%;resize:vertical}
-    #suggest{min-height:112px}
+  .kbd{padding:2px 6px;border-radius:6px;border:1px solid #2a2f45;background:#0e1324;font-family:var(--mono);font-size:12px;color:#c6cee1}
+  .iconTab{display:flex;gap:10px}
+  .iconTab button{flex:1;display:flex;align-items:center;gap:10px;justify-content:center;padding:12px;border-radius:14px;background:#0e1629;border:1px solid #252c44}
+  .iconTab button.active{outline:2px solid var(--ring);border-color:#3b48ff;background:#121a30}
+  .iconTab img{height:18px;opacity:.9}
+  .rightBox{min-height:320px}
+  .hidden{display:none}
+  .small{font-size:13px;color:#9fb0d1}
 
-    .kbd{
-      padding:2px 6px;
-      border-radius:6px;
-      border:1px solid #2a2f45;
-      background:#0e1324;
-      font-family:var(--mono);
-      font-size:12px;
-      color:#c6cee1;
-    }
-    .iconTab{display:flex;gap:10px}
-    .iconTab button{
-      flex:1;
-      display:flex;
-      align-items:center;
-      gap:10px;
-      justify-content:center;
-      padding:12px;
-      border-radius:14px;
-      background:#0e1629;
-      border:1px solid #252c44;
-    }
-    .iconTab button.active{
-      outline:2px solid var(--ring);
-      border-color:#3b48ff;
-      background:#121a30;
-    }
-    .iconTab img{height:18px;opacity:.9}
-    .rightBox{min-height:320px}
-    .hidden{display:none}
-    .small{font-size:13px;color:#9fb0d1}
+  .mk-hero {
+    position: relative;
+    padding: 2.5rem 1.5rem 2rem;
+    background-image:
+      linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(76, 29, 149, 0.96));
+    background-size: cover;
+    background-position: center;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.4);
+  }
+  .mk-hero-inner {
+    max-width: 960px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 1.75rem;
+  }
+  .mk-title-gradient{
+    background:linear-gradient(90deg,#ff7bd5 0%,#6ea8ff 100%);
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+  }
+  .mk-hero-text h1 {
+    margin: 0 0 0.35rem;
+    font-size: clamp(1.9rem, 2.6vw, 2.4rem);
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .mk-hero-text p {
+    margin: 0;
+    color: #e5e7eb;
+    font-size: 0.98rem;
+    max-width: 30rem;
+    line-height: 1.55;
+  }
+  .mk-version-icon{
+    width:46px;
+    height:auto;
+    margin-left:10px;
+    border-radius:12px;
+    box-shadow:0 8px 24px rgba(0,0,0,0.35);
+    vertical-align:middle;
+  }
+  @media(min-width:768px){
+    .mk-version-icon{width:56px;}
+  }
 
-    /* === MK HERO (Musickingdom header) =================== */
-    .mk-hero {
-      position: relative;
-      padding: 2.5rem 1.5rem 2rem;
-      background-image:
-        linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(76, 29, 149, 0.96)),
-        url("assets/musickingdom-christmas-bg.jpg");
-      background-size: cover;
-      background-position: center;
-      border-bottom: 1px solid rgba(148, 163, 184, 0.4);
-    }
+  body.focus-mode .mk-hero { display:none; }
+  body.focus-mode .rightBox { display:none; }
+  body.focus-mode .wrap { max-width:980px; }
+  body.focus-mode #lyrics,
+  body.focus-mode #suggest { min-height:220px; }
+  body.focus-mode textarea{ font-size:16px; line-height:1.5; }
+  body.focus-mode .title{ font-size:36px; }
 
-    .mk-hero-inner {
-      max-width: 960px;
-      margin: 0 auto;
-      display: flex;
-      align-items: center;
-      gap: 1.75rem;
-    }
+  #currentChord{
+    display:inline-block;
+    padding:4px 10px;
+    border-radius:999px;
+    background:#111827;
+    border:1px solid #374151;
+    min-width:60px;
+    font-weight:600;
+  }
 
-    .mk-title-gradient{
-      background:linear-gradient(90deg,#ff7bd5 0%,#6ea8ff 100%);
-      -webkit-background-clip:text;
-      -webkit-text-fill-color:transparent;
-    }
-
-    .mk-hero-text h1 {
-      margin: 0 0 0.35rem;
-      font-size: clamp(1.9rem, 2.6vw, 2.4rem);
-      font-weight: 800;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-    }
-
-    .mk-hero-text p {
-      margin: 0;
-      color: #e5e7eb;
-      font-size: 0.98rem;
-      max-width: 30rem;
-      line-height: 1.55;
-    }
-
-    .mk-version-icon{
-      width:46px;
-      height:auto;
-      margin-left:10px;
-      border-radius:12px;
-      box-shadow:0 8px 24px rgba(0,0,0,0.35);
-      vertical-align:middle;
-    }
-    @media(min-width:768px){
-      .mk-version-icon{width:56px;}
-    }
-
-    /* === Focus mode: tập trung vùng hợp âm / player === */
-    body.focus-mode .mk-hero {
-      display: none;
-    }
-    body.focus-mode .rightBox {
-      display: none;
-    }
-    body.focus-mode .wrap {
-      max-width: 980px;
-    }
-    body.focus-mode #lyrics,
-    body.focus-mode #suggest {
-      min-height: 220px;
-    }
-
-    /* Hợp âm đang phát – pill hiển thị */
-    #currentChord{
-      display:inline-block;
-      padding:4px 10px;
-      border-radius:999px;
-      background:#111827;
-      border:1px solid #374151;
-      min-width:60px;
-      font-weight:600;
-    }
-    body.focus-mode #currentChord{
-      font-size:17px;
-      padding:6px 14px;
-    }
-    .chord-pulse{
-      animation:chordPulse .28s ease-out;
-    }
-    @keyframes chordPulse{
-      0%{transform:scale(1);}
-      50%{transform:scale(1.12);}
-      100%{transform:scale(1);}
-    }
-    body.focus-mode textarea{
-      font-size:16px;
-      line-height:1.5;
-    }
-    body.focus-mode .title{
-      font-size:36px;
-    }
+  #log{
+    resize:vertical;
+    min-height:160px;
+    max-height:60vh;
+  }
+  .log-max{
+    height:60vh !important;
+  }
   </style>
 </head>
 
@@ -247,52 +165,30 @@
     <h1 class="title">PiChordify Kingdom</h1>
     <div class="row" style="align-items:center;gap:8px">
       <span class="ver">v8.10 — Chord Runner</span>
-      <img src="assets/musickingdom-golden-turtle.jpg"
-           alt="Musickingdom Icon"
-           class="mk-version-icon" />
-      <button id="btnFocusMode"
-              class="btn ghost"
-              style="padding:6px 10px;font-size:12px;margin-left:4px;">
+      <img src="assets/musickingdom-golden-turtle.jpg" alt="Musickingdom Icon" class="mk-version-icon"/>
+      <button id="btnFocusMode" class="btn ghost" style="padding:6px 10px;font-size:12px;margin-left:4px;">
         Chế độ tập trung
       </button>
     </div>
   </div>
 
   <div class="grid">
-    <!-- ===== Left: Editor ===== -->
     <div class="card">
       <div class="row" style="justify-content:space-between">
         <div>
           <div class="small" style="margin-bottom:8px">Nhạc cụ</div>
           <div class="iconTab" role="tablist" aria-label="instrument">
-            <button id="tabPiano" class="active" aria-selected="true">
-              <img alt="piano" src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Crect width='24' height='14' y='5' rx='3' fill='%23aab7ef'/%3E%3Crect x='3' y='5' width='3' height='14' fill='%230c1322'/%3E%3Crect x='8' y='5' width='2' height='14' fill='%230c1322'/%3E%3Crect x='12' y='5' width='2' height='14' fill='%230c1322'/%3E%3Crect x='16' y='5' width='2' height='14' fill='%230c1322'/%3E%3Crect x='19' y='5' width='3' height='14' fill='%230c1322'/%3E%3C/svg%3E"/>
-              Piano
-            </button>
-            <button id="tabGuitar">
-              <img alt="guitar" src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cpath d='M18 6l3-3 2 2-3 3a3 3 0 01-3 3l-2 2 2 2-3 3-4-4 3-3 2 2 2-2a3 3 0 003-3z' fill='%23ff7d7d'/%3E%3C/svg%3E"/>
-              Guitar
-            </button>
-            <button id="tabUke">
-              <img alt="ukulele" src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Ccircle cx='8' cy='16' r='5' fill='%23b5e6ff'/%3E%3Crect x='12' y='14' width='8' height='4' rx='2' fill='%237bd1ff'/%3E%3Crect x='20' y='13' width='3' height='6' rx='1' fill='%237bd1ff'/%3E%3C/svg%3E"/>
-              Ukulele
-            </button>
+            <button id="tabPiano" class="active" aria-selected="true">Piano</button>
+            <button id="tabGuitar">Guitar</button>
+            <button id="tabUke">Ukulele</button>
           </div>
         </div>
-
         <div>
           <div class="small" style="margin-bottom:8px">Giọng (key)</div>
           <div class="row">
-            <select id="selKey">
-              <option value="C">C</option>
-              <option value="G">G</option>
-              <option value="D">D</option>
-              <option value="A">A</option>
-              <option value="F">F</option>
-            </select>
+            <select id="selKey"></select>
           </div>
         </div>
-
         <div>
           <div class="small" style="margin-bottom:8px">Tiến trình</div>
           <select id="selProg">
@@ -304,7 +200,7 @@
       </div>
 
       <div class="row" style="margin-top:14px">
-        <input id="titleEl" placeholder="Tên bài" style="flex:1" />
+        <input id="titleEl" placeholder="Tên bài" style="flex:1"/>
         <button id="btnSuggest" class="btn">Tự gợi ý hợp âm</button>
       </div>
 
@@ -319,11 +215,10 @@
         </div>
       </div>
 
-      <!-- ===== Auto fill theo pattern ===== -->
       <div class="row" style="margin-top:8px;align-items:flex-end">
         <div style="flex:1">
           <div class="small">Mẫu hợp âm cho cả bài (pattern)</div>
-          <textarea id="patternInput" placeholder="Ví dụ: C G Am F | F G Em Am"></textarea>
+          <input id="patternInput" placeholder="Ví dụ: C G Am F | F G Em Am"/>
           <div class="small">
             Pattern sẽ lặp từ đầu đến cuối bài, mỗi hợp âm chia đều theo thời lượng MP3.
           </div>
@@ -332,59 +227,37 @@
         <small class="small">Tự điền hợp âm cho cả bài theo mẫu ở trên.</small>
       </div>
 
-      <!-- ===== Audio ===== -->
       <div style="margin-top:10px">
         <div class="row">
-          <input id="audiourl" placeholder="https://…/song.mp3" style="flex:1" />
-          <input id="filepick" type="file" accept="audio/*" class="hidden" />
+          <input id="audiourl" placeholder="https://…/song.mp3" style="flex:1"/>
+          <input id="filepick" type="file" accept="audio/*" class="hidden"/>
           <button id="btnPick" class="btn ghost">Chọn MP3</button>
           <button id="btnLoad" class="btn ghost">Load</button>
         </div>
-
         <div class="row" style="margin-top:10px;align-items:center">
           <button id="btnPlay" class="btn">Play</button>
           <button id="btnPause" class="btn ghost">Pause</button>
           <button id="btnStop" class="btn bad">Stop</button>
           <span id="time" class="mono small">00:00 / 00:00</span>
         </div>
+        <div class="progress" style="margin-top:8px"><i id="bar"></i></div>
 
-        <div style="margin-top:8px">
-          <input id="bar" type="range" min="0" max="100" value="0" style="width:100%;" />
-        </div>
-
-        <!-- Volume + Mute -->
         <div class="row" style="margin-top:8px;align-items:center">
-          <span class="small" style="margin-right:8px">🔊 Volume</span>
-          <input id="vol" type="range" min="0" max="1" step="0.01" value="1"
-                 style="flex:1;margin-right:8px" />
+          <span class="small" style="margin-right:8px">Volume</span>
+          <input id="vol" type="range" min="0" max="1" step="0.01" value="1" style="flex:1;margin-right:8px"/>
           <button id="btnMute" class="btn ghost">Mute</button>
         </div>
 
-        <!-- Chord Runner: hiển thị hợp âm đang phát -->
         <div class="row" style="margin-top:6px;align-items:center">
-          <span class="small">🎼 Hợp âm đang phát:</span>
+          <span class="small">Hợp âm đang phát:</span>
           <span id="currentChord" class="mono small" style="margin-left:6px;white-space:pre;"></span>
         </div>
-
-        <!-- Local save / Export (chưa gắn JS) -->
-        <div class="row" style="margin-top:12px">
-          <button id="btnSave" class="btn ghost">Lưu tạm (trình duyệt)</button>
-          <button id="btnLoadLocal" class="btn ghost">Mở bản đã lưu</button>
-          <button id="btnShare" class="btn">Chia sẻ bài học</button>
-          <button id="btnPDF" class="btn ok">Xuất Lead Sheet (PDF)</button>
-          <span class="small">
-            Dành cho học & chia sẻ: lưu tạm trên máy, hoặc tạo 1 đường link để gửi cho người khác mở lại đúng bài này.
-          </span>
-        </div>
-
-        <audio id="audio" preload="auto"></audio>
       </div>
     </div>
 
-    <!-- ===== Right: Pi Login / Pay & Log ===== -->
     <div class="card rightBox">
       <div class="row" style="justify-content:space-between;align-items:center">
-        <h3>Đăng nhập &amp; thanh toán</h3>
+        <h3>Đăng nhập & thanh toán</h3>
         <span class="badge">Pi Payment (LIVE)</span>
       </div>
 
@@ -396,7 +269,7 @@
 
       <details style="margin-top:10px">
         <summary class="small" style="cursor:pointer;">
-          ⚙️ Cài đặt backend (dev) – chỉ chỉnh khi setup
+          Cài đặt backend (dev) – chỉ chỉnh khi setup
         </summary>
 
         <div style="margin-top:6px; padding:6px; background:#151515; border-radius:6px;">
@@ -411,56 +284,24 @@
           </div>
         </div>
       </details>
-<script>
-  (function () {
-    var input = document.getElementById("backendUrl");
-    var btn = document.getElementById("btnSaveBackend");
-    var span = document.getElementById("backendNow");
-
-    if (!input || !btn) return;
-
-    // Load giá trị backend đã lưu (nếu có)
-    var saved = localStorage.getItem("backend") || "";
-    input.value = saved;
-    if (span) {
-      span.textContent = saved || "(none)";
-    }
-
-    // Lưu khi bấm nút
-    btn.addEventListener("click", function () {
-      var url = (input.value || "").trim();
-      localStorage.setItem("backend", url);
-      if (span) {
-        span.textContent = url || "(none)";
-      }
-      // log nhẹ lên console (không cần index.js)
-      try {
-        console.log("[Backend inline] Saved backend:", url);
-      } catch (e) {}
-    });
-  })();
-</script>
 
       <div style="margin-top:12px">
-  <div class="row" style="justify-content:space-between;align-items:center">
-    <div class="small">Log</div>
-    <button id="btnLogToggle" class="btn ghost" style="padding:4px 10px;font-size:11px">
-      Mở rộng log
-    </button>
+        <div class="row" style="justify-content:space-between;align-items:center">
+          <div class="small">Log</div>
+          <button id="btnLogToggle" class="btn ghost" style="padding:4px 10px;font-size:12px;">
+            Mở rộng log
+          </button>
+        </div>
+        <textarea id="log" class="mono" style="height:180px"></textarea>
+        <div class="small">Console mirror (copy/paste được) – có thể kéo dãn hoặc bấm “Mở rộng log”.</div>
+      </div>
+    </div>
   </div>
-  <textarea id="log" class="mono" style="height:260px"></textarea>
-  <div class="small">Console mirror (copy/paste được) – có thể kéo dãn hoặc bấm “Mở rộng log”.</div>
-</div>
 
-  <div class="small" style="margin-top:10px">
-    © PiChordify Kingdom — Hackathon demo “có nhạc thật”
-  </div>
+  <div class="small" style="margin-top:10px">© PiChordify Kingdom — Hackathon demo “có nhạc thật”</div>
 </div>
 
 <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-<script src="index.js?v=8.10.2"></script>
-
-
+<script src="index.js"></script>
 </body>
 </html>
