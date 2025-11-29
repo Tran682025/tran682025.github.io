@@ -400,6 +400,35 @@
           </div>
         </div>
       </details>
+<script>
+  (function () {
+    var input = document.getElementById("backendUrl");
+    var btn = document.getElementById("btnSaveBackend");
+    var span = document.getElementById("backendNow");
+
+    if (!input || !btn) return;
+
+    // Load giá trị backend đã lưu (nếu có)
+    var saved = localStorage.getItem("backend") || "";
+    input.value = saved;
+    if (span) {
+      span.textContent = saved || "(none)";
+    }
+
+    // Lưu khi bấm nút
+    btn.addEventListener("click", function () {
+      var url = (input.value || "").trim();
+      localStorage.setItem("backend", url);
+      if (span) {
+        span.textContent = url || "(none)";
+      }
+      // log nhẹ lên console (không cần index.js)
+      try {
+        console.log("[Backend inline] Saved backend:", url);
+      } catch (e) {}
+    });
+  })();
+</script>
 
       <div style="margin-top:12px">
         <div class="small">Log</div>
