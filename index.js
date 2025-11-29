@@ -1,7 +1,7 @@
-// PiChordify Kingdom — v20.0 "Chord Runner LIVE"
-// Player + chord tools + Pi Login / Pay (LIVE)
-// BẢN TƯƠNG THÍCH PI BROWSER (KHÔNG DÙNG OPTIONAL CHAINING)
+// PiChordify Kingdom — frontend clean build
+// Tương thích giao diện v8.10, thêm Pi Login + Pi Payment (LIVE) chạy được thật.
 
+// Namespace chính
 const MK = {
   audio: null,
   state: {
@@ -32,7 +32,7 @@ function setTitleFromName(name) {
   }
 }
 
-// === Log panel (giữ kiểu cũ) ===
+// === Log panel (viết thẳng ra textarea #log) ===
 function log() {
   var args = Array.prototype.slice.call(arguments);
   var box = $("log");
@@ -55,7 +55,6 @@ function log() {
   var line = "[" + now + "] " + textParts.join(" ");
 
   if (!box) {
-    // fallback ra console
     console.log(line);
     return;
   }
@@ -509,12 +508,12 @@ function initPiSdk() {
       try {
         log("⏳ Bắt đầu tạo thanh toán (LIVE)...");
 
-        var amount = "0.1"; // để ở dạng chuỗi 0.1 Pi cho rẻ
+        var amount = "0.1"; // 0.1 Pi cho nhẹ
         var memo = "Musickingdom test for Tran2020";
         var metadata = {
           username: MK.state.user && MK.state.user.username ? MK.state.user.username : "Tran2020",
           app: "PiChordifyKingdom",
-          version: "20.0",
+          version: "8.10-clean",
         };
 
         var paymentData = {
@@ -525,74 +524,63 @@ function initPiSdk() {
 
         var backendBase = backend.replace(/\/+$/, "");
 
-      var payment = await Pi.createPayment(paymentData, {
-  onReadyForServerApproval: async function (paymentId) {
-    log("🛰️ onReadyForServerApproval, paymentId:", paymentId);
-    try {
-      var backendBase = getBackend().replace(/\/+$/, "");
-      var res = await fetch(backendBase + "/pay-live", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          identifier: paymentId,
-          amount: paymentData.amount,
-          username: paymentData.metadata.username,
-        }),
-      });
-      var data = await res.json();
-      log("💾 Backend /pay-live (approve) trả về:", data);
-    } catch (err) {
-      console.error(err);
-      log(
-        "❌ Lỗi gọi backend /pay-live (approve):",
-        err && err.message ? err.message : err
-      );
-    }
-  },
+        var payment = await Pi.createPayment(paymentData, {
+          onReadyForServerApproval: async function (paymentId) {
+            log("🛰️ onReadyForServerApproval, paymentId:", paymentId);
+            try {
+              var res = await fetch(backendBase + "/pay-live", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  identifier: paymentId,
+                  amount: paymentData.amount,
+                  username: paymentData.metadata.username,
+                }),
+              });
+              var data = await res.json();
+              log("💾 Backend /pay-live trả về:", data);
+            } catch (err) {
+              console.error(err);
+              log("❌ Lỗi gọi backend /pay-live:", err && err.message ? err.message : err);
+            }
+          },
+          onReadyForServerCompletion: function (paymentId, txid) {
+            log("✅ onReadyForServerCompletion:", paymentId, "txid:", txid);
+          },
+          onCancel: function (paymentId) {
+            log("⚠ User huỷ thanh toán:", paymentId);
+          },
+          onError: function (err) {
+            console.error(err);
+            log("❌ Lỗi Pi Payment (callback):", err && err.message ? err.message : err);
+          },
+        });
 
-  onReadyForServerCompletion: async function (paymentId, txid) {
-    log("✅ onReadyForServerCompletion:", paymentId, "txid:", txid);
+        log("📩 Pi.createPayment trả về:", payment);
+      } catch (e) {
+        console.error(e);
+        log("❌ X payment (LIVE) lỗi:", e && e.message ? e.message : e);
+      }
+    });
+  }
+}
 
-    var backend = getBackend();
-    if (!backend) {
-      log("⚠ Chưa cấu hình backend (dev) nên không gọi complete được.");
-      return;
-    }
+//////////////////////////////
+// 8. Boot
+//////////////////////////////
 
-    try {
-      var backendBase = backend.replace(/\/+$/, "");
-      var res = await fetch(backendBase + "/pay-live", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          identifier: paymentId,
-          txid: txid,
-          username:
-            MK.state.user && MK.state.user.username
-              ? MK.state.user.username
-              : "Tran2020",
-        }),
-      });
-      var data = await res.json();
-      log("🎯 Backend /pay-live (complete) trả về:", data);
-    } catch (err) {
-      console.error(err);
-      log(
-        "❌ Lỗi gọi backend /pay-live (complete):",
-        err && err.message ? err.message : err
-      );
-    }
-  },
-
-  onCancel: function (paymentId) {
-    log("⚠ User huỷ thanh toán:", paymentId);
-  },
-
-  onError: function (err) {
-    console.error(err);
-    log(
-      "❌ Lỗi Pi Payment (callback):",
-      err && err.message ? err.message : err
-    );
-  },
+window.addEventListener("DOMContentLoaded", function () {
+  try {
+    initPlayer();
+    initChordSuggest();
+    initAutoPatternFill();
+    initChordRunner();
+    initBackendSettings();
+    initPiSdk();
+    initLogPanel();
+    log("🎼 PiChordify Kingdom frontend (index.js clean build) đã khởi động.");
+  } catch (e) {
+    console.error(e);
+    log("❌ Lỗi init index.js:", e && e.message ? e.message : e);
+  }
 });
