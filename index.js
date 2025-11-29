@@ -1,7 +1,7 @@
-// PiChordify Kingdom — frontend clean build
-// Tương thích giao diện v8.10, thêm Pi Login + Pi Payment (LIVE) chạy được thật.
+// PiChordify Kingdom — v20.0 "Chord Runner LIVE"
+// Player + chord tools + Pi Login / Pay (LIVE)
+// BẢN TƯƠNG THÍCH PI BROWSER (KHÔNG DÙNG OPTIONAL CHAINING)
 
-// Namespace chính
 const MK = {
   audio: null,
   state: {
@@ -32,7 +32,7 @@ function setTitleFromName(name) {
   }
 }
 
-// === Log panel (viết thẳng ra textarea #log) ===
+// === Log panel (giữ kiểu cũ) ===
 function log() {
   var args = Array.prototype.slice.call(arguments);
   var box = $("log");
@@ -55,6 +55,7 @@ function log() {
   var line = "[" + now + "] " + textParts.join(" ");
 
   if (!box) {
+    // fallback ra console
     console.log(line);
     return;
   }
@@ -508,12 +509,12 @@ function initPiSdk() {
       try {
         log("⏳ Bắt đầu tạo thanh toán (LIVE)...");
 
-        var amount = "0.1"; // 0.1 Pi cho nhẹ
+        var amount = "0.1"; // để ở dạng chuỗi 0.1 Pi cho rẻ
         var memo = "Musickingdom test for Tran2020";
         var metadata = {
           username: MK.state.user && MK.state.user.username ? MK.state.user.username : "Tran2020",
           app: "PiChordifyKingdom",
-          version: "8.10-clean",
+          version: "20.0",
         };
 
         var paymentData = {
@@ -524,7 +525,7 @@ function initPiSdk() {
 
         var backendBase = backend.replace(/\/+$/, "");
 
-        var payment = await Pi.createPayment(paymentData, {
+      var payment = await Pi.createPayment(paymentData, {
   onReadyForServerApproval: async function (paymentId) {
     log("🛰️ onReadyForServerApproval, paymentId:", paymentId);
     try {
