@@ -584,3 +584,53 @@ window.addEventListener("DOMContentLoaded", function () {
     log("❌ Lỗi init index.js:", e && e.message ? e.message : e);
   }
 });
+function onIncompletePaymentFound(payment) {
+  log("⚠ onIncompletePaymentFound:", payment);
+
+  try {
+    var backend = getBackend();
+    if (!backend) {
+      log("⚠ Chưa cấu hình backend nên không auto-complete được pending payment.");
+      return;
+    }
+
+    var identifier = payment && payment.identifier;
+    var txid =
+      payment &&
+      payment.transaction &&
+      payment.transaction.txid;
+
+    if (!identifier || !txid) {
+      log("⚠ Pending payment thiếu identifier hoặc txid, không thể auto-complete.");
+      return;
+    }
+
+    var url = backend.replace(/\/+$/, "") + "/complete-payment";
+    var body = { identifier: identifier, txid: txid };
+
+    log("⏳ Auto-complete pending payment trên server...", body);
+
+    fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    })
+      .then(function (res) {
+        return res.json();
+      })
+      .then(function (data) {
+        log("✅ Kết quả /complete-payment:", data);
+      })
+      .catch(function (err) {
+        log(
+          "❌ Lỗi gọi /complete-payment:",
+          err && err.message ? err.message : err
+        );
+      });
+  } catch (e) {
+    log(
+      "❌ Lỗi xử lý onIncompletePaymentFound:",
+      e && e.message ? e.message : e
+    );
+  }
+}
