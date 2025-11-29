@@ -519,3 +519,14 @@ function initPiSdk() {
     });
   }
 }
+// 8. Khởi động tất cả khi DOM sẵn sàng
+document.addEventListener("DOMContentLoaded", function () {
+  initPlayer();
+  initChordSuggest();
+  initAutoPatternFill();
+  initChordRunner();
+  initFocusMode();
+  initLogPanel();          // bật nút Mở rộng log / Thu nhỏ log
+  initBackendSettings();
+  initPiSdk();             // Pi Login + Pi Pay LIVE
+});
