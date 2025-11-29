@@ -475,57 +475,51 @@ function initPiSdk() {
     });
   }
 
-  if (btnPayLive) {
-    btnPayLive.addEventListener("click", async () => {
-      const backend = getBackend();
-      if (!backend) {
-        log("⚠ Chưa cấu hình backend (dev). Hãy vào 'Cài đặt backend'.");
-        return;
-      }
-      try {
-        log("⏳ Bắt đầu tạo thanh toán (LIVE)...");
-        const amount = 0.1;
-        const memo = "Musickingdom test for Tran2020";
-        const metadata = { username: "Tran2020" };
-
-        const payment = await Pi.createPayment({
-          amount,
-          memo,
-          metadata,
-        });
-
-        log("📩 Pi.createPayment trả về:", payment);
-
-        const res = await fetch(backend + "/pay-live", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payment),
-        });
-        const data = await res.json();
-        log("✅ Kết quả /pay-live:", data);
-      } catch (e) {
-        console.error(e);
-        log("❌ X payment (LIVE) lỗi:", e.message || e);
-      }
-    });
+  btnPayLive.addEventListener("click", async () => {
+  const backend = getBackend();
+  if (!backend) {
+    log("⚠ Chưa cấu hình backend (dev). Hãy vào 'Cài đặt backend'.");
+    return;
   }
-}
 
-//////////////////////////////
-// 8. Boot
-//////////////////////////////
-
-window.addEventListener("DOMContentLoaded", () => {
   try {
-    initPlayer();
-    initChordSuggest();
-    initAutoPatternFill();
-    initChordRunner();
-    initBackendSettings();
-    initPiSdk();
-    log("🎼 PiChordify Kingdom frontend (index.js) đã khởi động.");
+    log("⏳ Bắt đầu tạo thanh toán (LIVE)...");
+
+    const amount = 0.1;
+    const memo = "Musickingdom test for Tran2020";
+    const metadata = { username: "Tran2020" };
+
+    const payment = await Pi.createPayment(
+      {
+        amount,
+        memo,
+        metadata,
+      },
+      {
+        onReadyForServerApproval: async (paymentId) => {
+          // gửi paymentId về backend nếu cần tạo payment-tracking
+          await fetch(backend + "/pay-live", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ identifier: paymentId }),
+          });
+          log("💾 Đã gửi paymentId cho backend:", paymentId);
+        },
+        onReadyForServerCompletion: async (paymentId) => {
+          log("🟢 Payment đã được approve – chờ webhook complete:", paymentId);
+        },
+        onCancel: (paymentId) => {
+          log("⚠ User huỷ thanh toán:", paymentId);
+        },
+        onError: (err) => {
+          log("❌ Lỗi Pi Payment:", err);
+        },
+      }
+    );
+
+    log("📩 Pi.createPayment trả về:", payment);
   } catch (e) {
     console.error(e);
-    log("❌ Lỗi init index.js:", e.message || e);
+    log("❌ X payment (LIVE) lỗi:", e.message || e);
   }
 });
