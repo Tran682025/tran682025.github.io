@@ -38,13 +38,14 @@
         width:100%;
       }
     }
-
     /* Log box có thể kéo dãn + mode fullscreen */
     #log{
       resize:vertical;
       min-height:160px;
       max-height:60vh;
     }
+
+    /* Khi bật chế độ log-max, chiều cao chiếm gần full màn */
     .log-max{
       height:60vh !important;
     }
@@ -126,7 +127,7 @@
     .hidden{display:none}
     .small{font-size:13px;color:#9fb0d1}
 
-    /* === MK HERO =================== */
+    /* === MK HERO (Musickingdom header) =================== */
     .mk-hero {
       position: relative;
       padding: 2.5rem 1.5rem 2rem;
@@ -180,12 +181,22 @@
       .mk-version-icon{width:56px;}
     }
 
-    /* Focus mode */
-    body.focus-mode .mk-hero { display:none; }
-    body.focus-mode .rightBox { display:none; }
-    body.focus-mode .wrap { max-width:980px; }
+    /* === Focus mode: tập trung vùng hợp âm / player === */
+    body.focus-mode .mk-hero {
+      display: none;
+    }
+    body.focus-mode .rightBox {
+      display: none;
+    }
+    body.focus-mode .wrap {
+      max-width: 980px;
+    }
     body.focus-mode #lyrics,
-    body.focus-mode #suggest { min-height:220px; }
+    body.focus-mode #suggest {
+      min-height: 220px;
+    }
+
+    /* Hợp âm đang phát – pill hiển thị */
     #currentChord{
       display:inline-block;
       padding:4px 10px;
@@ -249,14 +260,203 @@
 
   <div class="grid">
     <!-- ===== Left: Editor ===== -->
-    <!-- NGUYÊN BẢN như v8.10, không đổi gì trong thân form, chỉ rút gọn comment để trả lời ngắn -->
-    <!-- (Anh có thể giữ nguyên phần HTML editor từ file cũ, vì không có gì thay đổi logic) -->
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <div class="small" style="margin-bottom:8px">Nhạc cụ</div>
+          <div class="iconTab" role="tablist" aria-label="instrument">
+            <button id="tabPiano" class="active" aria-selected="true">
+              <img alt="piano" src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Crect width='24' height='14' y='5' rx='3' fill='%23aab7ef'/%3E%3Crect x='3' y='5' width='3' height='14' fill='%230c1322'/%3E%3Crect x='8' y='5' width='2' height='14' fill='%230c1322'/%3E%3Crect x='12' y='5' width='2' height='14' fill='%230c1322'/%3E%3Crect x='16' y='5' width='2' height='14' fill='%230c1322'/%3E%3Crect x='19' y='5' width='3' height='14' fill='%230c1322'/%3E%3C/svg%3E"/>
+              Piano
+            </button>
+            <button id="tabGuitar">
+              <img alt="guitar" src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cpath d='M18 6l3-3 2 2-3 3a3 3 0 01-3 3l-2 2 2 2-3 3-4-4 3-3 2 2 2-2a3 3 0 003-3z' fill='%23ff7d7d'/%3E%3C/svg%3E"/>
+              Guitar
+            </button>
+            <button id="tabUke">
+              <img alt="ukulele" src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Ccircle cx='8' cy='16' r='5' fill='%23b5e6ff'/%3E%3Crect x='12' y='14' width='8' height='4' rx='2' fill='%237bd1ff'/%3E%3Crect x='20' y='13' width='3' height='6' rx='1' fill='%237bd1ff'/%3E%3C/svg%3E"/>
+              Ukulele
+            </button>
+          </div>
+        </div>
 
-    <!-- Toàn bộ block từ <div class="card"> bên trái tới <audio id="audio"> dưới cùng -->
-    <!-- ... GIỮ NGUYÊN NHƯ FILE V8.10 CỦA ANH ... -->
+        <div>
+          <div class="small" style="margin-bottom:8px">Giọng (key)</div>
+          <div class="row">
+            <select id="selKey">
+              <option value="C">C</option>
+              <option value="G">G</option>
+              <option value="D">D</option>
+              <option value="A">A</option>
+              <option value="F">F</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <div class="small" style="margin-bottom:8px">Tiến trình</div>
+          <select id="selProg">
+            <option value="I-V-vi-IV">I–V–vi–IV</option>
+            <option value="I-vi-IV-V">I–vi–IV–V</option>
+            <option value="I-IV-V">I–IV–V</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:14px">
+        <input id="titleEl" placeholder="Tên bài" style="flex:1" />
+        <button id="btnSuggest" class="btn">Tự gợi ý hợp âm</button>
+      </div>
+
+      <div class="row" style="margin-top:12px">
+        <div style="flex:1">
+          <div class="small">Lời + hợp âm (mỗi dòng có mốc thời gian — dạng: <span class="kbd">mm:ss Em / D</span>)</div>
+          <textarea id="lyrics" placeholder="00:12   Em  /  D ..."></textarea>
+        </div>
+        <div style="flex:1">
+          <div class="small">Gợi ý hợp âm</div>
+          <textarea id="suggest" class="mono" readonly></textarea>
+        </div>
+      </div>
+
+      <!-- ===== Auto fill theo pattern ===== -->
+      <div class="row" style="margin-top:8px;align-items:flex-end">
+        <div style="flex:1">
+          <div class="small">Mẫu hợp âm cho cả bài (pattern)</div>
+          <textarea id="patternInput" placeholder="Ví dụ: C G Am F | F G Em Am"></textarea>
+          <div class="small">
+            Pattern sẽ lặp từ đầu đến cuối bài, mỗi hợp âm chia đều theo thời lượng MP3.
+          </div>
+        </div>
+        <button id="btnAutoPattern" class="btn ghost">Auto fill</button>
+        <small class="small">Tự điền hợp âm cho cả bài theo mẫu ở trên.</small>
+      </div>
+
+      <!-- ===== Audio ===== -->
+      <div style="margin-top:10px">
+        <div class="row">
+          <input id="audiourl" placeholder="https://…/song.mp3" style="flex:1" />
+          <input id="filepick" type="file" accept="audio/*" class="hidden" />
+          <button id="btnPick" class="btn ghost">Chọn MP3</button>
+          <button id="btnLoad" class="btn ghost">Load</button>
+        </div>
+
+        <div class="row" style="margin-top:10px;align-items:center">
+          <button id="btnPlay" class="btn">Play</button>
+          <button id="btnPause" class="btn ghost">Pause</button>
+          <button id="btnStop" class="btn bad">Stop</button>
+          <span id="time" class="mono small">00:00 / 00:00</span>
+        </div>
+
+        <div style="margin-top:8px">
+          <input id="bar" type="range" min="0" max="100" value="0" style="width:100%;" />
+        </div>
+
+        <!-- Volume + Mute -->
+        <div class="row" style="margin-top:8px;align-items:center">
+          <span class="small" style="margin-right:8px">🔊 Volume</span>
+          <input id="vol" type="range" min="0" max="1" step="0.01" value="1"
+                 style="flex:1;margin-right:8px" />
+          <button id="btnMute" class="btn ghost">Mute</button>
+        </div>
+
+        <!-- Chord Runner: hiển thị hợp âm đang phát -->
+        <div class="row" style="margin-top:6px;align-items:center">
+          <span class="small">🎼 Hợp âm đang phát:</span>
+          <span id="currentChord" class="mono small" style="margin-left:6px;white-space:pre;"></span>
+        </div>
+
+        <!-- Local save / Export (chưa gắn JS) -->
+        <div class="row" style="margin-top:12px">
+          <button id="btnSave" class="btn ghost">Lưu tạm (trình duyệt)</button>
+          <button id="btnLoadLocal" class="btn ghost">Mở bản đã lưu</button>
+          <button id="btnShare" class="btn">Chia sẻ bài học</button>
+          <button id="btnPDF" class="btn ok">Xuất Lead Sheet (PDF)</button>
+          <span class="small">
+            Dành cho học & chia sẻ: lưu tạm trên máy, hoặc tạo 1 đường link để gửi cho người khác mở lại đúng bài này.
+          </span>
+        </div>
+
+        <audio id="audio" preload="auto"></audio>
+      </div>
+    </div>
 
     <!-- ===== Right: Pi Login / Pay & Log ===== -->
-    <!-- Toàn bộ block bên phải cũng giữ nguyên, chỉ khác câu © ở cuối và script version -->
+    <div class="card rightBox">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <h3>Đăng nhập &amp; thanh toán</h3>
+        <span class="badge">Pi Payment (LIVE)</span>
+      </div>
+
+      <div class="row" style="margin-top:8px">
+        <button id="btnPiLogin" class="btn ghost">Pi Login</button>
+        <button id="btnCheckPremium" class="btn ghost">Kiểm tra Premium</button>
+        <button id="btnPayLive" class="btn">Pi Pay (LIVE)</button>
+      </div>
+
+      <details style="margin-top:10px">
+        <summary class="small" style="cursor:pointer;">
+          ⚙️ Cài đặt backend (dev) – chỉ chỉnh khi setup
+        </summary>
+
+        <div style="margin-top:6px; padding:6px; background:#151515; border-radius:6px;">
+          <input id="backendUrl" placeholder="Backend URL"
+                 style="width:75%; padding:6px; border-radius:6px; border:1px solid #333; background:#000; color:#fff;">
+          <button id="btnSaveBackend"
+                  style="padding:6px 12px; margin-left:4px; border-radius:6px; background:#4b7bff; border:none; color:white;">
+            Save backend
+          </button>
+          <div style="margin-top:4px; font-size:12px; color:#aaa;">
+            Current: <span id="backendNow"></span>
+          </div>
+        </div>
+      </details>
+
+<script>
+  (function () {
+    var input = document.getElementById("backendUrl");
+    var btn = document.getElementById("btnSaveBackend");
+    var span = document.getElementById("backendNow");
+
+    if (!input || !btn) return;
+
+    // Load giá trị backend đã lưu (nếu có)
+    var saved = localStorage.getItem("backend") || "";
+    input.value = saved;
+    if (span) {
+      span.textContent = saved || "(none)";
+    }
+
+    // Lưu khi bấm nút
+    btn.addEventListener("click", function () {
+      var url = (input.value || "").trim();
+      localStorage.setItem("backend", url);
+      if (span) {
+        span.textContent = url || "(none)";
+      }
+      // log nhẹ lên console (không cần index.js)
+      try {
+        console.log("[Backend inline] Saved backend:", url);
+      } catch (e) {}
+    });
+  })();
+</script>
+
+      <div style="margin-top:12px">
+        <div class="row" style="justify-content:space-between;align-items:center">
+          <div class="small">Log</div>
+          <button id="btnLogToggle" class="btn ghost" style="padding:4px 10px;font-size:11px">
+            Mở rộng log
+          </button>
+        </div>
+        <textarea id="log" class="mono" style="height:260px"></textarea>
+        <div class="small">Console mirror (copy/paste được) – có thể kéo dãn hoặc bấm “Mở rộng log”.</div>
+      </div>
+
+      <div class="small" style="margin-top:10px">
+        © PiChordify Kingdom — Hackathon demo “có nhạc thật”
+      </div>
+    </div>
   </div>
 </div>
 
