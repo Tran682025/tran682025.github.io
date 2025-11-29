@@ -382,20 +382,6 @@ function initChordRunner() {
       parsed.push({ time: t, chord: chord });
     }
   }
-//////////////////////////////
-// 5.bis. Log panel toggle
-//////////////////////////////
-
-function initLogPanel() {
-  var logBox = $("log");
-  var btn = $("btnLogToggle");
-  if (!logBox || !btn) return;
-
-  btn.addEventListener("click", function () {
-    var isMax = logBox.classList.toggle("log-max");
-    btn.textContent = isMax ? "Thu nhỏ log" : "Mở rộng log";
-  });
-}
 
   lyricsBox.addEventListener("input", parseLyrics);
   parseLyrics();
@@ -412,6 +398,21 @@ function initLogPanel() {
     }
     currentChordSpan.textContent = found;
   }, 400);
+}
+
+//////////////////////////////
+// 5.bis. Log panel toggle
+//////////////////////////////
+
+function initLogPanel() {
+  var logBox = $("log");
+  var btn = $("btnLogToggle");
+  if (!logBox || !btn) return;
+
+  btn.addEventListener("click", function () {
+    var isMax = logBox.classList.toggle("log-max");
+    btn.textContent = isMax ? "Thu nhỏ log" : "Mở rộng log";
+  });
 }
 
 //////////////////////////////
@@ -446,7 +447,7 @@ function initBackendSettings() {
 }
 
 //////////////////////////////
-// 7. Pi SDK (LIVE)
+// 7. Pi SDK
 //////////////////////////////
 
 function initPiSdk() {
@@ -520,46 +521,49 @@ function initPiSdk() {
         var memo = "Musickingdom test for Tran2020";
         var metadata = { username: "Tran2020" };
 
-        var payment = await Pi.createPayment(
-          {
-            amount: amount,
-            memo: memo,
-            metadata: metadata,
-          },
-          {
-            onReadyForServerApproval: async function (paymentId) {
-              log("📡 onReadyForServerApproval, paymentId:", paymentId);
-              try {
-                var res = await fetch(backend + "/pay-live", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ identifier: paymentId }),
-                });
-                var data = await res.json();
-                log("💾 Backend /pay-live trả về:", data);
-              } catch (err) {
-                console.error(err);
-                log(
-                  "❌ Lỗi gọi backend /pay-live:",
-                  err && err.message ? err.message : err
-                );
-              }
-            },
-            onReadyForServerCompletion: function (paymentId, txid) {
-              log("✅ onReadyForServerCompletion:", paymentId, "txid:", txid);
-            },
-            onCancel: function (paymentId) {
-              log("⚠ User huỷ thanh toán:", paymentId);
-            },
-            onError: function (err) {
+        var paymentData = {
+          amount: amount,
+          memo: memo,
+          metadata: metadata,
+        };
+
+        var payment = await Pi.createPayment(paymentData, {
+          onReadyForServerApproval: async function (paymentId) {
+            log("🛰️ onReadyForServerApproval, paymentId:", paymentId);
+            try {
+              var res = await fetch(backend + "/pay-live", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  identifier: paymentId,
+                  amount: paymentData.amount,
+                  username: paymentData.metadata.username,
+                }),
+              });
+              var data = await res.json();
+              log("💾 Backend /pay-live trả về:", data);
+            } catch (err) {
               console.error(err);
               log(
-                "❌ Lỗi Pi Payment (callback):",
+                "❌ Lỗi gọi backend /pay-live:",
                 err && err.message ? err.message : err
               );
-            },
-          }
-        );
+            }
+          },
+          onReadyForServerCompletion: function (paymentId, txid) {
+            log("✅ onReadyForServerCompletion:", paymentId, "txid:", txid);
+          },
+          onCancel: function (paymentId) {
+            log("⚠ User huỷ thanh toán:", paymentId);
+          },
+          onError: function (err) {
+            console.error(err);
+            log(
+              "❌ Lỗi Pi Payment (callback):",
+              err && err.message ? err.message : err
+            );
+          },
+        });
 
         log("📩 Pi.createPayment trả về:", payment);
       } catch (e) {
