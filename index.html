@@ -1,307 +1,682 @@
-<!-- index.html -->
-
 <!doctype html>
 <html lang="vi">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>PiChordify Kingdom — v8.10</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tranmarket Kingdom — ROOM V19.0</title>
 
   <style>
-  :root{
-    --bg:#0f1320; --panel:#131a2a; --muted:#8892b0; --text:#e6e9ef;
-    --brand1:#8a5cff; --brand2:#49c6ff; --accent:#9b7bff; --ok:#24d17e; --warn:#ffb347; --err:#ff5d73;
-    --ring:rgba(138,92,255,.35);
-    --mono:"SFMono-Regular","JetBrains Mono",ui-monospace,Consolas,monospace;
-    --sans:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,"Noto Sans",sans-serif;
-  }
-  *{box-sizing:border-box}
-  html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:var(--sans)}
-  h1,h2,h3{margin:0 0 .5rem}
-  small{color:var(--muted)}
-  a{color:var(--brand2);text-decoration:none}
-
-  .wrap{
-    max-width:1280px;
-    margin:0 auto;
-    padding:0 16px;
-  }
-  .grid{
-    display:block;
-    width:100%;
-  }
-  textarea{min-height:260px;}
-
-  @media(min-width:970px){
-    .grid{
-      display:block;
-      width:100%;
+    :root {
+      --bg:#050816;
+      --panel:#0b1120;
+      --panel-soft:#111827;
+      --accent:#6366f1;
+      --accent-soft:#4f46e5;
+      --accent-2:#22d3ee;
+      --text:#e5e7eb;
+      --muted:#9ca3af;
+      --danger:#f97373;
+      --radius-lg:18px;
+      --radius-xl:26px;
     }
-  }
 
-  .card{background:var(--panel);border:1px solid #1b2236;border-radius:14px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
-  .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-  select,input,button,textarea{background:#0c1322;color:var(--text);border:1px solid #25304d;border-radius:12px;padding:10px 12px;font-size:15px}
-  select,input,textarea{outline:none}
-  select:focus,input:focus,textarea:focus,button:focus{box-shadow:0 0 0 3px var(--ring);border-color:#3b4b77}
-  button{cursor:pointer}
-  .btn{background:linear-gradient(90deg,var(--brand1),var(--brand2));border:none}
-  .btn.ghost{background:#0c1322}
-  .btn.bad{background:#2a0f18;border:1px solid #4b1122}
-  .btn.ok{background:#0f2a22;border:1px solid #11553c}
-  .badge{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:#0e1629;border:1px solid #232e4a;font-size:13px;color:#cfd6e6}
+    * {
+      box-sizing:border-box;
+      margin:0;
+      padding:0;
+    }
 
-  h1.title{font-weight:800;letter-spacing:.5px;font-size:42px;line-height:1.05}
-  .ver{margin-left:10px;border-radius:999px;padding:6px 10px;background:#1a2033;border:1px solid #2a365d;color:#bfc7de;font-weight:600}
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #111827 0, #020617 45%, #000 100%);
+      color:var(--text);
+      min-height:100vh;
+      display:flex;
+      flex-direction:column;
+      padding:16px;
+      gap:16px;
+    }
 
-  .mono{font-family:var(--mono);white-space:pre-wrap}
-  textarea{min-height:160px;width:100%;resize:vertical}
-  #suggest{min-height:112px}
+    body.focus-on {
+      background: radial-gradient(circle at top, #020617 0, #000 40%, #020617 100%);
+    }
 
-  .progress{height:8px;border-radius:999px;background:#0c1322;border:1px solid #25304d;position:relative}
-  .progress>i{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,#3e5cf5,#34d1ff);border-radius:999px}
+    .app-shell {
+      max-width:1200px;
+      width:100%;
+      margin:0 auto;
+      display:flex;
+      flex-direction:column;
+      gap:16px;
+    }
 
-  .kbd{padding:2px 6px;border-radius:6px;border:1px solid #2a2f45;background:#0e1324;font-family:var(--mono);font-size:12px;color:#c6cee1}
-  .iconTab{display:flex;gap:10px}
-  .iconTab button{flex:1;display:flex;align-items:center;gap:10px;justify-content:center;padding:12px;border-radius:14px;background:#0e1629;border:1px solid #252c44}
-  .iconTab button.active{outline:2px solid var(--ring);border-color:#3b48ff;background:#121a30}
-  .iconTab img{height:18px;opacity:.9}
-  .rightBox{min-height:320px}
-  .hidden{display:none}
-  .small{font-size:13px;color:#9fb0d1}
+    header.app-header {
+      background:linear-gradient(135deg, rgba(79,70,229,0.18), rgba(14,165,233,0.10));
+      border-radius:var(--radius-xl);
+      border:1px solid rgba(148,163,184,0.25);
+      padding:16px 18px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      box-shadow:0 18px 45px rgba(15,23,42,0.9);
+      backdrop-filter:blur(18px);
+    }
 
-  .mk-hero {
-    position: relative;
-    padding: 2.5rem 1.5rem 2rem;
-    background-image:
-      linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(76, 29, 149, 0.96));
-    background-size: cover;
-    background-position: center;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.4);
-  }
-  .mk-hero-inner {
-    max-width: 960px;
-    margin: 0 auto;
-    display: flex;
-    align-items: center;
-    gap: 1.75rem;
-  }
-  .mk-title-gradient{
-    background:linear-gradient(90deg,#ff7bd5 0%,#6ea8ff 100%);
-    -webkit-background-clip:text;
-    -webkit-text-fill-color:transparent;
-  }
-  .mk-hero-text h1 {
-    margin: 0 0 0.35rem;
-    font-size: clamp(1.9rem, 2.6vw, 2.4rem);
-    font-weight: 800;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-  }
-  .mk-hero-text p {
-    margin: 0;
-    color: #e5e7eb;
-    font-size: 0.98rem;
-    max-width: 30rem;
-    line-height: 1.55;
-  }
-  .mk-version-icon{
-    width:46px;
-    height:auto;
-    margin-left:10px;
-    border-radius:12px;
-    box-shadow:0 8px 24px rgba(0,0,0,0.35);
-    vertical-align:middle;
-  }
-  @media(min-width:768px){
-    .mk-version-icon{width:56px;}
-  }
+    .brand-block {
+      display:flex;
+      align-items:center;
+      gap:12px;
+    }
 
-  body.focus-mode .mk-hero { display:none; }
-  body.focus-mode .rightBox { display:none; }
-  body.focus-mode .wrap { max-width:980px; }
-  body.focus-mode #lyrics,
-  body.focus-mode #suggest { min-height:220px; }
-  body.focus-mode textarea{ font-size:16px; line-height:1.5; }
-  body.focus-mode .title{ font-size:36px; }
+    .brand-logo {
+      width:40px;
+      height:40px;
+      border-radius:16px;
+      border:1px solid rgba(148,163,184,0.5);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight:700;
+      font-size:20px;
+      background:radial-gradient(circle at top left, #4f46e5, #0f172a);
+      box-shadow:0 10px 30px rgba(15,23,42,0.9);
+    }
 
-  #currentChord{
-    display:inline-block;
-    padding:4px 10px;
-    border-radius:999px;
-    background:#111827;
-    border:1px solid #374151;
-    min-width:60px;
-    font-weight:600;
-  }
+    .brand-text-main {
+      font-size:18px;
+      font-weight:700;
+      letter-spacing:0.04em;
+    }
 
-  #log{
-    resize:vertical;
-    min-height:160px;
-    max-height:60vh;
-  }
-  .log-max{
-    height:60vh !important;
-  }
+    .brand-text-sub {
+      font-size:12px;
+      color:var(--muted);
+    }
+
+    .header-right {
+      display:flex;
+      align-items:center;
+      gap:10px;
+      font-size:12px;
+      color:var(--muted);
+    }
+
+    .pill {
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(148,163,184,0.45);
+      background:rgba(15,23,42,0.8);
+      display:flex;
+      align-items:center;
+      gap:6px;
+      font-size:11px;
+    }
+
+    .pill-dot {
+      width:7px;
+      height:7px;
+      border-radius:999px;
+      background:radial-gradient(circle, #22c55e, #16a34a);
+      box-shadow:0 0 12px rgba(34,197,94,0.9);
+    }
+
+    main {
+      display:grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.4fr);
+      gap:16px;
+    }
+
+    @media (max-width: 900px) {
+      main {
+        grid-template-columns:1fr;
+      }
+    }
+
+    .panel {
+      background:linear-gradient(145deg, rgba(15,23,42,0.9), rgba(15,23,42,0.95));
+      border-radius:var(--radius-xl);
+      border:1px solid rgba(30,64,175,0.9);
+      padding:14px 14px 16px;
+      box-shadow:0 18px 50px rgba(0,0,0,0.9);
+    }
+
+    .panel-header {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:8px;
+    }
+
+    .panel-title {
+      font-size:14px;
+      font-weight:600;
+      letter-spacing:0.06em;
+      text-transform:uppercase;
+      color:#e5e7eb;
+    }
+
+    .panel-tagline {
+      font-size:11px;
+      color:var(--muted);
+    }
+
+    .panel-body {
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      font-size:13px;
+    }
+
+    .kbd {
+      font-size:11px;
+      padding:2px 6px;
+      border-radius:6px;
+      border:1px solid rgba(148,163,184,0.5);
+      background:rgba(15,23,42,0.9);
+      color:var(--muted);
+    }
+
+    /* === Player block === */
+    .player-card {
+      background:radial-gradient(circle at top left, rgba(79,70,229,0.3), rgba(15,23,42,0.95));
+      border-radius:var(--radius-lg);
+      padding:10px 11px;
+      border:1px solid rgba(129,140,248,0.8);
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+
+    .song-meta {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:8px;
+      font-size:12px;
+    }
+
+    .song-title {
+      font-weight:600;
+    }
+
+    .song-key-bpm {
+      font-size:11px;
+      color:var(--muted);
+    }
+
+    .controls-row {
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+
+    button.btn {
+      border:none;
+      outline:none;
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:500;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      background:linear-gradient(135deg, var(--accent), var(--accent-soft));
+      color:white;
+      box-shadow:0 10px 25px rgba(79,70,229,0.8);
+      transition:transform 0.08s ease, box-shadow 0.08s ease, background 0.12s ease;
+    }
+
+    button.btn:hover {
+      transform:translateY(-1px);
+      box-shadow:0 14px 35px rgba(79,70,229,1);
+    }
+
+    button.btn:active {
+      transform:translateY(0);
+      box-shadow:0 6px 18px rgba(79,70,229,0.9);
+    }
+
+    button.btn-ghost {
+      background:rgba(15,23,42,0.9);
+      color:var(--muted);
+      border:1px solid rgba(148,163,184,0.7);
+      box-shadow:none;
+    }
+
+    button.btn-ghost:hover {
+      background:rgba(15,23,42,0.95);
+      color:#e5e7eb;
+      box-shadow:0 10px 25px rgba(15,23,42,0.9);
+    }
+
+    button.btn-danger {
+      background:linear-gradient(135deg, #f97373, #ef4444);
+      box-shadow:0 10px 28px rgba(248,113,113,0.95);
+    }
+
+    button.btn-sm {
+      padding:4px 9px;
+      font-size:11px;
+    }
+
+    .progress-row {
+      display:flex;
+      align-items:center;
+      gap:6px;
+      font-size:11px;
+      color:var(--muted);
+    }
+
+    .progress-bar-wrap {
+      flex:1;
+      height:6px;
+      border-radius:999px;
+      background:rgba(30,64,175,0.7);
+      overflow:hidden;
+    }
+
+    .progress-bar-inner {
+      height:100%;
+      width:0%;
+      border-radius:inherit;
+      background:linear-gradient(90deg, var(--accent-2), var(--accent));
+      transition:width 0.12s linear;
+    }
+
+    /* === Focus & status === */
+    .focus-row {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      font-size:11px;
+    }
+
+    .focus-label {
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+    }
+
+    .focus-label-main {
+      font-weight:500;
+    }
+
+    .focus-label-sub {
+      color:var(--muted);
+      font-size:11px;
+    }
+
+    .status-dot {
+      width:8px;
+      height:8px;
+      border-radius:999px;
+      background:radial-gradient(circle, #fb923c, #ea580c);
+      box-shadow:0 0 10px rgba(248,153,72,0.9);
+    }
+
+    .status-dot.focus-active {
+      background:radial-gradient(circle, #22c55e, #16a34a);
+      box-shadow:0 0 12px rgba(34,197,94,0.95);
+    }
+
+    /* === Chord panel === */
+    .chord-panel {
+      background:radial-gradient(circle at top, rgba(14,165,233,0.25), rgba(15,23,42,0.98));
+      border-radius:var(--radius-xl);
+      border:1px solid rgba(56,189,248,0.75);
+      padding:12px 12px 14px;
+      box-shadow:0 18px 50px rgba(8,47,73,0.9);
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+
+    .chord-header-row {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      font-size:12px;
+    }
+
+    .chord-meta {
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+    }
+
+    .chord-meta-main {
+      font-weight:500;
+    }
+
+    .chord-meta-sub {
+      color:var(--muted);
+      font-size:11px;
+    }
+
+    .chord-tools {
+      display:flex;
+      align-items:center;
+      gap:6px;
+      font-size:11px;
+      color:var(--muted);
+    }
+
+    .chord-body {
+      position:relative;
+      border-radius:var(--radius-lg);
+      border:1px solid rgba(148,163,184,0.7);
+      background:rgba(15,23,42,0.96);
+      overflow:hidden;
+      max-height:420px;
+      display:flex;
+      flex-direction:column;
+    }
+
+    .chord-scroll {
+      flex:1;
+      overflow-y:auto;
+      padding:12px 12px 14px;
+      font-family:"JetBrains Mono","Fira Code",monospace;
+      font-size:12px;
+      line-height:1.6;
+      white-space:pre;
+    }
+
+    .chord-scroll::-webkit-scrollbar {
+      width:6px;
+    }
+
+    .chord-scroll::-webkit-scrollbar-track {
+      background:transparent;
+    }
+
+    .chord-scroll::-webkit-scrollbar-thumb {
+      background:rgba(148,163,184,0.8);
+      border-radius:999px;
+    }
+
+    .chord-footer {
+      padding:6px 10px 7px;
+      border-top:1px solid rgba(31,41,55,0.95);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      font-size:11px;
+      color:var(--muted);
+      background:linear-gradient(90deg, rgba(15,23,42,0.98), rgba(15,23,42,0.9));
+    }
+
+    .chord-badge {
+      padding:2px 7px;
+      border-radius:999px;
+      border:1px solid rgba(148,163,184,0.7);
+      font-size:10px;
+      text-transform:uppercase;
+      letter-spacing:0.08em;
+    }
+
+    /* === Pi section === */
+    .pi-panel {
+      margin-top:8px;
+      background:radial-gradient(circle at top left, rgba(234,179,8,0.28), rgba(15,23,42,0.98));
+      border-radius:var(--radius-lg);
+      border:1px solid rgba(250,204,21,0.7);
+      padding:10px 11px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      font-size:12px;
+    }
+
+    .pi-left {
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+    }
+
+    .pi-main {
+      font-weight:500;
+    }
+
+    .pi-sub {
+      color:var(--muted);
+      font-size:11px;
+    }
+
+    footer {
+      max-width:1200px;
+      width:100%;
+      margin:0 auto;
+      font-size:11px;
+      color:var(--muted);
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
+      padding:2px 4px 0;
+    }
+
+    @media (max-width: 640px) {
+      header.app-header {
+        flex-direction:column;
+        align-items:flex-start;
+      }
+      .header-right {
+        align-self:stretch;
+        justify-content:space-between;
+      }
+      footer {
+        flex-direction:column;
+      }
+    }
   </style>
 </head>
-
 <body>
-
-<header class="mk-hero">
-  <div class="mk-hero-inner">
-    <div class="mk-hero-text">
-      <h1 class="mk-title-gradient">MUSICKINGDOM</h1>
-      <p>
-        Công cụ gợi ý hợp âm &amp; luyện hát trong hệ sinh thái Pi –
-        không gian thờ phượng và sáng tạo dành cho Pioneers.
-      </p>
-    </div>
-  </div>
-</header>
-
-<div class="wrap">
-  <div class="row" style="justify-content:space-between;align-items:flex-end;margin-bottom:10px">
-    <h1 class="title">PiChordify Kingdom</h1>
-    <div class="row" style="align-items:center;gap:8px">
-      <span class="ver">v8.10 — Chord Runner</span>
-      <img src="assets/musickingdom-golden-turtle.jpg" alt="Musickingdom Icon" class="mk-version-icon"/>
-      <button id="btnFocusMode" class="btn ghost" style="padding:6px 10px;font-size:12px;margin-left:4px;">
-        Chế độ tập trung
-      </button>
-    </div>
-  </div>
-
-  <div class="grid">
-    <div class="card">
-      <div class="row" style="justify-content:space-between">
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="brand-block">
+        <div class="brand-logo">TK</div>
         <div>
-          <div class="small" style="margin-bottom:8px">Nhạc cụ</div>
-          <div class="iconTab" role="tablist" aria-label="instrument">
-            <button id="tabPiano" class="active" aria-selected="true">Piano</button>
-            <button id="tabGuitar">Guitar</button>
-            <button id="tabUke">Ukulele</button>
+          <div class="brand-text-main">Tranmarket Kingdom</div>
+          <div class="brand-text-sub">Chord runner · Focus mode · Pi-ready</div>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="pill">
+          <span class="pill-dot"></span>
+          <span id="backend-status-text">Backend: checking…</span>
+        </div>
+        <div class="pill">
+          ROOM V19.0
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <!-- ===== Left: Player + Focus ===== -->
+      <section class="panel" id="player-panel">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">Player · Focus</div>
+            <div class="panel-tagline">Chạy hợp âm, khoá não, để Pi lo phần còn lại</div>
+          </div>
+          <span class="kbd">SPACE · F</span>
+        </div>
+
+        <div class="panel-body">
+          <div class="player-card">
+            <div class="song-meta">
+              <div>
+                <div class="song-title" id="song-title">Demo track — Tranmarket Intro</div>
+                <div class="song-key-bpm" id="song-meta">Key: G · 72 BPM · 4/4</div>
+              </div>
+            </div>
+
+            <div class="controls-row">
+              <button class="btn" id="play-toggle">
+                <span id="play-icon">▶</span>
+                <span id="play-label">Play</span>
+              </button>
+
+              <button class="btn btn-ghost btn-sm" id="rewind-5">
+                ⏪ -5s
+              </button>
+              <button class="btn btn-ghost btn-sm" id="forward-5">
+                ⏩ +5s
+              </button>
+
+              <button class="btn btn-ghost btn-sm" id="focus-toggle">
+                🎯 Focus
+              </button>
+            </div>
+
+            <div class="progress-row">
+              <span id="time-current">0:00</span>
+              <div class="progress-bar-wrap">
+                <div class="progress-bar-inner" id="progress-bar"></div>
+              </div>
+              <span id="time-total">0:00</span>
+            </div>
+
+            <audio id="audio" preload="metadata">
+              <!-- Đổi đường dẫn cho phù hợp dự án của anh -->
+              <source src="audio/demo.mp3" type="audio/mpeg" />
+            </audio>
+          </div>
+
+          <div class="focus-row">
+            <div class="focus-label">
+              <span class="focus-label-main">Focus mode</span>
+              <span class="focus-label-sub" id="focus-status-text">
+                Tắt · Chord sẽ không tự cuộn
+              </span>
+            </div>
+            <div class="status-dot" id="focus-status-dot"></div>
+          </div>
+
+          <div class="focus-row">
+            <div class="focus-label">
+              <span class="focus-label-main">Session · Tracking</span>
+              <span class="focus-label-sub" id="session-status-text">
+                Chưa gửi session nào lên backend
+              </span>
+            </div>
+            <button class="btn btn-ghost btn-sm" id="save-session-btn">
+              💾 Lưu session
+            </button>
           </div>
         </div>
-        <div>
-          <div class="small" style="margin-bottom:8px">Giọng (key)</div>
-          <div class="row">
-            <select id="selKey"></select>
+      </section>
+
+      <!-- ===== Right: Chord Runner ===== -->
+      <section class="chord-panel">
+        <div class="chord-header-row">
+          <div class="chord-meta">
+            <span class="chord-meta-main" id="chord-title">
+              G Intro — Tranmarket Kingdom
+            </span>
+            <span class="chord-meta-sub">
+              Arrow ↑↓ · PageUp/Down để cuộn · F bật tắt Focus
+            </span>
+          </div>
+          <div class="chord-tools">
+            <span id="scroll-speed-label">Scroll: x1.0</span>
+            <button class="btn btn-ghost btn-sm" id="scroll-slower">–</button>
+            <button class="btn btn-ghost btn-sm" id="scroll-faster">+</button>
           </div>
         </div>
-        <div>
-          <div class="small" style="margin-bottom:8px">Tiến trình</div>
-          <select id="selProg">
-            <option value="I-V-vi-IV">I–V–vi–IV</option>
-            <option value="I-vi-IV-V">I–vi–IV–V</option>
-            <option value="I-IV-V">I–IV–V</option>
-          </select>
-        </div>
-      </div>
 
-      <div class="row" style="margin-top:14px">
-        <input id="titleEl" placeholder="Tên bài" style="flex:1"/>
-        <button id="btnSuggest" class="btn">Tự gợi ý hợp âm</button>
-      </div>
+        <div class="chord-body">
+          <div class="chord-scroll" id="chord-scroll">
+Tranmarket Kingdom · Demo chart (G)
 
-      <div class="row" style="margin-top:12px">
-        <div style="flex:1">
-          <div class="small">Lời + hợp âm (mỗi dòng có mốc thời gian — dạng: <span class="kbd">mm:ss Em / D</span>)</div>
-          <textarea id="lyrics" placeholder="00:12   Em  /  D ..."></textarea>
-        </div>
-        <div style="flex:1">
-          <div class="small">Gợi ý hợp âm</div>
-          <textarea id="suggest" class="mono" readonly></textarea>
-        </div>
-      </div>
+[Intro]
+G    D/F#   Em7   C
+G    D/F#   Em7   C
 
-      <div class="row" style="margin-top:8px;align-items:flex-end">
-        <div style="flex:1">
-          <div class="small">Mẫu hợp âm cho cả bài (pattern)</div>
-          <input id="patternInput" placeholder="Ví dụ: C G Am F | F G Em Am"/>
-          <div class="small">
-            Pattern sẽ lặp từ đầu đến cuối bài, mỗi hợp âm chia đều theo thời lượng MP3.
+[Verse 1]
+G                    D/F#
+  Wake the chords, let kingdom run
+Em7                    C
+  Market flows but grace has won
+G                    D/F#
+  Every trade and every line
+Em7                        C
+  Tied to truth, not chasing time
+
+[Pre-Chorus]
+Am7                    G/B
+  When the screens are shouting fear
+C                     D
+  Lift your eyes, He's still right here
+
+[Chorus]
+G               D/F#
+  I'm not owned by FOMO waves
+Em7               C
+  I'm not chained to weekly crave
+G                 D/F#
+  Kingdom value, not just price
+Em7                   C
+  Jesus paid the perfect price
+
+[Tag]
+G            D/F#
+  Tranmarket Kingdom flow
+Em7               C
+  Where Pi and people grow
+
+[Bridge - build]
+G/B         C
+  Let the charts align
+D          Em7
+  With a higher design
+G/B         C
+  Let my trades confess
+D              Em7
+  You're the source, no less
+
+[Outro]
+G    D/F#   Em7   C
+G    D/F#   Em7   C    G
+          </div>
+          <div class="chord-footer">
+            <span class="chord-badge" id="focus-indicator">
+              Focus: OFF
+            </span>
+            <span id="chord-footer-status">
+              Ready · ROOM V19.0
+            </span>
           </div>
         </div>
-        <button id="btnAutoPattern" class="btn ghost">Auto fill</button>
-        <small class="small">Tự điền hợp âm cho cả bài theo mẫu ở trên.</small>
-      </div>
 
-      <div style="margin-top:10px">
-        <div class="row">
-          <input id="audiourl" placeholder="https://…/song.mp3" style="flex:1"/>
-          <input id="filepick" type="file" accept="audio/*" class="hidden"/>
-          <button id="btnPick" class="btn ghost">Chọn MP3</button>
-          <button id="btnLoad" class="btn ghost">Load</button>
-        </div>
-        <div class="row" style="margin-top:10px;align-items:center">
-          <button id="btnPlay" class="btn">Play</button>
-          <button id="btnPause" class="btn ghost">Pause</button>
-          <button id="btnStop" class="btn bad">Stop</button>
-          <span id="time" class="mono small">00:00 / 00:00</span>
-        </div>
-        <div class="progress" style="margin-top:8px"><i id="bar"></i></div>
-
-        <div class="row" style="margin-top:8px;align-items:center">
-          <span class="small" style="margin-right:8px">Volume</span>
-          <input id="vol" type="range" min="0" max="1" step="0.01" value="1" style="flex:1;margin-right:8px"/>
-          <button id="btnMute" class="btn ghost">Mute</button>
-        </div>
-
-        <div class="row" style="margin-top:6px;align-items:center">
-          <span class="small">Hợp âm đang phát:</span>
-          <span id="currentChord" class="mono small" style="margin-left:6px;white-space:pre;"></span>
-        </div>
-      </div>
-    </div>
-
-    <div class="card rightBox">
-      <div class="row" style="justify-content:space-between;align-items:center">
-        <h3>Đăng nhập & thanh toán</h3>
-        <span class="badge">Pi Payment (LIVE)</span>
-      </div>
-
-      <div class="row" style="margin-top:8px">
-        <button id="btnPiLogin" class="btn ghost">Pi Login</button>
-        <button id="btnCheckPremium" class="btn ghost">Kiểm tra Premium</button>
-        <button id="btnPayLive" class="btn">Pi Pay (LIVE)</button>
-      </div>
-
-      <details style="margin-top:10px">
-        <summary class="small" style="cursor:pointer;">
-          Cài đặt backend (dev) – chỉ chỉnh khi setup
-        </summary>
-
-        <div style="margin-top:6px; padding:6px; background:#151515; border-radius:6px;">
-          <input id="backendUrl" placeholder="Backend URL"
-                 style="width:75%; padding:6px; border-radius:6px; border:1px solid #333; background:#000; color:#fff;">
-          <button id="btnSaveBackend"
-                  style="padding:6px 12px; margin-left:4px; border-radius:6px; background:#4b7bff; border:none; color:white;">
-            Save backend
+        <div class="pi-panel">
+          <div class="pi-left">
+            <span class="pi-main">Pi Login · Sandbox</span>
+            <span class="pi-sub" id="pi-status-text">
+              Chưa kết nối Pi SDK · Sẽ thử khởi tạo khi anh bấm nút
+            </span>
+          </div>
+          <button class="btn btn-sm" id="pi-login-btn">
+            π Login
           </button>
-          <div style="margin-top:4px; font-size:12px; color:#aaa;">
-            Current: <span id="backendNow"></span>
-          </div>
         </div>
-      </details>
+      </section>
+    </main>
 
-      <div style="margin-top:12px">
-        <div class="row" style="justify-content:space-between;align-items:center">
-          <div class="small">Log</div>
-          <button id="btnLogToggle" class="btn ghost" style="padding:4px 10px;font-size:12px;">
-            Mở rộng log
-          </button>
-        </div>
-        <textarea id="log" class="mono" style="height:180px"></textarea>
-        <div class="small">Console mirror (copy/paste được) – có thể kéo dãn hoặc bấm “Mở rộng log”.</div>
-      </div>
-    </div>
+    <footer>
+      <span>TranmarketKingdom · ROOM V19.0 · Frontend clean build</span>
+      <span id="version-info">Index.js v19.0 · Backend link pending</span>
+    </footer>
   </div>
 
-  <div class="small" style="margin-top:10px">© PiChordify Kingdom — Hackathon demo “có nhạc thật”</div>
-</div>
+  <!-- Pi SDK (để placeholder, nếu chạy ngoài Pi Browser sẽ không sao) -->
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 
-<script src="https://sdk.minepi.com/pi-sdk.js"></script>
-<script src="index.v11.js"></script>
+  <!-- Frontend logic -->
+  <script src="index.js"></script>
 </body>
 </html>
