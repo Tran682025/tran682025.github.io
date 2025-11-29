@@ -509,7 +509,6 @@ window.addEventListener("DOMContentLoaded", () => {
     initChordSuggest();
     initAutoPatternFill();
     initChordRunner();
-    initFocusMode();
     initBackendSettings();
     initPiSdk();
     log("🎼 PiChordify Kingdom frontend (index.js) đã khởi động.");
