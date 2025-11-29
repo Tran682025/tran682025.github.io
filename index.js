@@ -375,16 +375,6 @@ function initChordRunner() {
 // 5. Focus Mode (vẫn giữ, nhưng chỉ ẩn header + card phải)
 //////////////////////////////
 
-function initFocusMode() {
-  const btn = $("btnFocusMode");
-  if (!btn) return;
-  btn.addEventListener("click", () => {
-    document.body.classList.toggle("focus-mode");
-    const on = document.body.classList.contains("focus-mode");
-    btn.textContent = on ? "Thoát chế độ tập trung" : "Chế độ tập trung";
-  });
-}
-
 //////////////////////////////
 // 6. Backend settings
 //////////////////////////////
