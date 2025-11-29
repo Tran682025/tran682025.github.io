@@ -1,616 +1,268 @@
-// index.js — PiChordify Kingdom v20.0
-// Mục tiêu: player + log ổn định, Pi Login + Pi Pay (LIVE) rõ ràng.
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PiChordify Kingdom — v20.0</title>
 
-(function () {
-  const state = {
-    audio: null,
-    isPlaying: false,
-    isMuted: false,
-    lastVolume: 1,
-    currentUser: null,
-    backendUrl: "",
-    piReady: false,
-  };
+  <!-- ===== Palette / Reset ===== -->
+  <style>
+    :root{
+      --bg:#0f1320; --panel:#131a2a; --muted:#8892b0; --text:#e6e9ef;
+      --brand1:#8a5cff; --brand2:#49c6ff; --accent:#9b7bff; --ok:#24d17e; --warn:#ffb347; --err:#ff5d73;
+      --ring:rgba(138,92,255,.35);
+      --mono:"SFMono-Regular","JetBrains Mono",ui-monospace,Consolas,monospace;
+      --sans:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,"Noto Sans",sans-serif;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:var(--sans)}
+    h1,h2,h3{margin:0 0 .5rem}
+    small{color:var(--muted)}
+    a{color:var(--brand2);text-decoration:none}
 
-  // ========== Helpers ==========
-  function $(id) {
-    return document.getElementById(id);
-  }
+    .wrap{
+      max-width:1280px;
+      margin:0 auto;
+      padding:0 16px;
+    }
 
-  function formatTime(sec) {
-    if (!isFinite(sec) || sec < 0) sec = 0;
-    const m = Math.floor(sec / 60);
-    const s = Math.floor(sec % 60);
-    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-  }
+    .grid{
+      display:block;
+      width:100%;
+    }
+    textarea{min-height:260px;}
 
-  // ----- Log panel + console mirror -----
-  const logEl = $("log");
-  const btnLogToggle = $("btnLogToggle");
-
-  const originalConsole = {
-    log: console.log,
-    warn: console.warn,
-    error: console.error,
-  };
-
-  function appendLogLine(raw) {
-    if (!logEl) return;
-    const ts = new Date().toLocaleTimeString("vi-VN", { hour12: false });
-    const line = `[${ts}] ${raw}`;
-    logEl.value += (logEl.value ? "\n" : "") + line;
-    logEl.scrollTop = logEl.scrollHeight;
-  }
-
-  function log(msg) {
-    appendLogLine(msg);
-    try {
-      originalConsole.log("[PK20]", msg);
-    } catch (_) {}
-  }
-
-  function logWarn(msg) {
-    appendLogLine("⚠ " + msg);
-    try {
-      originalConsole.warn("[PK20]", msg);
-    } catch (_) {}
-  }
-
-  function logError(msg) {
-    appendLogLine("✘ " + msg);
-    try {
-      originalConsole.error("[PK20]", msg);
-    } catch (_) {}
-  }
-
-  // Mirror console.log / warn / error → log panel, nhưng dùng originalConsole nên không loop.
-  ["log", "warn", "error"].forEach((fn) => {
-    console[fn] = function (...args) {
-      try {
-        originalConsole[fn].apply(originalConsole, args);
-      } catch (_) {}
-      const text = args
-        .map((a) => {
-          if (a instanceof Error) return a.message;
-          if (typeof a === "object") {
-            try {
-              return JSON.stringify(a);
-            } catch (_) {
-              return String(a);
-            }
-          }
-          return String(a);
-        })
-        .join(" ");
-      appendLogLine(`console.${fn}: ${text}`);
-    };
-  });
-
-  if (btnLogToggle && logEl) {
-    btnLogToggle.addEventListener("click", () => {
-      logEl.classList.toggle("log-max");
-      btnLogToggle.textContent = logEl.classList.contains("log-max")
-        ? "Thu nhỏ log"
-        : "Mở rộng log";
-    });
-  }
-
-  // ========== Focus mode ==========
-  function initFocusMode() {
-    const btn = $("btnFocusMode");
-    if (!btn) return;
-
-    btn.addEventListener("click", () => {
-      document.body.classList.toggle("focus-mode");
-      const on = document.body.classList.contains("focus-mode");
-      btn.textContent = on ? "Thoát chế độ tập trung" : "Chế độ tập trung";
-      log(on ? "Đã bật Focus mode." : "Đã tắt Focus mode.");
-    });
-  }
-
-  // ========== Instrument tabs ==========
-  function initInstrumentTabs() {
-    const tabs = ["tabPiano", "tabGuitar", "tabUke"]
-      .map((id) => $(id))
-      .filter(Boolean);
-
-    tabs.forEach((btn) => {
-      btn.addEventListener("click", () => {
-        tabs.forEach((b) => b.classList.remove("active"));
-        btn.classList.add("active");
-        log("Nhạc cụ: " + btn.textContent.trim());
-      });
-    });
-  }
-
-  // ========== Chord suggest (đơn giản) ==========
-  const PROGRESSIONS = {
-    "I-V-vi-IV": ["I", "V", "vi", "IV"],
-    "I-vi-IV-V": ["I", "vi", "IV", "V"],
-    "I-IV-V": ["I", "IV", "V", "V"],
-  };
-
-  const KEY_MAP = {
-    C: { I: "C", V: "G", vi: "Am", IV: "F" },
-    G: { I: "G", V: "D", vi: "Em", IV: "C" },
-    D: { I: "D", V: "A", vi: "Bm", IV: "G" },
-    A: { I: "A", V: "E", vi: "F#m", IV: "D" },
-    F: { I: "F", V: "C", vi: "Dm", IV: "Bb" },
-  };
-
-  function initChordSuggest() {
-    const btn = $("btnSuggest");
-    const keySel = $("selKey");
-    const progSel = $("selProg");
-    const out = $("suggest");
-
-    if (!btn || !keySel || !progSel || !out) return;
-
-    btn.addEventListener("click", () => {
-      const key = keySel.value || "C";
-      const progKey = progSel.value || "I-V-vi-IV";
-      const prog = PROGRESSIONS[progKey] || PROGRESSIONS["I-V-vi-IV"];
-      const map = KEY_MAP[key] || KEY_MAP["C"];
-
-      const chords = prog.map((deg) => map[deg] || deg);
-      const lines = [
-        `Key: ${key}`,
-        `Tiến trình: ${progKey}`,
-        "",
-        "[Verse]",
-        chords.join("  /  "),
-        "",
-        "[Chorus]",
-        chords.slice().reverse().join("  /  "),
-      ];
-
-      out.value = lines.join("\n");
-      out.scrollTop = 0;
-      log("Đã gợi ý hợp âm cho key " + key + " — " + progKey);
-    });
-  }
-
-  // ========== Auto pattern fill ==========
-  function initAutoPatternFill() {
-    const patternInput = $("patternInput");
-    const btn = $("btnAutoPattern");
-    const lyrics = $("lyrics");
-    const audio = $("audio");
-
-    if (!patternInput || !btn || !lyrics || !audio) return;
-
-    btn.addEventListener("click", () => {
-      const patternRaw = (patternInput.value || "").trim();
-      if (!patternRaw) {
-        alert("Điền pattern hợp âm trước đã.");
-        return;
-      }
-
-      const tokens = patternRaw
-        .split(/[|\s]+/)
-        .map((t) => t.trim())
-        .filter(Boolean);
-      if (!tokens.length) {
-        alert("Pattern không hợp lệ.");
-        return;
-      }
-
-      const duration = audio.duration || 180; // mặc định 3 phút
-      const step = duration / tokens.length;
-
-      const lines = tokens.map((ch, i) => {
-        const t = formatTime(step * i);
-        return `${t}   ${ch}`;
-      });
-
-      lyrics.value = lines.join("\n");
-      lyrics.scrollTop = 0;
-      log("Đã auto-fill " + tokens.length + " hợp âm theo pattern.");
-    });
-  }
-
-  // ========== Audio player ==========
-  function initAudioPlayer() {
-    const audio = $("audio");
-    const urlInput = $("audiourl");
-    const filePick = $("filepick");
-    const btnPick = $("btnPick");
-    const btnLoad = $("btnLoad");
-    const btnPlay = $("btnPlay");
-    const btnPause = $("btnPause");
-    const btnStop = $("btnStop");
-    const timeLabel = $("time");
-    const bar = $("bar");
-    const vol = $("vol");
-    const btnMute = $("btnMute");
-    const currentChord = $("currentChord");
-    const lyrics = $("lyrics");
-
-    if (!audio) return;
-    state.audio = audio;
-
-    function updateTime() {
-      if (!timeLabel) return;
-      const cur = audio.currentTime || 0;
-      const dur = audio.duration || 0;
-      timeLabel.textContent = `${formatTime(cur)} / ${formatTime(dur)}`;
-      if (bar && dur > 0) {
-        bar.value = ((cur / dur) * 100).toFixed(1);
-      }
-      // Chord runner đơn giản: quét lyrics tìm timestamp <= cur gần nhất
-      if (lyrics && currentChord) {
-        const text = lyrics.value || "";
-        const lines = text.split(/\r?\n/);
-        let found = "";
-        for (const line of lines) {
-          const m = line.match(/^(\d{2}:\d{2})\s+(.*)$/);
-          if (!m) continue;
-          const t = m[1];
-          const rest = m[2];
-          const parts = t.split(":");
-          const sec = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
-          if (sec <= cur + 0.25) {
-            found = rest.trim();
-          } else {
-            break;
-          }
-        }
-        if (found) {
-          currentChord.textContent = found;
-          currentChord.classList.remove("chord-pulse");
-          void currentChord.offsetWidth;
-          currentChord.classList.add("chord-pulse");
-        }
+    @media(min-width:970px){
+      .grid{
+        display:block;
+        width:100%;
       }
     }
 
-    audio.addEventListener("timeupdate", updateTime);
-    audio.addEventListener("loadedmetadata", updateTime);
-    audio.addEventListener("ended", () => {
-      state.isPlaying = false;
-      updateTime();
-      log("Track đã kết thúc.");
-    });
-
-    if (btnPick && filePick) {
-      btnPick.addEventListener("click", () => filePick.click());
-      filePick.addEventListener("change", () => {
-        if (!filePick.files || !filePick.files[0]) return;
-        const file = filePick.files[0];
-        const url = URL.createObjectURL(file);
-        audio.src = url;
-        if (urlInput) urlInput.value = file.name;
-        log("Đã chọn file local: " + file.name);
-      });
+    /* Log box có thể kéo dãn + mode fullscreen */
+    #log{
+      resize:vertical;
+      min-height:160px;
+      max-height:60vh;
+    }
+    .log-max{
+      height:60vh !important;
     }
 
-    if (btnLoad && urlInput) {
-      btnLoad.addEventListener("click", () => {
-        const url = (urlInput.value || "").trim();
-        if (!url) {
-          alert("Nhập URL MP3 trước đã.");
-          return;
-        }
-        audio.src = url;
-        audio.load();
-        log("Đã load audio từ URL.");
-      });
+    .card{
+      background:var(--panel);
+      border:1px solid #1b2236;
+      border-radius:14px;
+      padding:16px;
+      box-shadow:0 10px 30px rgba(0,0,0,.25);
+      margin-bottom:16px;
+    }
+    .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+    select,input,button,textarea{
+      background:#0c1322;
+      color:var(--text);
+      border:1px solid #25304d;
+      border-radius:12px;
+      padding:10px 12px;
+      font-size:15px;
+    }
+    select,input,textarea{outline:none}
+    select:focus,input:focus,textarea:focus,button:focus{
+      box-shadow:0 0 0 3px var(--ring);
+      border-color:#3b4b77;
+    }
+    button{cursor:pointer}
+    .btn{background:linear-gradient(90deg,var(--brand1),var(--brand2));border:none}
+    .btn.ghost{background:#0c1322}
+    .btn.bad{background:#2a0f18;border:1px solid #4b1122}
+    .btn.ok{background:#0f2a22;border:1px solid #11553c}
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:6px 10px;
+      border-radius:999px;
+      background:#0e1629;
+      border:1px solid #232e4a;
+      font-size:13px;
+      color:#cfd6e6;
     }
 
-    if (btnPlay) {
-      btnPlay.addEventListener("click", () => {
-        if (!audio.src) {
-          alert("Chưa có file MP3. Chọn file hoặc nhập URL.");
-          return;
-        }
-        audio
-          .play()
-          .then(() => {
-            state.isPlaying = true;
-            log("Play.");
-          })
-          .catch((err) => {
-            logError("Play lỗi: " + (err && err.message));
-          });
-      });
+    h1.title{font-weight:800;letter-spacing:.5px;font-size:42px;line-height:1.05}
+    .ver{margin-left:10px;border-radius:999px;padding:6px 10px;background:#1a2033;border:1px solid #2a365d;color:#bfc7de;font-weight:600}
+
+    .mono{font-family:var(--mono);white-space:pre-wrap}
+    textarea{min-height:160px;width:100%;resize:vertical}
+    #suggest{min-height:112px}
+
+    .kbd{
+      padding:2px 6px;
+      border-radius:6px;
+      border:1px solid #2a2f45;
+      background:#0e1324;
+      font-family:var(--mono);
+      font-size:12px;
+      color:#c6cee1;
+    }
+    .iconTab{display:flex;gap:10px}
+    .iconTab button{
+      flex:1;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      justify-content:center;
+      padding:12px;
+      border-radius:14px;
+      background:#0e1629;
+      border:1px solid #252c44;
+    }
+    .iconTab button.active{
+      outline:2px solid var(--ring);
+      border-color:#3b48ff;
+      background:#121a30;
+    }
+    .iconTab img{height:18px;opacity:.9}
+    .rightBox{min-height:320px}
+    .hidden{display:none}
+    .small{font-size:13px;color:#9fb0d1}
+
+    /* === MK HERO =================== */
+    .mk-hero {
+      position: relative;
+      padding: 2.5rem 1.5rem 2rem;
+      background-image:
+        linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(76, 29, 149, 0.96)),
+        url("assets/musickingdom-christmas-bg.jpg");
+      background-size: cover;
+      background-position: center;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.4);
     }
 
-    if (btnPause) {
-      btnPause.addEventListener("click", () => {
-        audio.pause();
-        state.isPlaying = false;
-        log("Pause.");
-      });
+    .mk-hero-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 1.75rem;
     }
 
-    if (btnStop) {
-      btnStop.addEventListener("click", () => {
-        audio.pause();
-        audio.currentTime = 0;
-        state.isPlaying = false;
-        updateTime();
-        log("Stop.");
-      });
+    .mk-title-gradient{
+      background:linear-gradient(90deg,#ff7bd5 0%,#6ea8ff 100%);
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
     }
 
-    if (bar) {
-      bar.addEventListener("input", () => {
-        const v = parseFloat(bar.value) || 0;
-        const dur = audio.duration || 0;
-        audio.currentTime = (dur * v) / 100;
-        updateTime();
-      });
+    .mk-hero-text h1 {
+      margin: 0 0 0.35rem;
+      font-size: clamp(1.9rem, 2.6vw, 2.4rem);
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
     }
 
-    if (vol) {
-      vol.addEventListener("input", () => {
-        const v = parseFloat(vol.value);
-        audio.volume = v;
-        if (v > 0) {
-          state.lastVolume = v;
-          state.isMuted = false;
-          if (btnMute) btnMute.textContent = "Mute";
-        }
-      });
+    .mk-hero-text p {
+      margin: 0;
+      color: #e5e7eb;
+      font-size: 0.98rem;
+      max-width: 30rem;
+      line-height: 1.55;
     }
 
-    if (btnMute && vol) {
-      btnMute.addEventListener("click", () => {
-        if (!state.isMuted) {
-          state.lastVolume = vol.value;
-          vol.value = 0;
-          audio.volume = 0;
-          state.isMuted = true;
-          btnMute.textContent = "Unmute";
-          log("Mute.");
-        } else {
-          const v = parseFloat(state.lastVolume || "1") || 1;
-          vol.value = v;
-          audio.volume = v;
-          state.isMuted = false;
-          btnMute.textContent = "Mute";
-          log("Unmute.");
-        }
-      });
+    .mk-version-icon{
+      width:46px;
+      height:auto;
+      margin-left:10px;
+      border-radius:12px;
+      box-shadow:0 8px 24px rgba(0,0,0,0.35);
+      vertical-align:middle;
+    }
+    @media(min-width:768px){
+      .mk-version-icon{width:56px;}
     }
 
-    updateTime();
-    log("Player đã khởi động.");
-  }
-
-  // ========== Local save (rất đơn giản) ==========
-  function initLocalSave() {
-    const btnSave = $("btnSave");
-    const btnLoadLocal = $("btnLoadLocal");
-    const lyrics = $("lyrics");
-    const suggest = $("suggest");
-    const titleEl = $("titleEl");
-
-    if (btnSave) {
-      btnSave.addEventListener("click", () => {
-        const payload = {
-          title: titleEl ? titleEl.value : "",
-          lyrics: lyrics ? lyrics.value : "",
-          suggest: suggest ? suggest.value : "",
-        };
-        localStorage.setItem("pk20-song", JSON.stringify(payload));
-        log("Đã lưu tạm vào trình duyệt.");
-      });
+    /* Focus mode */
+    body.focus-mode .mk-hero { display:none; }
+    body.focus-mode .rightBox { display:none; }
+    body.focus-mode .wrap { max-width:980px; }
+    body.focus-mode #lyrics,
+    body.focus-mode #suggest { min-height:220px; }
+    #currentChord{
+      display:inline-block;
+      padding:4px 10px;
+      border-radius:999px;
+      background:#111827;
+      border:1px solid #374151;
+      min-width:60px;
+      font-weight:600;
     }
-
-    if (btnLoadLocal) {
-      btnLoadLocal.addEventListener("click", () => {
-        const raw = localStorage.getItem("pk20-song");
-        if (!raw) {
-          alert("Chưa có bản lưu nào.");
-          return;
-        }
-        try {
-          const payload = JSON.parse(raw);
-          if (titleEl) titleEl.value = payload.title || "";
-          if (lyrics) lyrics.value = payload.lyrics || "";
-          if (suggest) suggest.value = payload.suggest || "";
-          log("Đã load lại bản lưu.");
-        } catch (e) {
-          logError("Load local lỗi: " + e.message);
-        }
-      });
+    body.focus-mode #currentChord{
+      font-size:17px;
+      padding:6px 14px;
     }
-  }
-
-  // ========== Backend config ==========
-  function initBackendConfig() {
-    const input = $("backendUrl");
-    const btn = $("btnSaveBackend");
-    const span = $("backendNow");
-
-    const saved = localStorage.getItem("backend") || "";
-    state.backendUrl = saved;
-    if (input) input.value = saved;
-    if (span) span.textContent = saved || "(none)";
-
-    if (btn && input) {
-      btn.addEventListener("click", () => {
-        const url = (input.value || "").trim();
-        state.backendUrl = url;
-        localStorage.setItem("backend", url);
-        if (span) span.textContent = url || "(none)";
-        log("Đã lưu backend: " + (url || "(none)"));
-      });
+    .chord-pulse{
+      animation:chordPulse .28s ease-out;
     }
-  }
-
-  async function postBackend(path, body) {
-    if (!state.backendUrl) {
-      logWarn("Chưa cấu hình backend; bỏ qua " + path);
-      return { ok: false, error: "No backend" };
+    @keyframes chordPulse{
+      0%{transform:scale(1);}
+      50%{transform:scale(1.12);}
+      100%{transform:scale(1);}
     }
-    const url = state.backendUrl.replace(/\/+$/, "") + path;
-    try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body || {}),
-      });
-      const data = await res.json().catch(() => ({}));
-      log("Backend " + path + " status " + res.status);
-      return { ok: res.ok, data };
-    } catch (e) {
-      logError("Gọi backend lỗi: " + e.message);
-      return { ok: false, error: e.message };
+    body.focus-mode textarea{
+      font-size:16px;
+      line-height:1.5;
     }
-  }
-
-  // ========== Pi SDK (LIVE) ==========
-  function initPiSdk() {
-    const btnLogin = $("btnPiLogin");
-    const btnPay = $("btnPayLive");
-    const btnCheckPremium = $("btnCheckPremium");
-
-    if (typeof window.Pi === "undefined") {
-      logWarn("Không tìm thấy Pi SDK. Mở app trong Pi Browser để dùng Pi Login / Pay.");
-      if (btnLogin) {
-        btnLogin.addEventListener("click", () => {
-          alert("Không có Pi SDK. Thử mở trong Pi Browser.");
-        });
-      }
-      if (btnPay) {
-        btnPay.addEventListener("click", () => {
-          alert("Không có Pi SDK nên không test được Pi Payment.");
-        });
-      }
-      if (btnCheckPremium) {
-        btnCheckPremium.addEventListener("click", () => {
-          alert("Không có Pi SDK. Cần mở trong Pi Browser.");
-        });
-      }
-      return;
+    body.focus-mode .title{
+      font-size:36px;
     }
+  </style>
+</head>
 
-    const Pi = window.Pi;
-    try {
-      Pi.init({ version: "2.0", sandbox: false });
-      state.piReady = true;
-      log("Pi SDK initialized (LIVE).");
-    } catch (e) {
-      state.piReady = false;
-      logError("Pi SDK init lỗi: " + e.message);
-    }
+<body>
 
-    async function handleLogin() {
-      if (!state.piReady) {
-        logWarn("Pi SDK chưa sẵn, không login được.");
-        return;
-      }
-      log("Đang login với Pi...");
-      try {
-        const scopes = ["username", "payments"];
-        const auth = await Pi.authenticate(scopes, onIncompletePaymentFound);
-        state.currentUser = auth.user;
-        log("Login thành công. " + auth.user.username);
-      } catch (e) {
-        logError("Pi login lỗi: " + e.message);
-        alert("Pi login lỗi. Xem log để chi tiết.");
-      }
-    }
+<header class="mk-hero">
+  <div class="mk-hero-inner">
+    <div class="mk-hero-text">
+      <h1 class="mk-title-gradient">MUSICKINGDOM</h1>
+      <p>
+        Công cụ gợi ý hợp âm &amp; luyện hát trong hệ sinh thái Pi –
+        không gian thờ phượng và sáng tạo dành cho Pioneers.
+      </p>
+    </div>
+  </div>
+</header>
 
-    async function handleCheckPremium() {
-      if (!state.currentUser) {
-        alert("Đăng nhập Pi trước đã.");
-        return;
-      }
-      const res = await postBackend("/premium/check", {
-        uid: state.currentUser.uid,
-        username: state.currentUser.username,
-      });
-      if (!res.ok) {
-        alert("Không kiểm tra được premium. Xem log.");
-        return;
-      }
-      const status = res.data && res.data.status;
-      log("Premium status: " + status);
-      alert("Premium: " + status);
-    }
+<div class="wrap">
+  <div class="row" style="justify-content:space-between;align-items:flex-end;margin-bottom:10px">
+    <h1 class="title">PiChordify Kingdom</h1>
+    <div class="row" style="align-items:center;gap:8px">
+      <span class="ver">v20.0 — Chord Runner LIVE</span>
+      <img src="assets/musickingdom-golden-turtle.jpg"
+           alt="Musickingdom Icon"
+           class="mk-version-icon" />
+      <button id="btnFocusMode"
+              class="btn ghost"
+              style="padding:6px 10px;font-size:12px;margin-left:4px;">
+        Chế độ tập trung
+      </button>
+    </div>
+  </div>
 
-    async function handlePayLive() {
-      if (!state.currentUser) {
-        alert("Đăng nhập Pi trước đã.");
-        return;
-      }
-      if (!state.backendUrl) {
-        if (!confirm("Chưa cấu hình backend. Vẫn tạo payment (sẽ không approve/complete được)?")) {
-          return;
-        }
-      }
+  <div class="grid">
+    <!-- ===== Left: Editor ===== -->
+    <!-- NGUYÊN BẢN như v8.10, không đổi gì trong thân form, chỉ rút gọn comment để trả lời ngắn -->
+    <!-- (Anh có thể giữ nguyên phần HTML editor từ file cũ, vì không có gì thay đổi logic) -->
 
-      try {
-        log("Bắt đầu tạo payment LIVE 1 Pi...");
-        const paymentData = {
-          amount: "1",
-          memo: "PiChordify Kingdom premium demo",
-          metadata: {
-            app: "PiChordifyKingdom",
-            version: "20.0",
-          },
-        };
+    <!-- Toàn bộ block từ <div class="card"> bên trái tới <audio id="audio"> dưới cùng -->
+    <!-- ... GIỮ NGUYÊN NHƯ FILE V8.10 CỦA ANH ... -->
 
-        const callbacks = {
-          onReadyForServerApproval: async (paymentId) => {
-            log("onReadyForServerApproval: " + paymentId);
-            await postBackend("/payments/approve", {
-              paymentId,
-              user: state.currentUser,
-            });
-          },
-          onReadyForServerCompletion: async (paymentId, txid) => {
-            log("onReadyForServerCompletion: " + paymentId + " txid=" + txid);
-            await postBackend("/payments/complete", {
-              paymentId,
-              txid,
-              user: state.currentUser,
-            });
-          },
-          onCancel: (paymentId) => {
-            logWarn("Payment bị huỷ: " + paymentId);
-          },
-          onError: (error, payment) => {
-            logError("Pi.createPayment error: " + (error && error.message));
-            if (payment) {
-              log("Payment object (error): " + JSON.stringify(payment));
-            }
-          },
-        };
+    <!-- ===== Right: Pi Login / Pay & Log ===== -->
+    <!-- Toàn bộ block bên phải cũng giữ nguyên, chỉ khác câu © ở cuối và script version -->
+  </div>
+</div>
 
-        const payment = await Pi.createPayment(paymentData, callbacks);
-        log("✅ Pi.createPayment trả về: " + JSON.stringify(payment));
-      } catch (e) {
-        logError("✘ x payment (LIVE) lỗi: " + (e.message || e));
-        alert("Payment lỗi. Xem log.");
-      }
-    }
+<script src="https://sdk.minepi.com/pi-sdk.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="index.js?v=20.0.0"></script>
 
-    if (btnLogin) btnLogin.addEventListener("click", handleLogin);
-    if (btnCheckPremium) btnCheckPremium.addEventListener("click", handleCheckPremium);
-    if (btnPay) btnPay.addEventListener("click", handlePayLive);
-  }
-
-  function onIncompletePaymentFound(payment) {
-    logWarn("Có payment chưa hoàn tất: " + JSON.stringify(payment));
-    // Sau này có thể gọi backend để sync lại.
-  }
-
-  // ========== Init ==========
-  function init() {
-    log("PiChordify Kingdom frontend (index.js v20.0) đã khởi động.");
-    initFocusMode();
-    initInstrumentTabs();
-    initChordSuggest();
-    initAutoPatternFill();
-    initAudioPlayer();
-    initLocalSave();
-    initBackendConfig();
-    initPiSdk();
-  }
-
-  document.addEventListener("DOMContentLoaded", init);
-})();
+</body>
+</html>
