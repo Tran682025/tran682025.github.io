@@ -1,7 +1,7 @@
 // FYKINGDOM v0.4 + Tran682025 Pi Login/Payment panel
 
 // === Backend URL cho Pi Payment (tùy chọn) ===
-const BACKEND_URL = ""; 
+const BACKEND_URL = https://d6a3c212fcc1.ngrok-free.app
 // Để trống nếu chỉ muốn test client.
 // Nếu có backend: ví dụ "https://curvy-parts-flash.loca.lt"
 
