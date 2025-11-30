@@ -1,239 +1,163 @@
-// PiChordify Kingdom — v0.4 core script
+// Tran682025 · Pi Web3 Studio
+// Frontend test cho Pi Login & Pi Payment (Testnet)
 
-let mediaRecorder = null;
-let recordedChunks = [];
-let userRecordingUrl = null;
+const BACKEND_URL = "https://your-backend-url.example.com"; 
+// TODO: sửa thành URL backend của Trẫm (ví dụ: https://curvy-parts-flash.loca.lt)
+// hoặc tạm thời để nguyên nếu chỉ muốn test Pi SDK & xem log.
+
+let piAvailable = false;
 
 document.addEventListener("DOMContentLoaded", () => {
-  // DOM refs
-  const audioPlayer = document.getElementById("audioPlayer");
-  const playBtn = document.getElementById("playBtn");
-  const pauseBtn = document.getElementById("pauseBtn");
-  const stopBtn = document.getElementById("stopBtn");
-  const speedSlider = document.getElementById("speedSlider");
-  const speedLabel = document.getElementById("speedLabel");
-  const volumeSlider = document.getElementById("volumeSlider");
+  const sdkStatusDot = document.getElementById("sdkStatusDot");
+  const sdkStatusText = document.getElementById("sdkStatusText");
 
-  const lyricsInput = document.getElementById("lyricsInput");
-  const patternInput = document.getElementById("patternInput");
-  const applyPatternBtn = document.getElementById("applyPatternBtn");
-  const autoFillPatternBtn = document.getElementById("autoFillPatternBtn");
-  const lyricsWithChordsOutput = document.getElementById("lyricsWithChordsOutput");
-  const keyInput = document.getElementById("keyInput");
-  const mp3FileInput = document.getElementById("mp3FileInput");
-  const lyricsPreview = document.getElementById("lyricsPreview");
+  const loginBtn = document.getElementById("loginBtn");
+  const loginLog = document.getElementById("loginLog");
+  const scopeInput = document.getElementById("scopeInput");
+  const loginNoteInput = document.getElementById("loginNoteInput");
 
-  const startRecBtn = document.getElementById("startRecBtn");
-  const stopRecBtn = document.getElementById("stopRecBtn");
-  const userRecordingAudio = document.getElementById("userRecordingAudio");
-  const recStatusText = document.getElementById("recText");
-  const recDot = document.getElementById("recDot");
+  const payBtn = document.getElementById("payBtn");
+  const paymentLog = document.getElementById("paymentLog");
+  const amountInput = document.getElementById("amountInput");
+  const memoInput = document.getElementById("memoInput");
+  const metadataInput = document.getElementById("metadataInput");
 
-  const helpModal = document.getElementById("helpModal");
-  const openHelpBtn = document.getElementById("openHelpBtn");
-  const closeHelpBtn = document.getElementById("closeHelpBtn");
-  const tabButtons = document.querySelectorAll(".tab");
-  const chipPresets = document.querySelectorAll(".btn-soft[data-preset]");
+  // ===== Helper: log =====
+  function appendLog(el, msg) {
+    const time = new Date().toISOString().split("T")[1].split(".")[0];
+    el.textContent += `\n[${time}] ${msg}`;
+    el.scrollTop = el.scrollHeight;
+  }
 
-  // 1. Audio player basic behaviour
-  audioPlayer.volume = parseFloat(volumeSlider.value);
-
-  playBtn.addEventListener("click", () => {
-    if (!audioPlayer.src) {
-      // nếu chưa có src, lấy từ file input (nếu có) hoặc bỏ qua
-      const file = mp3FileInput.files && mp3FileInput.files[0];
-      if (file) {
-        const url = URL.createObjectURL(file);
-        audioPlayer.src = url;
-      }
-    }
-    audioPlayer.play().catch(() => {});
-  });
-
-  pauseBtn.addEventListener("click", () => {
-    audioPlayer.pause();
-  });
-
-  stopBtn.addEventListener("click", () => {
-    audioPlayer.pause();
-    audioPlayer.currentTime = 0;
-  });
-
-  speedSlider.addEventListener("input", () => {
-    const val = parseFloat(speedSlider.value);
-    audioPlayer.playbackRate = val;
-    speedLabel.textContent = val.toFixed(2) + "×";
-  });
-
-  volumeSlider.addEventListener("input", () => {
-    audioPlayer.volume = parseFloat(volumeSlider.value);
-  });
-
-  mp3FileInput.addEventListener("change", () => {
-    const file = mp3FileInput.files && mp3FileInput.files[0];
-    if (!file) return;
-    if (audioPlayer.src) URL.revokeObjectURL(audioPlayer.src);
-    const url = URL.createObjectURL(file);
-    audioPlayer.src = url;
-  });
-
-  // 2. Pattern helpers
-  chipPresets.forEach(chip => {
-    chip.addEventListener("click", () => {
-      patternInput.value = chip.dataset.preset || "";
-      patternInput.focus();
-    });
-  });
-
-  autoFillPatternBtn.addEventListener("click", () => {
-    const key = (keyInput.value || "").trim().toUpperCase();
-    let pattern = "";
-
-    // gợi ý cực basic theo key
-    if (key === "G") pattern = "G D Em C";
-    else if (key === "C") pattern = "C G Am F";
-    else if (key === "D") pattern = "D A Bm G";
-    else if (key === "E") pattern = "E B C#m A";
-    else if (key === "A") pattern = "A E F#m D";
-    else pattern = "C G Am F";
-
-    patternInput.value = pattern;
-  });
-
-  applyPatternBtn.addEventListener("click", () => {
-    const rawLyrics = lyricsInput.value;
-    const rawPattern = patternInput.value;
-
-    const pattern = parsePattern(rawPattern);
-    if (!pattern.length) {
-      lyricsWithChordsOutput.textContent =
-        "[lỗi] Chưa có pattern hợp âm. Hãy nhập ví dụ: C G Am F";
-      return;
-    }
-
-    const result = applyPatternToLyrics(rawLyrics, pattern);
-    lyricsWithChordsOutput.textContent = result || "[trống] Chưa có dòng hợp lệ.";
-    lyricsPreview.textContent = result || lyricsPreview.textContent;
-  });
-
-  // 3. Recording
-  startRecBtn.addEventListener("click", startRecording);
-  stopRecBtn.addEventListener("click", stopRecording);
-
-  async function startRecording() {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      alert("Trình duyệt không hỗ trợ ghi âm (MediaRecorder).");
-      return;
-    }
+  // ===== Init Pi SDK (nếu có) =====
+  if (window.Pi) {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      recordedChunks = [];
-      mediaRecorder = new MediaRecorder(stream);
+      window.Pi.init({
+        version: "2.0",
+        sandbox: true,       // testnet / sandbox
+      });
+      piAvailable = true;
+      sdkStatusDot.classList.add("status-ok");
+      sdkStatusText.textContent = "Pi SDK sẵn sàng (Testnet / Sandbox)";
+    } catch (err) {
+      sdkStatusText.textContent = "Lỗi init Pi SDK: " + err.message;
+      appendLog(loginLog, "Pi.init error: " + err.message);
+    }
+  } else {
+    sdkStatusText.textContent =
+      "Không tìm thấy Pi SDK. Hãy mở trang này trong Pi Browser (Develop → Tran682025).";
+    appendLog(loginLog, "Pi SDK không có. Đây có thể là Chrome / trình duyệt ngoài.");
+  }
 
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) recordedChunks.push(e.data);
-      };
+  // ===== Login =====
+  loginBtn.addEventListener("click", async () => {
+    if (!piAvailable) {
+      alert("Pi SDK chưa hoạt động. Hãy mở trong Pi Browser.");
+      return;
+    }
 
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(recordedChunks, { type: "audio/webm" });
-        if (userRecordingUrl) URL.revokeObjectURL(userRecordingUrl);
-        userRecordingUrl = URL.createObjectURL(blob);
-        userRecordingAudio.src = userRecordingUrl;
-        userRecordingAudio.play().catch(() => {});
-        recDot.style.display = "none";
-        recStatusText.textContent = "Đã thu xong · có thể phát lại";
-      };
+    const scopes = scopeInput.value
+      .split(",")
+      .map(s => s.trim())
+      .filter(Boolean);
 
-      mediaRecorder.start();
-      recDot.style.display = "inline-block";
-      recStatusText.textContent = "Đang thu… nói hoặc hát vào mic";
+    appendLog(loginLog, `Bắt đầu Pi.authenticate với scope: [${scopes.join(", ")}]`);
 
-      // option: nếu muốn tự play beat khi bắt đầu thu
-      if (!audioPlayer.paused) {
-        // đã đang chơi
-      } else {
-        audioPlayer.play().catch(() => {});
+    const onIncompletePaymentFound = (payment) => {
+      appendLog(loginLog, "onIncompletePaymentFound: " + JSON.stringify(payment, null, 2));
+    };
+
+    try {
+      const authResult = await window.Pi.authenticate(scopes, onIncompletePaymentFound);
+      appendLog(loginLog, "Kết quả auth: " + JSON.stringify(authResult, null, 2));
+
+      if (loginNoteInput.value.trim()) {
+        appendLog(loginLog, "Ghi chú: " + loginNoteInput.value.trim());
       }
     } catch (err) {
-      console.error("startRecording error", err);
-      alert("Không thể truy cập micro: " + err.message);
+      appendLog(loginLog, "Lỗi authenticate: " + err.message);
+      alert("Login lỗi: " + err.message);
     }
-  }
+  });
 
-  function stopRecording() {
-    if (mediaRecorder && mediaRecorder.state !== "inactive") {
-      mediaRecorder.stop();
-    } else {
-      recDot.style.display = "none";
-      recStatusText.textContent = "Idle";
+  // ===== Payment =====
+  payBtn.addEventListener("click", async () => {
+    if (!piAvailable) {
+      alert("Pi SDK chưa hoạt động. Hãy mở trong Pi Browser.");
+      return;
     }
-  }
 
-  // 4. Help modal
-  openHelpBtn.addEventListener("click", () => {
-    helpModal.style.display = "flex";
-  });
-  closeHelpBtn.addEventListener("click", () => {
-    helpModal.style.display = "none";
-  });
-  helpModal.addEventListener("click", (e) => {
-    if (e.target === helpModal) helpModal.style.display = "none";
-  });
+    const amount = parseFloat(amountInput.value) || 0;
+    const memo = memoInput.value || "Tran682025 Test Payment";
 
-  tabButtons.forEach(btn => {
-    btn.addEventListener("click", () => {
-      const tab = btn.dataset.helpTab;
-      tabButtons.forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
+    let metadata = {};
+    try {
+      metadata = JSON.parse(metadataInput.value);
+    } catch (err) {
+      alert("Metadata không phải JSON hợp lệ. Sửa lại trước khi gửi.");
+      return;
+    }
 
-      document.querySelectorAll("[data-help-content]").forEach(el => {
-        el.style.display = el.dataset.helpContent === tab ? "block" : "none";
-      });
-    });
+    appendLog(paymentLog, `Tạo payment: amount=${amount}, memo="${memo}"`);
+
+    const paymentData = {
+      amount,
+      memo,
+      metadata,
+    };
+
+    const callbacks = {
+      onReadyForServerApproval: async (paymentId) => {
+        appendLog(paymentLog, "onReadyForServerApproval: " + paymentId);
+        // Gửi paymentId cho backend để gọi Pi server /approve
+        try {
+          if (BACKEND_URL && BACKEND_URL.startsWith("http")) {
+            await fetch(`${BACKEND_URL}/payments/approve`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ paymentId }),
+            });
+            appendLog(paymentLog, "Đã gửi approve tới backend.");
+          } else {
+            appendLog(paymentLog, "BACKEND_URL chưa cấu hình – chỉ log, không gọi server.");
+          }
+        } catch (err) {
+          appendLog(paymentLog, "Lỗi fetch approve: " + err.message);
+        }
+      },
+      onReadyForServerCompletion: async (paymentId, txid) => {
+        appendLog(paymentLog, `onReadyForServerCompletion: paymentId=${paymentId}, txid=${txid}`);
+        // Gửi paymentId + txid cho backend để gọi Pi server /complete
+        try {
+          if (BACKEND_URL && BACKEND_URL.startsWith("http")) {
+            await fetch(`${BACKEND_URL}/payments/complete`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ paymentId, txid }),
+            });
+            appendLog(paymentLog, "Đã gửi complete tới backend.");
+          } else {
+            appendLog(paymentLog, "BACKEND_URL chưa cấu hình – chỉ log, không gọi server.");
+          }
+        } catch (err) {
+          appendLog(paymentLog, "Lỗi fetch complete: " + err.message);
+        }
+      },
+      onCancel: (paymentId) => {
+        appendLog(paymentLog, "Người dùng hủy payment: " + paymentId);
+      },
+      onError: (error, payment) => {
+        appendLog(paymentLog, "Lỗi payment: " + error + " | payment=" +
+          JSON.stringify(payment || {}, null, 2));
+      },
+    };
+
+    try {
+      const payment = await window.Pi.createPayment(paymentData, callbacks);
+      appendLog(paymentLog, "createPayment() trả về: " + JSON.stringify(payment, null, 2));
+    } catch (err) {
+      appendLog(paymentLog, "Lỗi createPayment: " + err.message);
+      alert("Payment lỗi: " + err.message);
+    }
   });
 });
-
-/**
- * Parse pattern string ("C G Am F") to array ["C","G","Am","F"]
- */
-function parsePattern(rawPattern) {
-  if (!rawPattern) return [];
-  return rawPattern
-    .split(/\s+/)
-    .map(ch => ch.trim())
-    .filter(Boolean);
-}
-
-/**
- * Apply pattern to lyrics.
- * Each non-empty line will get a chord from pattern[index % len].
- * If line already contains chord-like tokens at end, we still append pattern chord.
- */
-function applyPatternToLyrics(rawLyrics, pattern) {
-  if (!rawLyrics.trim()) return "";
-  const lines = rawLyrics.split(/\r?\n/);
-  const outLines = [];
-  let chordIndex = 0;
-
-  for (const line of lines) {
-    if (!line.trim()) {
-      outLines.push("");
-      continue;
-    }
-
-    const chord = pattern[chordIndex % pattern.length];
-    chordIndex++;
-
-    // If timestamp present, keep it at left
-    const matchTs = line.match(/^(\s*\[[0-9:.]+\]\s*)(.*)$/);
-    if (matchTs) {
-      const ts = matchTs[1];
-      const rest = matchTs[2];
-      outLines.push(`${ts}${rest}    ${chord}`);
-    } else {
-      outLines.push(`${line}    ${chord}`);
-    }
-  }
-
-  return outLines.join("\n");
-}
