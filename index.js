@@ -1,9 +1,9 @@
 // Tran682025 · Pi Web3 Studio
 // Frontend test cho Pi Login & Pi Payment (Testnet)
 
-const BACKEND_URL = "https://your-backend-url.example.com"; 
-// TODO: sửa thành URL backend của Trẫm (ví dụ: https://curvy-parts-flash.loca.lt)
-// hoặc tạm thời để nguyên nếu chỉ muốn test Pi SDK & xem log.
+const BACKEND_URL = "https://your-backend-url.example.com";
+// TODO: sửa thành URL backend thật nếu cần gọi approve/complete.
+// Nếu chỉ muốn test Pi SDK ở client, cứ để nguyên.
 
 let piAvailable = false;
 
@@ -34,37 +34,59 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       window.Pi.init({
         version: "2.0",
-        sandbox: true,       // testnet / sandbox
+        sandbox: true, // Testnet / sandbox
       });
       piAvailable = true;
       sdkStatusDot.classList.add("status-ok");
       sdkStatusText.textContent = "Pi SDK sẵn sàng (Testnet / Sandbox)";
+
+      // Cho phép bấm nút
+      loginBtn.disabled = false;
+      payBtn.disabled = false;
+
+      // Cập nhật log ban đầu
+      loginLog.textContent =
+        "[Login] Sẵn sàng. Bấm “Đăng nhập bằng Pi (Testnet)” trong Pi Browser.";
+      paymentLog.textContent =
+        "[Payment] Sẵn sàng. Bấm “Tạo thanh toán Pi (Testnet)” để tạo giao dịch thử.";
     } catch (err) {
       sdkStatusText.textContent = "Lỗi init Pi SDK: " + err.message;
       appendLog(loginLog, "Pi.init error: " + err.message);
+      loginBtn.disabled = true;
+      payBtn.disabled = true;
     }
   } else {
+    // SIMPLE MODE: không có Pi SDK → chỉ cho xem giao diện
     sdkStatusText.textContent =
       "Không tìm thấy Pi SDK. Hãy mở trang này trong Pi Browser (Develop → Tran682025).";
-    appendLog(loginLog, "Pi SDK không có. Đây có thể là Chrome / trình duyệt ngoài.");
+    loginBtn.disabled = true;
+    payBtn.disabled = true;
+
+    loginLog.textContent =
+      "[Login] Đang xem bằng trình duyệt thường.\nMở app Tran682025 trong Pi Browser để test đăng nhập.";
+    paymentLog.textContent =
+      "[Payment] Đang xem bằng trình duyệt thường.\nMở app Tran682025 trong Pi Browser để test thanh toán.";
   }
 
   // ===== Login =====
   loginBtn.addEventListener("click", async () => {
     if (!piAvailable) {
-      alert("Pi SDK chưa hoạt động. Hãy mở trong Pi Browser.");
+      alert("Pi SDK chưa hoạt động. Hãy mở trong Pi Browser (Develop → Tran682025).");
       return;
     }
 
     const scopes = scopeInput.value
       .split(",")
-      .map(s => s.trim())
+      .map((s) => s.trim())
       .filter(Boolean);
 
     appendLog(loginLog, `Bắt đầu Pi.authenticate với scope: [${scopes.join(", ")}]`);
 
     const onIncompletePaymentFound = (payment) => {
-      appendLog(loginLog, "onIncompletePaymentFound: " + JSON.stringify(payment, null, 2));
+      appendLog(
+        loginLog,
+        "onIncompletePaymentFound: " + JSON.stringify(payment, null, 2)
+      );
     };
 
     try {
@@ -83,7 +105,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // ===== Payment =====
   payBtn.addEventListener("click", async () => {
     if (!piAvailable) {
-      alert("Pi SDK chưa hoạt động. Hãy mở trong Pi Browser.");
+      alert("Pi SDK chưa hoạt động. Hãy mở trong Pi Browser (Develop → Tran682025).");
       return;
     }
 
@@ -98,7 +120,12 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    appendLog(paymentLog, `Tạo payment: amount=${amount}, memo="${memo}"`);
+    appendLog(
+      paymentLog,
+      `Tạo payment: amount=${amount}, memo="${memo}", metadata=${JSON.stringify(
+        metadata
+      )}`
+    );
 
     const paymentData = {
       amount,
@@ -109,7 +136,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const callbacks = {
       onReadyForServerApproval: async (paymentId) => {
         appendLog(paymentLog, "onReadyForServerApproval: " + paymentId);
-        // Gửi paymentId cho backend để gọi Pi server /approve
         try {
           if (BACKEND_URL && BACKEND_URL.startsWith("http")) {
             await fetch(`${BACKEND_URL}/payments/approve`, {
@@ -119,15 +145,20 @@ document.addEventListener("DOMContentLoaded", () => {
             });
             appendLog(paymentLog, "Đã gửi approve tới backend.");
           } else {
-            appendLog(paymentLog, "BACKEND_URL chưa cấu hình – chỉ log, không gọi server.");
+            appendLog(
+              paymentLog,
+              "BACKEND_URL chưa cấu hình – chỉ log ở client, không gọi server."
+            );
           }
         } catch (err) {
           appendLog(paymentLog, "Lỗi fetch approve: " + err.message);
         }
       },
       onReadyForServerCompletion: async (paymentId, txid) => {
-        appendLog(paymentLog, `onReadyForServerCompletion: paymentId=${paymentId}, txid=${txid}`);
-        // Gửi paymentId + txid cho backend để gọi Pi server /complete
+        appendLog(
+          paymentLog,
+          `onReadyForServerCompletion: paymentId=${paymentId}, txid=${txid}`
+        );
         try {
           if (BACKEND_URL && BACKEND_URL.startsWith("http")) {
             await fetch(`${BACKEND_URL}/payments/complete`, {
@@ -137,7 +168,10 @@ document.addEventListener("DOMContentLoaded", () => {
             });
             appendLog(paymentLog, "Đã gửi complete tới backend.");
           } else {
-            appendLog(paymentLog, "BACKEND_URL chưa cấu hình – chỉ log, không gọi server.");
+            appendLog(
+              paymentLog,
+              "BACKEND_URL chưa cấu hình – chỉ log ở client, không gọi server."
+            );
           }
         } catch (err) {
           appendLog(paymentLog, "Lỗi fetch complete: " + err.message);
@@ -147,8 +181,11 @@ document.addEventListener("DOMContentLoaded", () => {
         appendLog(paymentLog, "Người dùng hủy payment: " + paymentId);
       },
       onError: (error, payment) => {
-        appendLog(paymentLog, "Lỗi payment: " + error + " | payment=" +
-          JSON.stringify(payment || {}, null, 2));
+        appendLog(
+          paymentLog,
+          "Lỗi payment: " + error + " | payment=" +
+            JSON.stringify(payment || {}, null, 2)
+        );
       },
     };
 
