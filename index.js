@@ -726,32 +726,27 @@ if (loginDevBtn) {
           );
         }
       },
-      onReadyForServerCompletion: async (paymentId, txid) => {
-        appendLog(
-          paymentLog,
-          `onReadyForServerCompletion: paymentId=${paymentId}, txid=${txid}`
-        );
-        try {
-          if (!isDev && cleanBackend && cleanBackend.startsWith("http")) {
-            await fetch(`${cleanBackend}/payments/complete`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ paymentId, txid }),
-            });
-            appendLog(paymentLog, "Đã gửi complete tới backend.");
-          } else {
-            appendLog(
-              paymentLog,
-              "BACKEND_URL chưa cấu hình hoặc đang ở DEV – chỉ log ở client, không gọi server."
-            );
-          }
-        } catch (err) {
-          appendLog(
-            paymentLog,
-            "Lỗi fetch complete: " + err.message
-          );
-        }
-      },
+    onReadyForServerCompletion: async (paymentId, txid) => {
+  appendLog(paymentLog, "Complete request: " + paymentId);
+
+  try {
+    const res = await fetch(`${cleanBackend}/payments/complete`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ paymentId })   // chỉ paymentId
+    });
+    const data = await res.json();
+    appendLog(paymentLog, "Backend đã complete xong.");
+
+    // ⭐ RẤT QUAN TRỌNG: báo cho Pi SDK biết là hoàn tất
+    payment.onReadyForCompletion(paymentId, txid);
+
+  } catch (err) {
+    appendLog(paymentLog, "Lỗi fetch complete: " + err.message);
+  }
+},
+
+
       onCancel: (paymentId) => {
         appendLog(
           paymentLog,
