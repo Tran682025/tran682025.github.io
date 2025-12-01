@@ -580,12 +580,12 @@ document.addEventListener("DOMContentLoaded", () => {
       "[Payment] Đang xem bằng trình duyệt thường.\nMở app Tran682025 trong mục Develop của Pi Browser để test thanh toán.";
   }
 
- // Hàm login chung
+
+// 2) TRONG index.js: THAY TOÀN BỘ HÀM runLogin BẰNG ĐOẠN NÀY
+
 async function runLogin(isDev = false) {
   if (!piAvailable) {
-    alert(
-      "Pi SDK chưa hoạt động. Hãy mở trong Pi Browser (Develop → Tran682025)."
-    );
+    alert("Pi SDK chưa hoạt động. Hãy mở trong Pi Browser (Develop → Tran682025).");
     return;
   }
 
@@ -609,36 +609,26 @@ async function runLogin(isDev = false) {
     );
 
     try {
-      const status = payment.status || {};
-      const tx = payment.transaction || {};
       const paymentId = payment.identifier;
-      const txid = tx.txid;
 
-      // Nếu payment đã được approve + verified nhưng chưa complete → tự gọi backend complete
       if (
-        status.developer_approved &&
-        status.transaction_verified &&
-        !status.developer_completed &&
         paymentId &&
-        txid &&
         BACKEND_URL &&
         BACKEND_URL.startsWith("http")
       ) {
         appendLog(
           loginLog,
-          `Auto-complete pending payment: id=${paymentId}, txid=${txid}`
+          `Gửi yêu cầu CANCEL pending payment: id=${paymentId}`
         );
-
-        await fetch(`${BACKEND_URL}/payments/complete`, {
+        await fetch(`${BACKEND_URL}/payments/cancel`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ paymentId, txid }),
+          body: JSON.stringify({ paymentId }),
         });
-
-        appendLog(loginLog, "Đã gửi complete pending payment lên backend.");
+        appendLog(loginLog, "Backend đã nhận yêu cầu CANCEL pending.");
       }
     } catch (e) {
-      appendLog(loginLog, "Lỗi auto-complete pending: " + e.message);
+      appendLog(loginLog, "Lỗi xử lý pending (cancel): " + e.message);
     }
   };
 
@@ -664,7 +654,7 @@ async function runLogin(isDev = false) {
   }
 }
 
-// Gắn lại nút login (đoạn này GIỮ NGUYÊN, chỉ để ngay sau hàm runLogin)
+// Giữ nguyên bên dưới:
 loginBtn.addEventListener("click", () => runLogin(false));
 if (loginDevBtn) {
   loginDevBtn.addEventListener("click", () => runLogin(true));
