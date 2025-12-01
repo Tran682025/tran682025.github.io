@@ -1,16 +1,116 @@
-// FYKINGDOM v0.4 + Tran682025 Pi Login/Payment panel
+// Chordifykingdom v1.0 + Tran682025 Pi Login/Payment panel
+// Chuẩn hóa: Golden Turtle Edition (musickingdom), Pi SDK v2, pending-safe.
 
-// === Backend URL cho Pi Payment (tùy chọn) ===
-const BACKEND_URL = " https://9bf7eba97a89.ngrok-free.app";
+// === Backend URL cho Pi Payment (tùy chọn, đã bỏ khoảng trắng thừa) ===
+const BACKEND_URL = "https://9bf7eba97a89.ngrok-free.app";
 
-// Để trống nếu chỉ muốn test client.
-// Nếu có backend: ví dụ "https://curvy-parts-flash.loca.lt"
+// ====== I18N đơn giản VN / EN cho phần UI chính ======
+const I18N = {
+  vn: {
+    bannerTitle: "PiChordify Kingdom · Tran682025",
+    bannerDescription:
+      "Công cụ gợi ý hợp âm & luyện hát trong hệ sinh thái Pi – bản dành riêng cho thử nghiệm frontend, chạy trên domain Tran682025 cùng với Pi Login & Pi Payment (Testnet) để hoàn thành Checklist trên Pi App Platform.",
+    bannerVersionLabel: "Tran682025 · Golden Turtle Edition",
+    bannerSubline: "FYKINGDOM v1.0 · Pi SDK SANDBOX",
+    bannerSmall: "Testnet gateway for Pi apps",
+    newSongTitle: "Bản nhạc mới (giao diện demo)",
+    composerPill: "Composer panel",
+    instrumentLabel: "Nhạc cụ",
+    songTitleLabel: "Tên bài",
+    keyLabel: "Giọng (key)",
+    progressionLabel: "Tiến trình: I–V–vi–IV",
+    lyricsSectionTitle: "Lời + hợp âm (có mốc thời gian)",
+    lyricsHint:
+      "Mỗi dòng có thể bắt đầu bằng mốc thời gian, ví dụ: [00:12] Ngày mai…",
+    patternSectionTitle: "Mẫu hợp âm cho cả bài (pattern)",
+    patternHint:
+      "Ví dụ: G D Em C hoặc C G Am F G F Em Am. App sẽ lặp lại pattern theo từng dòng lời.",
+    mp3SectionTitle: "File MP3 (tùy chọn)",
+    mp3Hint: "Chọn file beat hoặc bản demo để luyện trong Player.",
+    playerTitle: "FYKINGDOM Player",
+    practicePill: "Practice panel",
+    speedLabelText: "Tốc độ / BPM",
+    volumeLabel: "Âm lượng",
+    recLabel: "Bản thu của bạn",
+    videoRoomHint:
+      "Kênh giao lưu học viên & giảng viên (bản DEV – placeholder).",
+    devModeText:
+      "Đang chạy ở trạng thái: Chế độ DEV, thanh toán Pi chỉ chạy khi Pi SDK (client) & backend UP, Pi Payment mở trên app Pi và test (SANDBOX).",
+    piPanelTitle: "Pi Login & Pi Payment (Testnet)",
+    piPanelSubtitle:
+      "Panel dùng để hoàn thành bước 10 Checklist trong Pi App Platform cho app Tran682025.",
+    sdkStatusChecking: "Đang kiểm tra Pi SDK…",
+    compressPanelBtnExpand: "Thu gọn panel",
+    compressPanelBtnCollapse: "Mở rộng panel",
+    scopeLabel: "Scope",
+    loginNoteLabel: "Ghi chú login",
+    paymentSectionTitle: "Pi Payment (Testnet)",
+    amountLabel: "Số Pi (test)",
+    memoLabel: "Memo",
+    metadataLabel: "Metadata (JSON)",
+    helpTitle: "Hướng dẫn sử dụng PiChordify Kingdom",
+    helpSubtitle: "Tóm tắt cách học với app · VN / EN / Dev notes",
+    langToggle: "VN / EN",
+    sdkBadge: "Pi SDK ready (SANDBOX)",
+    playlistTitle: "Danh sách bản demo",
+  },
+  en: {
+    bannerTitle: "PiChordify Kingdom · Tran682025",
+    bannerDescription:
+      "Chord suggestion & vocal practice tool in the Pi ecosystem – frontend test build on Tran682025 domain with Pi Login & Pi Payment (Testnet) to complete the Pi App Platform Checklist.",
+    bannerVersionLabel: "Tran682025 · Golden Turtle Edition",
+    bannerSubline: "FYKINGDOM v1.0 · Pi SDK SANDBOX",
+    bannerSmall: "Testnet gateway for Pi apps",
+    newSongTitle: "New song (demo UI)",
+    composerPill: "Composer panel",
+    instrumentLabel: "Instrument",
+    songTitleLabel: "Song title",
+    keyLabel: "Key",
+    progressionLabel: "Progression: I–V–vi–IV",
+    lyricsSectionTitle: "Lyrics + chords (with timestamps)",
+    lyricsHint:
+      "Each line may start with a timestamp, for example: [00:12] Tomorrow…",
+    patternSectionTitle: "Chord pattern for the whole song",
+    patternHint:
+      "Example: G D Em C or C G Am F G F Em Am. The app loops this pattern per lyric line.",
+    mp3SectionTitle: "MP3 file (optional)",
+    mp3Hint: "Choose a backing track or demo to practice with the Player.",
+    playerTitle: "FYKINGDOM Player",
+    practicePill: "Practice panel",
+    speedLabelText: "Speed / BPM",
+    volumeLabel: "Volume",
+    recLabel: "Your recording",
+    videoRoomHint:
+      "Student & teacher hangout channel (DEV placeholder).",
+    devModeText:
+      "Running in DEV mode: Pi payments only work when Pi SDK (client) & backend are UP and the app is opened in Pi Browser (SANDBOX).",
+    piPanelTitle: "Pi Login & Pi Payment (Testnet)",
+    piPanelSubtitle:
+      "Panel used to complete Step 10 in the Pi App Platform Checklist for the Tran682025 app.",
+    sdkStatusChecking: "Checking Pi SDK…",
+    compressPanelBtnExpand: "Collapse panel",
+    compressPanelBtnCollapse: "Expand panel",
+    scopeLabel: "Scope",
+    loginNoteLabel: "Login note",
+    paymentSectionTitle: "Pi Payment (Testnet)",
+    amountLabel: "Pi amount (test)",
+    memoLabel: "Memo",
+    metadataLabel: "Metadata (JSON)",
+    helpTitle: "How to use PiChordify Kingdom",
+    helpSubtitle: "Quick guide · VN / EN / Dev notes",
+    langToggle: "EN / VN",
+    sdkBadge: "Pi SDK ready (SANDBOX)",
+    playlistTitle: "Demo playlist",
+  },
+};
 
-// ====== PHẦN 1: FYKINGDOM (audio, pattern, rec, help) ======
+// ====== PHẦN 1: FYKINGDOM (audio, pattern, rec, help, i18n, video) ======
 
 let mediaRecorder = null;
 let recordedChunks = [];
 let userRecordingUrl = null;
+let isRecording = false;
+let currentLang = "vn";
 
 document.addEventListener("DOMContentLoaded", () => {
   // DOM refs cho FYKINGDOM
@@ -20,13 +120,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const stopBtn = document.getElementById("stopBtn");
   const speedSlider = document.getElementById("speedSlider");
   const speedLabel = document.getElementById("speedLabel");
+  const speedLabelText = document.getElementById("speedLabelText");
   const volumeSlider = document.getElementById("volumeSlider");
+  const volumeLabel = document.getElementById("volumeLabel");
 
   const lyricsInput = document.getElementById("lyricsInput");
   const patternInput = document.getElementById("patternInput");
   const applyPatternBtn = document.getElementById("applyPatternBtn");
   const autoFillPatternBtn = document.getElementById("autoFillPatternBtn");
-  const lyricsWithChordsOutput = document.getElementById("lyricsWithChordsOutput");
+  const lyricsWithChordsOutput = document.getElementById(
+    "lyricsWithChordsOutput"
+  );
   const keyInput = document.getElementById("keyInput");
   const mp3FileInput = document.getElementById("mp3FileInput");
   const lyricsPreview = document.getElementById("lyricsPreview");
@@ -42,6 +146,98 @@ document.addEventListener("DOMContentLoaded", () => {
   const closeHelpBtn = document.getElementById("closeHelpBtn");
   const tabButtons = document.querySelectorAll(".tab");
   const chipPresets = document.querySelectorAll(".btn-soft[data-preset]");
+
+  const videoRoomBtn = document.getElementById("videoRoomBtn");
+  const langToggleBtn = document.getElementById("langToggleBtn");
+
+  // I18N: áp dụng text cho UI tĩnh chính
+  function applyI18n() {
+    const dict = I18N[currentLang];
+    if (!dict) return;
+
+    const ids = {
+      bannerTitle: "bannerTitle",
+      bannerDescription: "bannerDescription",
+      bannerVersionLabel: "bannerVersionLabel",
+      bannerSubline: "bannerSubline",
+      bannerSmall: "bannerSmall",
+      newSongTitle: "newSongTitle",
+      composerPill: "composerPill",
+      instrumentLabel: "instrumentLabel",
+      songTitleLabel: "songTitleLabel",
+      keyLabel: "keyLabel",
+      progressionLabel: "progressionLabel",
+      lyricsSectionTitle: "lyricsSectionTitle",
+      lyricsHint: "lyricsHint",
+      patternSectionTitle: "patternSectionTitle",
+      patternHint: "patternHint",
+      mp3SectionTitle: "mp3SectionTitle",
+      mp3Hint: "mp3Hint",
+      playerTitle: "playerTitle",
+      practicePill: "practicePill",
+      speedLabelText: "speedLabelText",
+      volumeLabel: "volumeLabel",
+      recLabel: "recLabel",
+      videoRoomHint: "videoRoomHint",
+      piPanelTitle: "piPanelTitle",
+      piPanelSubtitle: "piPanelSubtitle",
+      scopeLabel: "scopeLabel",
+      loginNoteLabel: "loginNoteLabel",
+      paymentSectionTitle: "paymentSectionTitle",
+      amountLabel: "amountLabel",
+      memoLabel: "memoLabel",
+      metadataLabel: "metadataLabel",
+      helpTitle: "helpTitle",
+      helpSubtitle: "helpSubtitle",
+      sdkBadge: "sdkBadge",
+    };
+
+    Object.entries(ids).forEach(([key, id]) => {
+      const el = document.getElementById(id);
+      if (el && typeof dict[key] === "string") {
+        el.textContent = dict[key];
+      }
+    });
+
+    const devModeTextEl = document.getElementById("devModeText");
+    if (devModeTextEl && dict.devModeText) {
+      devModeTextEl.innerHTML = dict.devModeText.replace(
+        "Chế độ DEV",
+        "<strong>Chế độ DEV</strong>"
+      );
+      if (currentLang === "en") {
+        devModeTextEl.innerHTML = dict.devModeText.replace(
+          "DEV mode",
+          "<strong>DEV mode</strong>"
+        );
+      }
+    }
+
+    if (langToggleBtn && dict.langToggle) {
+      langToggleBtn.textContent = dict.langToggle;
+    }
+
+    const playlistBlock = document.getElementById("playlistBlock");
+    if (playlistBlock && dict.playlistTitle) {
+      const html =
+        currentLang === "vn"
+          ? `<div>${dict.playlistTitle}</div>
+             <div>• <strong>Tran682025 – Demo Jam</strong> · 92 BPM · 3:45</div>
+             <div>• Focus Mode Practice · 75 BPM · 4:12</div>`
+          : `<div>${dict.playlistTitle}</div>
+             <div>• <strong>Tran682025 – Demo Jam</strong> · 92 BPM · 3:45</div>
+             <div>• Focus Mode Practice · 75 BPM · 4:12</div>`;
+      playlistBlock.innerHTML = html;
+    }
+  }
+
+  if (langToggleBtn) {
+    langToggleBtn.addEventListener("click", () => {
+      currentLang = currentLang === "vn" ? "en" : "vn";
+      applyI18n();
+    });
+    applyI18n();
+  }
 
   // 1. Audio player basic behaviour
   if (audioPlayer) {
@@ -87,7 +283,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // 2. Pattern helpers
-  chipPresets.forEach(chip => {
+  chipPresets.forEach((chip) => {
     chip.addEventListener("click", () => {
       patternInput.value = chip.dataset.preset || "";
       patternInput.focus();
@@ -123,18 +319,22 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       const result = applyPatternToLyrics(rawLyrics, pattern);
-      lyricsWithChordsOutput.textContent = result || "[trống] Chưa có dòng hợp lệ.";
-      lyricsPreview.textContent = result || lyricsPreview.textContent;
+      lyricsWithChordsOutput.textContent =
+        result || "[trống] Chưa có dòng hợp lệ.";
+      if (result) {
+        lyricsPreview.textContent = result;
+      }
     });
   }
 
-  // 3. Recording
+  // 3. Recording (đã chỉnh lại cho mượt, tránh lỗi double-rec)
   if (startRecBtn && stopRecBtn) {
-    startRecBtn.addEventListener("click", startRecording);
+    startRecBtn.addEventListener("click", () => startRecording(audioPlayer));
     stopRecBtn.addEventListener("click", stopRecording);
   }
 
-  async function startRecording() {
+  async function startRecording(playerRef) {
+    if (isRecording) return;
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       alert("Trình duyệt không hỗ trợ ghi âm (MediaRecorder).");
       return;
@@ -155,19 +355,37 @@ document.addEventListener("DOMContentLoaded", () => {
         userRecordingAudio.src = userRecordingUrl;
         userRecordingAudio.play().catch(() => {});
         if (recDot) recDot.style.display = "none";
-        if (recStatusText) recStatusText.textContent = "Đã thu xong · có thể phát lại";
+        if (recStatusText)
+          recStatusText.textContent = "Đã thu xong · có thể phát lại";
+        isRecording = false;
+        startRecBtn.disabled = false;
+        stopRecBtn.disabled = true;
+
+        if (mediaRecorder && mediaRecorder.stream) {
+          mediaRecorder.stream.getTracks().forEach((t) => t.stop());
+        }
       };
 
       mediaRecorder.start();
-      if (recDot) recDot.style.display = "inline-block";
-      if (recStatusText) recStatusText.textContent = "Đang thu… nói hoặc hát vào mic";
+      isRecording = true;
+      startRecBtn.disabled = true;
+      stopRecBtn.disabled = false;
 
-      if (audioPlayer && audioPlayer.paused) {
-        audioPlayer.play().catch(() => {});
+      if (recDot) recDot.style.display = "inline-block";
+      if (recStatusText)
+        recStatusText.textContent = "Đang thu… nói hoặc hát vào mic";
+
+      if (playerRef && playerRef.paused) {
+        playerRef.play().catch(() => {});
       }
     } catch (err) {
       console.error("startRecording error", err);
       alert("Không thể truy cập micro: " + err.message);
+      isRecording = false;
+      startRecBtn.disabled = false;
+      stopRecBtn.disabled = true;
+      if (recDot) recDot.style.display = "none";
+      if (recStatusText) recStatusText.textContent = "Idle";
     }
   }
 
@@ -177,6 +395,9 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       if (recDot) recDot.style.display = "none";
       if (recStatusText) recStatusText.textContent = "Idle";
+      isRecording = false;
+      startRecBtn.disabled = false;
+      stopRecBtn.disabled = true;
     }
   }
 
@@ -195,17 +416,26 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  tabButtons.forEach(btn => {
+  tabButtons.forEach((btn) => {
     btn.addEventListener("click", () => {
       const tab = btn.dataset.helpTab;
-      tabButtons.forEach(b => b.classList.remove("active"));
+      tabButtons.forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
 
-      document.querySelectorAll("[data-help-content]").forEach(el => {
+      document.querySelectorAll("[data-help-content]").forEach((el) => {
         el.style.display = el.dataset.helpContent === tab ? "block" : "none";
       });
     });
   });
+
+  // 5. Video ROOM (placeholder)
+  if (videoRoomBtn) {
+    videoRoomBtn.addEventListener("click", () => {
+      alert(
+        "Video ROOM sẽ được tích hợp ở các bản sau.\nHiện tại đây là nút demo cho kênh học viên & giảng viên."
+      );
+    });
+  }
 });
 
 // Helpers cho pattern
@@ -213,7 +443,7 @@ function parsePattern(rawPattern) {
   if (!rawPattern) return [];
   return rawPattern
     .split(/\s+/)
-    .map(ch => ch.trim())
+    .map((ch) => ch.trim())
     .filter(Boolean);
 }
 
@@ -245,24 +475,29 @@ function applyPatternToLyrics(rawLyrics, pattern) {
   return outLines.join("\n");
 }
 
-// ====== PHẦN 2: Pi SDK Login + Payment (Step 10) ======
+// ====== PHẦN 2: Pi SDK Login + Payment (Step 10, pending-safe) ======
 
 document.addEventListener("DOMContentLoaded", () => {
   const sdkStatusDot = document.getElementById("sdkStatusDot");
   const sdkStatusText = document.getElementById("sdkStatusText");
   const loginBtn = document.getElementById("loginBtn");
+  const loginDevBtn = document.getElementById("loginDevBtn");
   const loginLog = document.getElementById("loginLog");
   const scopeInput = document.getElementById("scopeInput");
   const loginNoteInput = document.getElementById("loginNoteInput");
 
   const payBtn = document.getElementById("payBtn");
+  const payDevBtn = document.getElementById("payDevBtn");
   const paymentLog = document.getElementById("paymentLog");
   const amountInput = document.getElementById("amountInput");
   const memoInput = document.getElementById("memoInput");
   const metadataInput = document.getElementById("metadataInput");
 
+  const compressPanelBtn = document.getElementById("compressPanelBtn");
+  const piPanelBody = document.getElementById("piPanelBody");
+  const langToggleBtn = document.getElementById("langToggleBtn");
+
   if (!sdkStatusDot || !sdkStatusText || !loginBtn || !payBtn) {
-    // nếu thiếu panel thì bỏ qua
     return;
   }
 
@@ -274,6 +509,32 @@ document.addEventListener("DOMContentLoaded", () => {
     el.scrollTop = el.scrollHeight;
   }
 
+  // Compress panel toggle (COMPRESSER PANEL)
+  if (compressPanelBtn && piPanelBody) {
+    compressPanelBtn.addEventListener("click", () => {
+      const dict = I18N[currentLang];
+      const expandLabel =
+        dict?.compressPanelBtnExpand || "Thu gọn panel";
+      const collapseLabel =
+        dict?.compressPanelBtnCollapse || "Mở rộng panel";
+
+      if (piPanelBody.classList.contains("card-body-collapsed")) {
+        piPanelBody.classList.remove("card-body-collapsed");
+        compressPanelBtn.textContent = expandLabel;
+      } else {
+        piPanelBody.classList.add("card-body-collapsed");
+        compressPanelBtn.textContent = collapseLabel;
+      }
+    });
+
+    // cập nhật label ban đầu theo ngôn ngữ
+    const dict = I18N[currentLang];
+    if (dict?.compressPanelBtnExpand) {
+      compressPanelBtn.textContent = dict.compressPanelBtnExpand;
+    }
+  }
+
+  // Pi SDK init
   if (window.Pi) {
     try {
       window.Pi.init({
@@ -282,9 +543,14 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       piAvailable = true;
       sdkStatusDot.classList.add("status-ok");
-      sdkStatusText.textContent = "Pi SDK sẵn sàng (Testnet / Sandbox)";
+      sdkStatusText.textContent =
+        currentLang === "en"
+          ? "Pi SDK ready (Testnet / Sandbox)"
+          : "Pi SDK sẵn sàng (Testnet / Sandbox)";
       loginBtn.disabled = false;
       payBtn.disabled = false;
+      if (loginDevBtn) loginDevBtn.disabled = false;
+      if (payDevBtn) payDevBtn.disabled = false;
 
       loginLog.textContent =
         "[Login] Sẵn sàng. Bấm “Đăng nhập bằng Pi (Testnet)” trong Pi Browser.";
@@ -295,12 +561,18 @@ document.addEventListener("DOMContentLoaded", () => {
       appendLog(loginLog, "Pi.init error: " + err.message);
       loginBtn.disabled = true;
       payBtn.disabled = true;
+      if (loginDevBtn) loginDevBtn.disabled = true;
+      if (payDevBtn) payDevBtn.disabled = true;
     }
   } else {
+    const dict = I18N[currentLang];
     sdkStatusText.textContent =
+      dict?.sdkStatusChecking ||
       "Không tìm thấy Pi SDK. Nếu bạn đang dùng Pi Browser, có thể đang mở bằng URL thường.";
     loginBtn.disabled = true;
     payBtn.disabled = true;
+    if (loginDevBtn) loginDevBtn.disabled = true;
+    if (payDevBtn) payDevBtn.disabled = true;
 
     loginLog.textContent =
       "[Login] Đang xem bằng trình duyệt thường.\nMở app Tran682025 trong mục Develop của Pi Browser để test đăng nhập.";
@@ -308,10 +580,12 @@ document.addEventListener("DOMContentLoaded", () => {
       "[Payment] Đang xem bằng trình duyệt thường.\nMở app Tran682025 trong mục Develop của Pi Browser để test thanh toán.";
   }
 
-  // Login
-  loginBtn.addEventListener("click", async () => {
+  // Hàm login chung
+  async function runLogin(isDev = false) {
     if (!piAvailable) {
-      alert("Pi SDK chưa hoạt động. Hãy mở trong Pi Browser (Develop → Tran682025).");
+      alert(
+        "Pi SDK chưa hoạt động. Hãy mở trong Pi Browser (Develop → Tran682025)."
+      );
       return;
     }
 
@@ -320,32 +594,54 @@ document.addEventListener("DOMContentLoaded", () => {
       .map((s) => s.trim())
       .filter(Boolean);
 
-    appendLog(loginLog, `Bắt đầu Pi.authenticate với scope: [${scopes.join(", ")}]`);
+    appendLog(
+      loginLog,
+      `[Login] Bắt đầu Pi.authenticate (mode=${
+        isDev ? "DEV" : "TESTNET"
+      }) với scope: [${scopes.join(", ")}]`
+    );
 
     const onIncompletePaymentFound = (payment) => {
       appendLog(
         loginLog,
-        "onIncompletePaymentFound: " + JSON.stringify(payment, null, 2)
+        "onIncompletePaymentFound (pending payment): " +
+          JSON.stringify(payment, null, 2)
       );
     };
 
     try {
-      const authResult = await window.Pi.authenticate(scopes, onIncompletePaymentFound);
-      appendLog(loginLog, "Kết quả auth: " + JSON.stringify(authResult, null, 2));
+      const authResult = await window.Pi.authenticate(
+        scopes,
+        onIncompletePaymentFound
+      );
+      appendLog(
+        loginLog,
+        "Kết quả auth: " + JSON.stringify(authResult, null, 2)
+      );
 
       if (loginNoteInput.value.trim()) {
-        appendLog(loginLog, "Ghi chú: " + loginNoteInput.value.trim());
+        appendLog(
+          loginLog,
+          "Ghi chú: " + loginNoteInput.value.trim()
+        );
       }
     } catch (err) {
       appendLog(loginLog, "Lỗi authenticate: " + err.message);
       alert("Login lỗi: " + err.message);
     }
-  });
+  }
+
+  loginBtn.addEventListener("click", () => runLogin(false));
+  if (loginDevBtn) {
+    loginDevBtn.addEventListener("click", () => runLogin(true));
+  }
 
   // Payment
-  payBtn.addEventListener("click", async () => {
+  async function runPayment(isDev = false) {
     if (!piAvailable) {
-      alert("Pi SDK chưa hoạt động. Hãy mở trong Pi Browser (Develop → Tran682025).");
+      alert(
+        "Pi SDK chưa hoạt động. Hãy mở trong Pi Browser (Develop → Tran682025)."
+      );
       return;
     }
 
@@ -362,7 +658,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     appendLog(
       paymentLog,
-      `Tạo payment: amount=${amount}, memo="${memo}", metadata=${JSON.stringify(
+      `[Payment] Tạo payment (mode=${
+        isDev ? "DEV" : "TESTNET"
+      }): amount=${amount}, memo="${memo}", metadata=${JSON.stringify(
         metadata
       )}`
     );
@@ -373,12 +671,17 @@ document.addEventListener("DOMContentLoaded", () => {
       metadata,
     };
 
+    const cleanBackend = (BACKEND_URL || "").trim();
+
     const callbacks = {
       onReadyForServerApproval: async (paymentId) => {
-        appendLog(paymentLog, "onReadyForServerApproval: " + paymentId);
+        appendLog(
+          paymentLog,
+          "onReadyForServerApproval: " + paymentId
+        );
         try {
-          if (BACKEND_URL && BACKEND_URL.startsWith("http")) {
-            await fetch(`${BACKEND_URL}/payments/approve`, {
+          if (!isDev && cleanBackend && cleanBackend.startsWith("http")) {
+            await fetch(`${cleanBackend}/payments/approve`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ paymentId }),
@@ -387,11 +690,14 @@ document.addEventListener("DOMContentLoaded", () => {
           } else {
             appendLog(
               paymentLog,
-              "BACKEND_URL chưa cấu hình – chỉ log ở client, không gọi server."
+              "BACKEND_URL chưa cấu hình hoặc đang ở DEV – chỉ log ở client, không gọi server."
             );
           }
         } catch (err) {
-          appendLog(paymentLog, "Lỗi fetch approve: " + err.message);
+          appendLog(
+            paymentLog,
+            "Lỗi fetch approve: " + err.message
+          );
         }
       },
       onReadyForServerCompletion: async (paymentId, txid) => {
@@ -400,8 +706,8 @@ document.addEventListener("DOMContentLoaded", () => {
           `onReadyForServerCompletion: paymentId=${paymentId}, txid=${txid}`
         );
         try {
-          if (BACKEND_URL && BACKEND_URL.startsWith("http")) {
-            await fetch(`${BACKEND_URL}/payments/complete`, {
+          if (!isDev && cleanBackend && cleanBackend.startsWith("http")) {
+            await fetch(`${cleanBackend}/payments/complete`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ paymentId, txid }),
@@ -410,31 +716,54 @@ document.addEventListener("DOMContentLoaded", () => {
           } else {
             appendLog(
               paymentLog,
-              "BACKEND_URL chưa cấu hình – chỉ log ở client, không gọi server."
+              "BACKEND_URL chưa cấu hình hoặc đang ở DEV – chỉ log ở client, không gọi server."
             );
           }
         } catch (err) {
-          appendLog(paymentLog, "Lỗi fetch complete: " + err.message);
+          appendLog(
+            paymentLog,
+            "Lỗi fetch complete: " + err.message
+          );
         }
       },
       onCancel: (paymentId) => {
-        appendLog(paymentLog, "Người dùng hủy payment: " + paymentId);
+        appendLog(
+          paymentLog,
+          "Người dùng hủy payment: " + paymentId
+        );
       },
       onError: (error, payment) => {
         appendLog(
           paymentLog,
-          "Lỗi payment: " + error + " | payment=" +
+          "Lỗi payment: " +
+            error +
+            " | payment=" +
             JSON.stringify(payment || {}, null, 2)
         );
       },
     };
 
     try {
-      const payment = await window.Pi.createPayment(paymentData, callbacks);
-      appendLog(paymentLog, "createPayment() trả về: " + JSON.stringify(payment, null, 2));
+      const payment = await window.Pi.createPayment(
+        paymentData,
+        callbacks
+      );
+      appendLog(
+        paymentLog,
+        "createPayment() trả về: " +
+          JSON.stringify(payment, null, 2)
+      );
     } catch (err) {
-      appendLog(paymentLog, "Lỗi createPayment: " + err.message);
+      appendLog(
+        paymentLog,
+        "Lỗi createPayment: " + err.message
+      );
       alert("Payment lỗi: " + err.message);
     }
-  });
+  }
+
+  payBtn.addEventListener("click", () => runPayment(false));
+  if (payDevBtn) {
+    payDevBtn.addEventListener("click", () => runPayment(true));
+  }
 });
