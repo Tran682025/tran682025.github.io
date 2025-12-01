@@ -2,7 +2,7 @@
 // Chuẩn hóa: Golden Turtle Edition (musickingdom), Pi SDK v2, pending-safe.
 
 // === Backend URL cho Pi Payment (tùy chọn, đã bỏ khoảng trắng thừa) ===
-const BACKEND_URL = "https://9bf7eba97a89.ngrok-free.app";
+const BACKEND_URL = "";
 
 // ====== I18N đơn giản VN / EN cho phần UI chính ======
 const I18N = {
