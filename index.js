@@ -580,61 +580,96 @@ document.addEventListener("DOMContentLoaded", () => {
       "[Payment] Đang xem bằng trình duyệt thường.\nMở app Tran682025 trong mục Develop của Pi Browser để test thanh toán.";
   }
 
-  // Hàm login chung
-  async function runLogin(isDev = false) {
-    if (!piAvailable) {
-      alert(
-        "Pi SDK chưa hoạt động. Hãy mở trong Pi Browser (Develop → Tran682025)."
-      );
-      return;
-    }
+ // Hàm login chung
+async function runLogin(isDev = false) {
+  if (!piAvailable) {
+    alert(
+      "Pi SDK chưa hoạt động. Hãy mở trong Pi Browser (Develop → Tran682025)."
+    );
+    return;
+  }
 
-    const scopes = scopeInput.value
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
+  const scopes = scopeInput.value
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
 
+  appendLog(
+    loginLog,
+    `[Login] Bắt đầu Pi.authenticate (mode=${
+      isDev ? "DEV" : "TESTNET"
+    }) với scope: [${scopes.join(", ")}]`
+  );
+
+  const onIncompletePaymentFound = async (payment) => {
     appendLog(
       loginLog,
-      `[Login] Bắt đầu Pi.authenticate (mode=${
-        isDev ? "DEV" : "TESTNET"
-      }) với scope: [${scopes.join(", ")}]`
+      "onIncompletePaymentFound (pending payment): " +
+        JSON.stringify(payment, null, 2)
     );
 
-    const onIncompletePaymentFound = (payment) => {
-      appendLog(
-        loginLog,
-        "onIncompletePaymentFound (pending payment): " +
-          JSON.stringify(payment, null, 2)
-      );
-    };
-
     try {
-      const authResult = await window.Pi.authenticate(
-        scopes,
-        onIncompletePaymentFound
-      );
-      appendLog(
-        loginLog,
-        "Kết quả auth: " + JSON.stringify(authResult, null, 2)
-      );
+      const status = payment.status || {};
+      const tx = payment.transaction || {};
+      const paymentId = payment.identifier;
+      const txid = tx.txid;
 
-      if (loginNoteInput.value.trim()) {
+      // Nếu payment đã được approve + verified nhưng chưa complete → tự gọi backend complete
+      if (
+        status.developer_approved &&
+        status.transaction_verified &&
+        !status.developer_completed &&
+        paymentId &&
+        txid &&
+        BACKEND_URL &&
+        BACKEND_URL.startsWith("http")
+      ) {
         appendLog(
           loginLog,
-          "Ghi chú: " + loginNoteInput.value.trim()
+          `Auto-complete pending payment: id=${paymentId}, txid=${txid}`
         );
-      }
-    } catch (err) {
-      appendLog(loginLog, "Lỗi authenticate: " + err.message);
-      alert("Login lỗi: " + err.message);
-    }
-  }
 
-  loginBtn.addEventListener("click", () => runLogin(false));
-  if (loginDevBtn) {
-    loginDevBtn.addEventListener("click", () => runLogin(true));
+        await fetch(`${BACKEND_URL}/payments/complete`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ paymentId, txid }),
+        });
+
+        appendLog(loginLog, "Đã gửi complete pending payment lên backend.");
+      }
+    } catch (e) {
+      appendLog(loginLog, "Lỗi auto-complete pending: " + e.message);
+    }
+  };
+
+  try {
+    const authResult = await window.Pi.authenticate(
+      scopes,
+      onIncompletePaymentFound
+    );
+    appendLog(
+      loginLog,
+      "Kết quả auth: " + JSON.stringify(authResult, null, 2)
+    );
+
+    if (loginNoteInput.value.trim()) {
+      appendLog(
+        loginLog,
+        "Ghi chú: " + loginNoteInput.value.trim()
+      );
+    }
+  } catch (err) {
+    appendLog(loginLog, "Lỗi authenticate: " + err.message);
+    alert("Login lỗi: " + err.message);
   }
+}
+
+// Gắn lại nút login (đoạn này GIỮ NGUYÊN, chỉ để ngay sau hàm runLogin)
+loginBtn.addEventListener("click", () => runLogin(false));
+if (loginDevBtn) {
+  loginDevBtn.addEventListener("click", () => runLogin(true));
+}
+
 
   // Payment
   async function runPayment(isDev = false) {
