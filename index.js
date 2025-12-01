@@ -620,12 +620,13 @@ async function runLogin(isDev = false) {
           loginLog,
           `Gửi yêu cầu CANCEL pending payment: id=${paymentId}`
         );
-        await fetch(`${BACKEND_URL}/payments/cancel`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ paymentId }),
-        });
-        appendLog(loginLog, "Backend đã nhận yêu cầu CANCEL pending.");
+       await fetch(`${BACKEND_URL}/payments/complete`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ paymentId }) // chỉ paymentId, không txid
+});
+appendLog(paymentLog, "Đã ép hoàn tất pending payment.");
+
       }
     } catch (e) {
       appendLog(loginLog, "Lỗi xử lý pending (cancel): " + e.message);
