@@ -149,6 +149,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const videoRoomBtn = document.getElementById("videoRoomBtn");
   const langToggleBtn = document.getElementById("langToggleBtn");
+// ===== TEST LOGIN (debug để theo dõi Pi.authenticate) =====
+const testLoginBtn = document.getElementById("testLoginBtn");
+if (testLoginBtn) {
+  testLoginBtn.addEventListener("click", async () => {
+    appendLog("[TestLogin] Bắt đầu Pi.authenticate...");
+
+    try {
+      const auth = await Pi.authenticate(
+        ["username", "wallet_address"],
+        (incompletePayment) => {
+          appendLog("[TestLogin] incomplete payment:", incompletePayment);
+        },
+        {
+          version: "2.0",
+          sandbox: true,
+          channelName: "Tran682025",
+        }
+      );
+
+      appendLog("[TestLogin] KẾT QUẢ:", JSON.stringify(auth, null, 2));
+    } catch (err) {
+      appendLog("[TestLogin] LỖI:", err);
+    }
+  });
+}
 
   // I18N: áp dụng text cho UI tĩnh chính
   function applyI18n() {
